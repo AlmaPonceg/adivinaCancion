@@ -22,6 +22,7 @@ export default function HostGame() {
   const [currentJudging, setCurrentJudging] = useState(null);
   const [lastResult, setLastResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
+  const [mobileTab, setMobileTab] = useState('controls'); // 'controls' | 'music'
 
   useEffect(() => {
     if (!roomCode) navigate('/');
@@ -41,6 +42,8 @@ export default function HostGame() {
   useSocketEvent('first-buzz', (data) => {
     setGameState('BUZZER_LOCKED');
     setCurrentJudging(data.buzzEntry);
+    // If on mobile and in music tab, switch to controls tab automatically
+    setMobileTab('controls');
   });
 
   useSocketEvent('buzz-queue-updated', (data) => {
@@ -102,20 +105,22 @@ export default function HostGame() {
   }, [emit, roomCode]);
 
   const endGame = useCallback(async () => {
-    try { await emit('end-game', { roomCode }); }
-    catch (err) { console.error('End game error:', err); }
+    if (window.confirm('¿Estás seguro de que querés terminar la partida y ver los resultados finales?')) {
+      try { await emit('end-game', { roomCode }); }
+      catch (err) { console.error('End game error:', err); }
+    }
   }, [emit, roomCode]);
 
   if (!roomCode) return null;
 
   return (
-    <div className="min-h-dvh bg-glow noise">
+    <div className="min-h-dvh bg-glow noise pb-12">
       <div className="relative z-10">
         {/* Header Bar */}
-        <div className="border-b border-[var(--color-border)] bg-[var(--color-bg-surface)]/90 backdrop-blur-md">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="border-b border-[var(--color-border)] bg-[var(--color-bg-surface)]/90 backdrop-blur-md sticky top-0 z-30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-bold tracking-tight">Trivia Musical</h1>
+              <h1 className="text-base sm:text-lg font-bold tracking-tight">Trivia Musical</h1>
               <p className="mono text-xs text-[var(--color-text-muted)] mt-0.5">
                 Sala {roomCode} · Ronda {roundNumber}
               </p>
@@ -124,7 +129,7 @@ export default function HostGame() {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={endGame}
-              className="px-4 py-2 rounded-lg text-sm font-medium
+              className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium
                          bg-transparent border border-[var(--color-border)]
                          text-[var(--color-text-muted)] hover:border-[var(--color-coral)]/40 hover:text-[var(--color-coral)]
                          transition-all duration-200 cursor-pointer"
@@ -134,25 +139,54 @@ export default function HostGame() {
           </div>
         </div>
 
-        {/* Scoreboard */}
-        <div className="max-w-7xl mx-auto px-6 pt-6">
+        {/* Scoreboard (Always visible on mobile & desktop) */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6">
           <Scoreboard teams={teams} />
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Music Player */}
-          <div className="lg:col-span-2">
+        {/* Mobile Tab Switcher (Visible only on mobile/tablet) */}
+        <div className="lg:hidden max-w-7xl mx-auto px-4 pt-4">
+          <div className="flex rounded-xl bg-[var(--color-bg-elevated)] p-1 border border-[var(--color-border)]">
+            <button
+              onClick={() => setMobileTab('controls')}
+              className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                mobileTab === 'controls'
+                  ? 'bg-[var(--color-accent)] text-[var(--color-bg-primary)] shadow'
+                  : 'text-[var(--color-text-muted)] hover:text-white'
+              }`}
+            >
+              Control y Juez
+              {gameState === 'BUZZER_LOCKED' && (
+                <span className="w-2 h-2 rounded-full bg-[var(--color-coral)] animate-ping" />
+              )}
+            </button>
+            <button
+              onClick={() => setMobileTab('music')}
+              className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all ${
+                mobileTab === 'music'
+                  ? 'bg-[var(--color-accent)] text-[var(--color-bg-primary)] shadow'
+                  : 'text-[var(--color-text-muted)] hover:text-white'
+              }`}
+            >
+              Reproductor de Música
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left: Music Player (Desktop always, Mobile when tab is 'music') */}
+          <div className={`lg:col-span-2 ${mobileTab === 'music' ? 'block' : 'hidden lg:block'}`}>
             <MusicPlayer roomCode={roomCode} />
           </div>
 
-          {/* Right: Game Controls */}
-          <div className="space-y-6">
+          {/* Right: Game & Judge Controls (Desktop always, Mobile when tab is 'controls') */}
+          <div className={`space-y-6 ${mobileTab === 'controls' ? 'block' : 'hidden lg:block'}`}>
             {/* Round Controls */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="card p-6"
+              className="card p-5 sm:p-6"
             >
               <p className="label mb-4">Control de ronda</p>
 
@@ -164,23 +198,23 @@ export default function HostGame() {
                   className="w-full py-3.5 rounded-xl font-semibold
                              bg-[var(--color-accent)] text-[var(--color-bg-primary)]
                              hover:bg-[var(--color-accent-dim)]
-                             transition-colors duration-200 cursor-pointer"
+                             transition-colors duration-200 cursor-pointer text-base shadow-md"
                 >
-                  {roundNumber === 0 ? 'Iniciar primera ronda' : 'Nueva ronda'}
+                  {roundNumber === 0 ? 'Iniciar primera ronda' : 'Iniciar siguiente ronda'}
                 </motion.button>
               )}
 
               {gameState === 'ROUND_ACTIVE' && (
-                <div className="text-center py-4">
+                <div className="text-center py-6">
                   <motion.div
-                    animate={{ opacity: [1, 0.5, 1] }}
-                    transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                    className="text-[var(--color-accent)] font-semibold"
+                    animate={{ opacity: [1, 0.4, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                    className="text-[var(--color-accent)] font-bold text-base"
                   >
-                    Buzzers activos
+                    Música sonando · Buzzers activos
                   </motion.div>
-                  <p className="text-[var(--color-text-muted)] text-sm mt-1">
-                    Esperando que alguien pulse...
+                  <p className="text-[var(--color-text-muted)] text-xs sm:text-sm mt-1.5">
+                    Esperando que algún jugador pulse el botón en su celular...
                   </p>
                 </div>
               )}
@@ -201,21 +235,21 @@ export default function HostGame() {
           </div>
         </div>
 
-        {/* Result Overlay */}
+        {/* Result Overlay Banner */}
         <AnimatePresence>
           {showResult && lastResult && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
             >
               <motion.div
                 initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.85, opacity: 0 }}
                 transition={{ type: 'spring', damping: 20 }}
-                className="card p-12 text-center max-w-md mx-4"
+                className="card p-8 sm:p-12 text-center max-w-md w-full"
               >
                 {lastResult.type === 'correct' ? (
                   <>
@@ -225,13 +259,13 @@ export default function HostGame() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <h2 className="text-2xl font-bold mb-2">Correcto</h2>
-                    <p className="text-[var(--color-text-secondary)] leading-relaxed">
-                      <span className="font-semibold" style={{ color: lastResult.teamColor }}>
+                    <h2 className="text-2xl font-bold mb-2">¡Correcto!</h2>
+                    <p className="text-[var(--color-text-secondary)] leading-relaxed text-sm sm:text-base">
+                      <span className="font-bold" style={{ color: lastResult.teamColor }}>
                         {lastResult.playerName}
                       </span>
                       {' '}sumó {lastResult.pointsAwarded} punto{lastResult.pointsAwarded !== 1 ? 's' : ''} para{' '}
-                      <span className="font-semibold" style={{ color: lastResult.teamColor }}>
+                      <span className="font-bold" style={{ color: lastResult.teamColor }}>
                         {lastResult.teamName}
                       </span>
                     </p>
@@ -245,8 +279,8 @@ export default function HostGame() {
                       </svg>
                     </div>
                     <h2 className="text-2xl font-bold mb-2">Ronda terminada</h2>
-                    <p className="text-[var(--color-text-secondary)]">
-                      Todos los equipos fueron bloqueados. Nadie acertó.
+                    <p className="text-[var(--color-text-secondary)] text-sm">
+                      Todos los equipos fallaron. Nadie sumó puntos en esta ronda.
                     </p>
                   </>
                 )}

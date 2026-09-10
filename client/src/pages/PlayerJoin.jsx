@@ -26,7 +26,7 @@ export default function PlayerJoin() {
   });
 
   useSocketEvent('player-state-updated', (state) => {
-    if (state.gameState === 'ROUND_ACTIVE') {
+    if (state.gameState && state.gameState !== 'LOBBY' && state.gameState !== 'TEAMS_ASSIGNED') {
       navigate('/play/buzzer', {
         state: { roomCode: roomCode.trim(), playerName: name.trim() },
       });
@@ -59,6 +59,14 @@ export default function PlayerJoin() {
         setError(response.error);
       } else {
         setJoined(true);
+        // Check if game is already active
+        socket.emit('get-player-state', { roomCode: trimmedCode }, (st) => {
+          if (st?.gameState && st.gameState !== 'LOBBY' && st.gameState !== 'TEAMS_ASSIGNED') {
+            navigate('/play/buzzer', {
+              state: { roomCode: trimmedCode, playerName: trimmedName },
+            });
+          }
+        });
       }
     });
   };

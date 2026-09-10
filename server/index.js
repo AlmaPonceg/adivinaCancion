@@ -6,7 +6,14 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import os from 'os';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { GameManager, GAME_STATES } from './gameManager.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
@@ -25,10 +32,46 @@ app.use(express.json());
 
 const gm = new GameManager();
 
+// Detect local network IP (e.g. 192.168.1.X)
+function getLocalIp() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+}
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
 });
+
+// Config & network info endpoint
+app.get('/api/config', (req, res) => {
+  const localIp = getLocalIp();
+  res.json({
+    status: 'ok',
+    localIp,
+    port: process.env.PORT || 3001,
+    publicUrl: process.env.PUBLIC_URL || null,
+  });
+});
+
+// Serve static client files if dist directory exists (for production deployment)
+const clientDistPath = path.resolve(__dirname, '../client/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
+      return next();
+    }
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 // ── Socket.io Connection Handler ───────────────────────────────
 
@@ -284,11 +327,13 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3001;
 
 httpServer.listen(PORT, () => {
+  const localIp = getLocalIp();
   console.log('');
-  console.log('  ╔══════════════════════════════════════════╗');
-  console.log('  ║  🎵 Trivia Musical Server Running       ║');
-  console.log(`  ║  📡 Port: ${PORT}                          ║`);
-  console.log('  ║  🔗 http://localhost:' + PORT + '               ║');
-  console.log('  ╚══════════════════════════════════════════╝');
+  console.log('  ╔═══════════════════════════════════════════════════════╗');
+  console.log('  ║  🎵 Trivia Musical Server Running                    ║');
+  console.log(`  ║  📡 Port: ${PORT}                                       ║`);
+  console.log(`  ║  🔗 Local:   http://localhost:${PORT}                   ║`);
+  console.log(`  ║  📱 Red:     http://${localIp}:${PORT}               ║`);
+  console.log('  ╚═══════════════════════════════════════════════════════╝');
   console.log('');
 });

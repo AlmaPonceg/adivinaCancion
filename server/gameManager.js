@@ -371,6 +371,14 @@ class GameManager {
       isPlayerBlocked,
       currentJudging: room.currentJudging,
       isMyTurn: room.currentJudging?.playerId === socketId,
+      roundNumber: room.roundNumber,
+      teams: room.teams.map(t => ({
+        name: t.name,
+        color: t.color,
+        bg: t.bg,
+        score: t.score,
+        players: t.players.map(p => ({ name: p.name, id: p.id })),
+      })),
     };
   }
 }
