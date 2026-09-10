@@ -191,6 +191,9 @@ export default function PlayerBuzzer() {
 
   useSocketEvent('player-state-updated', (state) => {
     if (!state) return;
+    if (state.gameState === 'ROUND_ACTIVE' || state.canBuzz) {
+      setShowTeamsModal(false);
+    }
     setPlayerState(state);
     setStatusMessage(computeStatusMessage(state));
 
@@ -272,14 +275,14 @@ export default function PlayerBuzzer() {
   });
 
   useSocketEvent('game-started', (data) => {
-    if (data?.teams) {
-      setPlayerState((prev) => ({
-        ...prev,
-        teams: data.teams,
-        roundNumber: data.roundNumber || prev.roundNumber,
-      }));
-    }
-    setStatusMessage('Partida en curso. Esperando canción...');
+    setShowTeamsModal(false);
+    setPlayerState((prev) => ({
+      ...prev,
+      teams: data?.teams || prev.teams,
+      roundNumber: data?.roundNumber || prev.roundNumber,
+      gameState: 'ROUND_WAITING',
+    }));
+    setStatusMessage('Partida iniciada. Esperando que el anfitrión lance la música...');
   });
 
   useSocketEvent('first-buzz', (data) => {
@@ -329,6 +332,7 @@ export default function PlayerBuzzer() {
 
     // Mostrar automáticamente la tabla de posiciones en los celulares al terminar la ronda
     setShowTeamsModal(true);
+    setTimeout(() => setShowTeamsModal(false), 5000);
     setTimeout(() => setRoundNotification(null), 4000);
   });
 
@@ -451,7 +455,7 @@ export default function PlayerBuzzer() {
       </div>
 
       {/* ── MIDDLE: Player info & Circular Arcade Buzzer OR Team Setup Card ── */}
-      {playerState.gameState === 'TEAMS_ASSIGNED' ? (
+      {playerState.gameState === 'TEAMS_ASSIGNED' && (!playerState.roundNumber || playerState.roundNumber === 0) ? (
         playerState.teamName ? (
           <div className="flex flex-col items-center justify-center my-auto py-2 w-full max-w-sm mx-auto">
             {/* Team Confirmation & Setup Card */}

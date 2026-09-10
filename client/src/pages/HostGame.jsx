@@ -7,6 +7,7 @@ import Scoreboard from '../components/Scoreboard';
 import MusicPlayer from '../components/MusicPlayer';
 import BuzzQueue from '../components/BuzzQueue';
 import JudgePanel from '../components/JudgePanel';
+import { playHostBuzzerSound } from '../utils/audioEffects';
 
 export default function HostGame() {
   const location = useLocation();
@@ -60,6 +61,7 @@ export default function HostGame() {
   useSocketEvent('first-buzz', (data) => {
     setGameState('BUZZER_LOCKED');
     setCurrentJudging(data.buzzEntry);
+    playHostBuzzerSound();
   });
 
   useSocketEvent('buzz-queue-updated', (data) => {
@@ -108,37 +110,45 @@ export default function HostGame() {
 
   // ── Actions ────────────────────────────────────────────────
 
-  const startNextRound = useCallback(async () => {
+  const startNextRound = useCallback(() => {
     try {
       if (roundNumber > 0) {
         musicPlayerRef.current?.nextAndPlay();
       } else {
         musicPlayerRef.current?.play();
       }
-      await emit('start-round', { roomCode });
-      setGameState('ROUND_ACTIVE');
-      setBuzzQueue([]);
-      setCurrentJudging(null);
-    } catch (err) {
-      console.error('Start round error:', err);
+    } catch (audioErr) {
+      console.warn('Audio playback warning:', audioErr);
     }
-  }, [emit, roomCode, roundNumber]);
+
+    socket.emit('start-round', { roomCode }, (res) => {
+      if (res?.error) console.error('start-round error:', res.error);
+    });
+
+    setGameState('ROUND_ACTIVE');
+    setBuzzQueue([]);
+    setCurrentJudging(null);
+  }, [roomCode, roundNumber]);
 
   const replayAudio = useCallback(() => {
     musicPlayerRef.current?.replay();
   }, []);
 
-  const skipCurrentSong = useCallback(async () => {
+  const skipCurrentSong = useCallback(() => {
     try {
       musicPlayerRef.current?.nextAndPlay();
-      await emit('start-round', { roomCode });
-      setGameState('ROUND_ACTIVE');
-      setBuzzQueue([]);
-      setCurrentJudging(null);
-    } catch (err) {
-      console.error('Skip error:', err);
+    } catch (audioErr) {
+      console.warn('Audio playback warning:', audioErr);
     }
-  }, [emit, roomCode]);
+
+    socket.emit('start-round', { roomCode }, (res) => {
+      if (res?.error) console.error('start-round error:', res.error);
+    });
+
+    setGameState('ROUND_ACTIVE');
+    setBuzzQueue([]);
+    setCurrentJudging(null);
+  }, [roomCode]);
 
   const judgeCorrect = useCallback(async () => {
     try {

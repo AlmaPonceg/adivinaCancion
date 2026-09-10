@@ -345,35 +345,38 @@ io.on('connection', (socket) => {
   // ── HOST: Start Round ──────────────────────────────────────
 
   socket.on('start-round', ({ roomCode }, callback) => {
-    const success = gm.startRound(roomCode);
+    const code = String(roomCode || '').trim().toUpperCase();
+    const success = gm.startRound(code);
     if (!success) {
       return callback?.({ error: 'No se pudo iniciar la ronda' });
     }
 
-    io.to(roomCode).emit('round-started', {
-      roundNumber: gm.getRoom(roomCode).roundNumber,
+    io.to(code).emit('round-started', {
+      roundNumber: gm.getRoom(code).roundNumber,
     });
 
-    broadcastPlayerStates(roomCode);
+    broadcastPlayerStates(code);
 
-    console.log(`[Round] Started in room ${roomCode}`);
+    console.log(`[Round] Started in room ${code}`);
     callback?.({ success: true });
   });
 
   // ── HOST: Enable Buzzers ───────────────────────────────────
 
   socket.on('enable-buzzers', ({ roomCode }) => {
-    const success = gm.enableBuzzers(roomCode);
+    const code = String(roomCode || '').trim().toUpperCase();
+    const success = gm.enableBuzzers(code);
     if (!success) return;
 
-    io.to(roomCode).emit('buzzers-enabled');
-    broadcastPlayerStates(roomCode);
+    io.to(code).emit('buzzers-enabled');
+    broadcastPlayerStates(code);
   });
 
   // ── PLAYER: Buzz ───────────────────────────────────────────
 
   socket.on('buzz', ({ roomCode }, callback) => {
-    const result = gm.registerBuzz(roomCode, socket.id);
+    const code = String(roomCode || '').trim().toUpperCase();
+    const result = gm.registerBuzz(code, socket.id);
 
     if (result.error) {
       return callback?.({ error: result.error });
