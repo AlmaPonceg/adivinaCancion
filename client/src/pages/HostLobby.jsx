@@ -13,8 +13,9 @@ export default function HostLobby() {
   const [players, setPlayers] = useState([]);
   const [teams, setTeams] = useState(null);
   const [isShuffling, setIsShuffling] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState(socket.connected ? 'connected' : 'connecting');
 
-  // ── Playlist State (Requirement 2) ──────────────────────────
+  // ── Playlist State ──────────────────────────────────────────
   const [playlist, setPlaylist] = useState(() => {
     try {
       const saved = localStorage.getItem('trivia_playlist');
@@ -26,7 +27,7 @@ export default function HostLobby() {
   const [playlistInput, setPlaylistInput] = useState('');
   const [showPlaylistDrawer, setShowPlaylistDrawer] = useState(false);
 
-  // ── Manual Player State (Requirement 3) ─────────────────────
+  // ── Manual Player State ─────────────────────────────────────
   const [manualName, setManualName] = useState('');
   const [manualError, setManualError] = useState('');
 
@@ -45,12 +46,12 @@ export default function HostLobby() {
 
   // Fetch local IP from backend if running on localhost
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('trivia_base_url');
       if (!saved) {
         fetch('/api/config')
-          .then(res => res.json())
-          .then(data => {
+          .then((res) => res.json())
+          .then((data) => {
             if (data?.localIp && data.localIp !== 'localhost') {
               const detected = `http://${data.localIp}:${window.location.port || 5173}`;
               setBaseUrl(detected);
@@ -61,10 +62,72 @@ export default function HostLobby() {
     }
   }, []);
 
+  // ── Robust Room Creation & Connection ───────────────────────
   useEffect(() => {
-    socket.emit('create-room', (response) => {
-      if (response.code) setRoomCode(response.code);
-    });
+    let mounted = true;
+
+    const handleConnect = () => {
+      if (!mounted) return;
+      setConnectionStatus('connected');
+      requestRoom();
+    };
+
+    const handleDisconnect = () => {
+      if (!mounted) return;
+      setConnectionStatus('disconnected');
+    };
+
+    const handleRoomCreated = (data) => {
+      if (!mounted) return;
+      if (data?.code) {
+        setRoomCode(data.code);
+        setConnectionStatus('connected');
+      }
+    };
+
+    const requestRoom = () => {
+      if (!mounted) return;
+      socket.emit('create-room', (response) => {
+        if (!mounted) return;
+        if (response?.code) {
+          setRoomCode(response.code);
+          setConnectionStatus('connected');
+        }
+      });
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('room-created', handleRoomCreated);
+
+    if (socket.connected) {
+      requestRoom();
+    } else {
+      socket.connect();
+    }
+
+    // Active retry timer if roomCode remains null
+    const retryInterval = setInterval(() => {
+      if (!mounted) return;
+      setRoomCode((curr) => {
+        if (!curr) {
+          if (socket.connected) {
+            requestRoom();
+          } else {
+            socket.connect();
+          }
+        }
+        return curr;
+      });
+    }, 1500);
+
+    return () => {
+      mounted = false;
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('room-created', handleRoomCreated);
+      clearInterval(retryInterval);
+    };
   }, []);
 
   useSocketEvent('player-list-updated', (playerList) => {
@@ -76,7 +139,7 @@ export default function HostLobby() {
     setIsShuffling(false);
   });
 
-  // ── Shuffle Teams (Requirement 4: Max 4 per team) ───────────
+  // ── Shuffle Teams (Max 4 per team) ──────────────────────────
   const handleShuffle = async () => {
     if (players.length < 2) return;
     setIsShuffling(true);
@@ -88,7 +151,7 @@ export default function HostLobby() {
     }
   };
 
-  // ── Move Player Manual Reallocation (Requirement 4) ─────────
+  // ── Move Player Manual Reallocation ─────────────────────────
   const handleMovePlayer = (playerId, targetTeamIndex) => {
     socket.emit('move-player-team', { roomCode, playerId, targetTeamIndex }, (res) => {
       if (res?.error) {
@@ -97,13 +160,13 @@ export default function HostLobby() {
     });
   };
 
-  // ── Add Manual Player (Requirement 3) ───────────────────────
+  // ── Add Manual Player ───────────────────────────────────────
   const handleAddManualPlayer = (e) => {
     e.preventDefault();
     if (!manualName.trim()) return;
     setManualError('');
     socket.emit('add-manual-player', { roomCode, playerName: manualName.trim() }, (res) => {
-      if (res.error) {
+      if (res?.error) {
         setManualError(res.error);
       } else {
         setManualName('');
@@ -115,13 +178,13 @@ export default function HostLobby() {
     socket.emit('remove-manual-player', { roomCode, playerId });
   };
 
-  // ── Playlist Management (Requirement 2) ─────────────────────
+  // ── Playlist Management ─────────────────────────────────────
   const handleAddPlaylistUrls = () => {
     if (!playlistInput.trim()) return;
     const lines = playlistInput
       .split(/[\n,]+/)
-      .map(s => s.trim())
-      .filter(s => s.length > 5);
+      .map((s) => s.trim())
+      .filter((s) => s.length > 5);
 
     const updated = [...playlist, ...lines];
     setPlaylist(updated);
@@ -159,7 +222,7 @@ export default function HostLobby() {
   const handleShareWhatsApp = () => {
     if (!joinUrl) return;
     const text = encodeURIComponent(
-      `¡Unite a la Trivia Musical! Sala: ${roomCode}. Tocá acá para entrar: ${joinUrl}`
+      `¡Unite a la Trivia Musical de Cumpleaños! Sala: ${roomCode}. Tocá acá para entrar con tu celular: ${joinUrl}`
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
@@ -181,29 +244,50 @@ export default function HostLobby() {
     setIsEditingUrl(false);
   };
 
+  const handleManualRetryRoom = () => {
+    socket.connect();
+    socket.emit('create-room', (response) => {
+      if (response?.code) setRoomCode(response.code);
+    });
+  };
+
   return (
-    <div className="min-h-dvh p-4 sm:p-8 bg-[var(--nm-bg)]">
+    <div className="min-h-dvh p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
-        {/* Header Bar */}
+        {/* Top Navigation / Header Bar */}
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
         >
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--color-text-primary)]">
-              Trivia Musical
+            <div className="flex items-center gap-2 mb-1">
+              <button
+                onClick={() => navigate('/')}
+                className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-1"
+              >
+                ← Inicio
+              </button>
+              <span className="text-slate-300">/</span>
+              <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+                Panel Anfitrión
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+              Sala de Espera y Configuración
             </h1>
-            <p className="text-[var(--color-text-muted)] text-xs sm:text-sm mt-0.5">
-              Panel de Administración y Lobby
+            <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
+              Compartí el código o QR para que cada invitado se una desde su teléfono.
             </p>
           </div>
 
-          <div className="nm-flat-sm px-4 py-2 rounded-xl flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="mono text-xs font-bold text-[var(--color-text-primary)]">
-              LOBBY
-            </span>
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            <div className="nm-flat-sm px-3.5 py-1.5 rounded-xl flex items-center gap-2 border border-slate-200/80">
+              <span className={`w-2.5 h-2.5 rounded-full ${roomCode ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+              <span className="mono text-xs font-black text-slate-700">
+                {roomCode ? `SALA ${roomCode}` : 'CONECTANDO...'}
+              </span>
+            </div>
           </div>
         </motion.div>
 
@@ -215,20 +299,26 @@ export default function HostLobby() {
             <motion.div
               initial={{ opacity: 0, x: -16 }}
               animate={{ opacity: 1, x: 0 }}
-              className="nm-flat p-6 sm:p-8 rounded-2xl flex flex-col items-center text-center"
+              className="nm-flat p-6 sm:p-8 rounded-3xl flex flex-col items-center text-center relative overflow-hidden"
             >
-              <span className="label mb-3">Código de sala</span>
+              <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-extrabold uppercase tracking-wider mb-4">
+                Código para unirse
+              </div>
 
               {roomCode ? (
                 <>
+                  {/* Big Bold Digits */}
                   <div className="flex gap-2.5 mb-6">
                     {roomCode.split('').map((digit, i) => (
-                      <span
+                      <motion.span
                         key={i}
-                        className="mono nm-inset w-12 h-16 sm:w-14 sm:h-18 flex items-center justify-center text-2xl sm:text-3xl font-extrabold text-[var(--color-accent)] rounded-xl"
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: i * 0.08 }}
+                        className="mono w-14 h-18 sm:w-16 sm:h-20 bg-slate-50 border-2 border-indigo-100 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl font-black text-indigo-600 shadow-sm"
                       >
                         {digit}
-                      </span>
+                      </motion.span>
                     ))}
                   </div>
 
@@ -236,20 +326,20 @@ export default function HostLobby() {
                   <div className="w-full grid grid-cols-2 gap-3 mb-6">
                     <button
                       onClick={handleShareWhatsApp}
-                      className="nm-btn py-3 px-3 rounded-xl font-bold text-xs text-emerald-700 flex items-center justify-center gap-1.5"
+                      className="py-3 px-3 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.897 2.796.897 3.182 0 5.769-2.587 5.769-5.766.001-3.181-2.586-5.766-5.769-5.766zm9.969 5.766c0 5.514-4.486 10-10 10-1.745 0-3.376-.452-4.801-1.241l-5.2 1.361 1.385-5.066c-.928-1.503-1.464-3.267-1.464-5.054 0-5.514 4.486-10 10-10 5.514 0 10 4.486 10 10z"/>
+                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.897 2.796.897 3.182 0 5.769-2.587 5.769-5.766.001-3.181-2.586-5.766-5.769-5.766zm9.969 5.766c0 5.514-4.486 10-10 10-1.745 0-3.376-.452-4.801-1.241l-5.2 1.361 1.385-5.066c-.928-1.503-1.464-3.267-1.464-5.054 0-5.514 4.486-10 10-10 5.514 0 10 4.486 10 10z" />
                       </svg>
                       WhatsApp
                     </button>
 
                     <button
                       onClick={handleCopyLink}
-                      className="nm-btn py-3 px-3 rounded-xl font-bold text-xs text-[var(--color-text-secondary)] flex items-center justify-center gap-1.5"
+                      className="nm-btn py-3 px-3 rounded-xl font-bold text-xs text-slate-700 flex items-center justify-center gap-1.5"
                     >
                       {copied ? (
-                        <span className="text-emerald-700 font-bold">¡Copiado!</span>
+                        <span className="text-emerald-600 font-bold">¡Copiado!</span>
                       ) : (
                         <>
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -262,45 +352,48 @@ export default function HostLobby() {
                   </div>
 
                   {/* QR Display */}
-                  <div className="nm-inset p-4 rounded-2xl mb-4">
-                    <QRDisplay value={joinUrl} size={160} />
+                  <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl mb-4 flex flex-col items-center">
+                    <QRDisplay value={joinUrl} size={170} />
+                    <p className="text-[11px] font-semibold text-slate-500 mt-2">
+                      Escaneá con la cámara del celular
+                    </p>
                   </div>
 
                   {/* URL Config */}
                   <div className="w-full">
                     {!isEditingUrl ? (
-                      <div className="flex items-center justify-center gap-1.5 text-xs text-[var(--color-text-muted)]">
-                        <span className="mono truncate max-w-[220px]">{joinUrl}</span>
+                      <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
+                        <span className="mono truncate max-w-[240px]">{joinUrl}</span>
                         <button
                           onClick={() => {
                             setUrlInput(baseUrl);
                             setIsEditingUrl(true);
                           }}
-                          className="text-[var(--color-accent)] font-semibold hover:underline cursor-pointer"
+                          className="text-indigo-600 font-bold hover:underline cursor-pointer ml-1"
                         >
-                          (editar)
+                          (cambiar)
                         </button>
                       </div>
                     ) : (
-                      <div className="nm-inset p-3 rounded-xl text-left space-y-2">
-                        <span className="label text-[10px]">URL base de la app / deploy:</span>
+                      <div className="nm-inset p-3 rounded-xl text-left space-y-2 bg-slate-50">
+                        <span className="text-[11px] font-bold text-slate-600">URL del servidor / deploy:</span>
                         <input
                           type="text"
                           value={urlInput}
                           onChange={(e) => setUrlInput(e.target.value)}
                           placeholder="https://tu-app.onrender.com"
-                          className="w-full px-3 py-1.5 text-xs"
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300"
                         />
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-2 pt-1">
                           <button
                             onClick={() => setIsEditingUrl(false)}
-                            className="text-xs text-[var(--color-text-muted)] hover:text-black px-2 py-1"
+                            className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1 font-semibold"
                           >
                             Cancelar
                           </button>
                           <button
                             onClick={handleSaveCustomUrl}
-                            className="nm-btn-primary px-3 py-1 text-xs"
+                            className="nm-btn-primary px-3 py-1.5 text-xs font-bold"
                           >
                             Guardar
                           </button>
@@ -310,36 +403,47 @@ export default function HostLobby() {
                   </div>
                 </>
               ) : (
-                <div className="h-40 flex items-center justify-center">
-                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <div className="py-12 flex flex-col items-center justify-center space-y-4">
+                  <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm font-semibold text-slate-600">
+                    Generando código y código QR...
+                  </p>
+                  <button
+                    onClick={handleManualRetryRoom}
+                    className="nm-btn px-4 py-2 text-xs font-bold text-indigo-600 mt-2"
+                  >
+                    Reintentar conexión
+                  </button>
                 </div>
               )}
             </motion.div>
 
-            {/* PRECARGA DE PLAYLIST (Requirement 2) */}
+            {/* PRECARGA DE PLAYLIST */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="nm-flat p-6 rounded-2xl"
+              className="nm-flat p-6 rounded-3xl"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="label">Cola de Canciones (Playlist)</span>
-                  <span className="mono text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                    {playlist.length} lista{playlist.length === 1 ? '' : 's'}
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                    Playlist de Canciones
+                  </span>
+                  <span className="mono text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                    {playlist.length} {playlist.length === 1 ? 'canción' : 'canciones'}
                   </span>
                 </div>
 
                 <button
                   onClick={() => setShowPlaylistDrawer(!showPlaylistDrawer)}
-                  className="text-xs font-bold text-[var(--color-accent)] hover:underline"
+                  className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
                 >
-                  {showPlaylistDrawer ? 'Ocultar' : 'Cargar / Editar'}
+                  {showPlaylistDrawer ? 'Cerrar' : '+ Cargar lista'}
                 </button>
               </div>
 
-              <p className="text-xs text-[var(--color-text-muted)] mb-3">
-                Pegá los enlaces de YouTube antes de empezar para no tener que cargarlos uno a uno durante el juego.
+              <p className="text-xs text-slate-500 mb-3">
+                Pegá los enlaces de YouTube antes de empezar. Sonarán únicamente en esta computadora (Bluetooth).
               </p>
 
               {showPlaylistDrawer && (
@@ -348,23 +452,23 @@ export default function HostLobby() {
                     rows={3}
                     value={playlistInput}
                     onChange={(e) => setPlaylistInput(e.target.value)}
-                    placeholder="Pegá una o varias URLs de YouTube (una por línea)"
-                    className="w-full p-3 text-xs"
+                    placeholder="Pegá URLs de YouTube (una por línea)"
+                    className="w-full p-3 text-xs rounded-xl border border-slate-300"
                   />
                   <div className="flex justify-between items-center">
                     {playlist.length > 0 && (
                       <button
                         onClick={handleClearPlaylist}
-                        className="text-xs text-rose-600 hover:underline cursor-pointer"
+                        className="text-xs text-rose-600 hover:underline cursor-pointer font-semibold"
                       >
-                        Vaciar cola
+                        Vaciar todo
                       </button>
                     )}
                     <button
                       onClick={handleAddPlaylistUrls}
                       className="nm-btn-primary px-4 py-2 text-xs font-bold ml-auto"
                     >
-                      + Cargar a la Playlist
+                      + Guardar Canciones
                     </button>
                   </div>
                 </div>
@@ -372,18 +476,18 @@ export default function HostLobby() {
 
               {/* Playlist items list preview */}
               {playlist.length > 0 && (
-                <div className="nm-inset p-3 rounded-xl mt-3 max-h-40 overflow-y-auto space-y-1.5">
+                <div className="nm-inset p-3 rounded-2xl mt-3 max-h-44 overflow-y-auto space-y-1.5 bg-slate-50">
                   {playlist.map((url, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between text-xs py-1 px-2 rounded bg-white/40"
+                      className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-white border border-slate-200/60 shadow-xs"
                     >
-                      <span className="mono truncate max-w-[240px] text-[var(--color-text-secondary)]">
+                      <span className="mono truncate max-w-[230px] text-slate-700 font-medium">
                         {idx + 1}. {url}
                       </span>
                       <button
                         onClick={() => handleRemovePlaylistItem(idx)}
-                        className="text-rose-500 hover:text-rose-700 ml-2 font-bold"
+                        className="text-slate-400 hover:text-rose-600 ml-2 font-bold px-1"
                         title="Eliminar canción"
                       >
                         ✕
@@ -400,52 +504,57 @@ export default function HostLobby() {
             <motion.div
               initial={{ opacity: 0, x: 16 }}
               animate={{ opacity: 1, x: 0 }}
-              className="nm-flat p-6 sm:p-8 rounded-2xl"
+              className="nm-flat p-6 sm:p-8 rounded-3xl"
             >
               {/* Header: Connected count & Teams rule */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
                 <div>
-                  <h2 className="text-xl font-bold">Jugadores y Equipos</h2>
-                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                    {players.length} participante{players.length === 1 ? '' : 's'} · Máx. 4 por equipo
+                  <h2 className="text-xl font-extrabold text-slate-900">
+                    Jugadores y Equipos
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {players.length} participante{players.length === 1 ? '' : 's'} conectados · Máximo 4 por equipo
                   </p>
                 </div>
 
-                <div className="nm-inset-sm px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--color-text-secondary)]">
-                  Límite: 4 por equipo
-                </div>
+                <span className="mono text-xs font-black px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                  LÍMITE: 4 / EQUIPO
+                </span>
               </div>
 
-              {/* CARGA MANUAL DE JUGADORES (Requirement 3) */}
-              <form onSubmit={handleAddManualPlayer} className="nm-inset p-3.5 rounded-xl mb-6 flex gap-2">
+              {/* CARGA MANUAL DE JUGADORES */}
+              <form onSubmit={handleAddManualPlayer} className="p-2 bg-slate-50 border border-slate-200 rounded-2xl mb-6 flex gap-2">
                 <input
                   type="text"
                   value={manualName}
                   onChange={(e) => setManualName(e.target.value)}
-                  placeholder="Nombre de invitado sin celular..."
-                  className="flex-1 px-3 py-2 text-xs sm:text-sm bg-transparent border-none shadow-none focus:ring-0"
+                  placeholder="Nombre de invitado sin teléfono..."
+                  className="flex-1 px-3 py-2 text-xs sm:text-sm bg-transparent border-none shadow-none focus:outline-none"
                 />
                 <button
                   type="submit"
-                  className="nm-btn px-4 py-2 font-bold text-xs text-[var(--color-accent)] shrink-0"
+                  className="nm-btn px-4 py-2 font-bold text-xs text-indigo-600 shrink-0"
                 >
                   + Cargar Manual
                 </button>
               </form>
               {manualError && (
-                <p className="text-xs text-rose-600 font-medium mb-4">{manualError}</p>
+                <p className="text-xs text-rose-600 font-bold mb-4">{manualError}</p>
               )}
 
               {/* Roster or Teams View */}
               {!teams ? (
                 <div>
-                  <p className="label mb-3">Lista de espera</p>
-                  <div className="nm-inset p-4 rounded-xl min-h-[160px] max-h-72 overflow-y-auto space-y-2 mb-6">
+                  <p className="label mb-3">Lista de espera ({players.length})</p>
+                  <div className="nm-inset p-3 rounded-2xl min-h-[180px] max-h-72 overflow-y-auto space-y-2 mb-6 bg-slate-50">
                     <AnimatePresence>
                       {players.length === 0 ? (
-                        <div className="text-center py-10">
-                          <p className="text-sm text-[var(--color-text-muted)]">
-                            Esperando que se unan los jugadores con el link o ingresalos manualmente arriba.
+                        <div className="text-center py-12">
+                          <p className="text-sm font-semibold text-slate-600 mb-1">
+                            Aún no hay jugadores conectados
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            Escaneen el QR con la cámara del celular para ingresar.
                           </p>
                         </div>
                       ) : (
@@ -455,15 +564,15 @@ export default function HostLobby() {
                             initial={{ opacity: 0, y: 6 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-white/50 shadow-sm"
+                            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white border border-slate-200/70 shadow-xs"
                           >
                             <div className="flex items-center gap-2.5">
-                              <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
+                              <span className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center font-black text-xs shadow-xs">
                                 {player.name.charAt(0).toUpperCase()}
                               </span>
-                              <span className="font-semibold text-sm">{player.name}</span>
+                              <span className="font-bold text-sm text-slate-800">{player.name}</span>
                               {player.isManual && (
-                                <span className="text-[10px] uppercase font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
+                                <span className="text-[10px] uppercase font-black bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">
                                   Manual
                                 </span>
                               )}
@@ -472,7 +581,7 @@ export default function HostLobby() {
                             {player.isManual && (
                               <button
                                 onClick={() => handleRemoveManualPlayer(player.id)}
-                                className="text-xs text-rose-500 hover:text-rose-700 font-bold px-1"
+                                className="text-slate-400 hover:text-rose-600 text-xs font-bold px-2 py-1"
                                 title="Eliminar jugador manual"
                               >
                                 ✕
@@ -487,9 +596,9 @@ export default function HostLobby() {
               ) : (
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="label">Equipos conformados (editables a mano)</p>
-                    <span className="text-xs text-[var(--color-text-muted)]">
-                      Podés cambiar jugadores de equipo con el selector
+                    <p className="label">Equipos asignados (balanceados, máx. 4 c/u)</p>
+                    <span className="text-xs text-slate-500">
+                      Podés reasignar jugadores usando el selector
                     </span>
                   </div>
 
@@ -503,24 +612,24 @@ export default function HostLobby() {
                   <button
                     onClick={handleShuffle}
                     disabled={players.length < 2 || isShuffling}
-                    className="nm-btn-primary flex-1 py-3.5 rounded-xl text-sm font-bold disabled:opacity-40"
+                    className="nm-btn-primary flex-1 py-4 rounded-2xl text-sm font-black disabled:opacity-40 flex items-center justify-center gap-2 shadow-md"
                   >
-                    {isShuffling ? 'Sorteando...' : '🎲 Sortear Equipos (Máx 4 por equipo)'}
+                    {isShuffling ? 'Sorteando...' : '🎲 Sortear Equipos (Máx. 4 por equipo)'}
                   </button>
                 ) : (
                   <>
                     <button
                       onClick={handleShuffle}
-                      className="nm-btn flex-1 py-3.5 rounded-xl text-xs font-bold text-[var(--color-text-secondary)]"
+                      className="nm-btn flex-1 py-3.5 rounded-2xl text-xs font-bold text-slate-700"
                     >
                       🎲 Volver a sortear
                     </button>
 
                     <button
                       onClick={handleStartGame}
-                      className="nm-btn-primary flex-1 py-3.5 rounded-xl text-sm font-bold"
+                      className="nm-btn-primary flex-1 py-3.5 rounded-2xl text-sm font-black flex items-center justify-center gap-1.5 shadow-md"
                     >
-                      Iniciar Juego →
+                      Iniciar Partida →
                     </button>
                   </>
                 )}

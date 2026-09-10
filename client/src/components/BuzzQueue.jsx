@@ -7,9 +7,16 @@ export default function BuzzQueue({ queue, currentJudging }) {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="nm-flat p-5 rounded-2xl"
+      className="nm-flat p-5 sm:p-6 rounded-3xl"
     >
-      <p className="label mb-3">Cola de pulsadores registrados</p>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-xs font-black uppercase tracking-wider text-slate-700">
+          Orden de Pulsadores
+        </p>
+        <span className="mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+          {queue.length} en cola
+        </span>
+      </div>
 
       <div className="space-y-2">
         <AnimatePresence>
@@ -21,16 +28,18 @@ export default function BuzzQueue({ queue, currentJudging }) {
                 key={buzz.playerId}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all border ${
                   isJudging
-                    ? 'nm-inset border-2 border-emerald-500/50 bg-emerald-50/50'
-                    : 'nm-flat-sm'
+                    ? 'border-emerald-500 bg-emerald-50/70 shadow-xs'
+                    : 'border-slate-200/80 bg-slate-50'
                 }`}
               >
                 {/* Position */}
                 <span
-                  className={`mono text-sm font-extrabold w-6 text-center shrink-0 ${
-                    index === 0 ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)]'
+                  className={`mono text-xs font-black w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
+                    index === 0
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600'
                   }`}
                 >
                   #{index + 1}
@@ -38,23 +47,24 @@ export default function BuzzQueue({ queue, currentJudging }) {
 
                 {/* Player */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-xs sm:text-sm truncate text-[var(--color-text-primary)]">
+                  <p className="font-extrabold text-sm truncate text-slate-900">
                     {buzz.playerName}
                   </p>
-                  <p className="text-[11px] font-medium truncate" style={{ color: buzz.teamColor }}>
+                  <p className="text-xs font-bold truncate" style={{ color: buzz.teamColor }}>
                     {buzz.teamName}
                   </p>
                 </div>
 
                 {/* Team dot */}
                 <div
-                  className="w-3 h-3 rounded-full shrink-0"
+                  className="w-3.5 h-3.5 rounded-full shrink-0 shadow-2xs"
                   style={{ backgroundColor: buzz.teamColor }}
                 />
 
                 {/* Active indicator */}
                 {isJudging && (
-                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider shrink-0 bg-emerald-100 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider shrink-0 bg-emerald-100 border border-emerald-300/60 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping" />
                     Respondiendo
                   </span>
                 )}

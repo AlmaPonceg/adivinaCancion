@@ -100,7 +100,10 @@ io.on('connection', (socket) => {
     currentRoom = room.code;
     socket.join(room.code);
     console.log(`🏠 Room created: ${room.code} by ${socket.id}`);
-    callback({ code: room.code });
+    socket.emit('room-created', { code: room.code });
+    if (typeof callback === 'function') {
+      callback({ code: room.code });
+    }
   });
 
   // ── PLAYER: Join Room ──────────────────────────────────────

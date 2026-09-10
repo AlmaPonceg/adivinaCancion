@@ -9,17 +9,26 @@ function getServerUrl() {
     return import.meta.env.VITE_SERVER_URL;
   }
   if (typeof window !== 'undefined') {
-    // In Vite dev (default port 5173), socket server runs on port 3001 of the same host (works for localhost and LAN IP)
-    if (window.location.port === '5173') {
-      return `${window.location.protocol}//${window.location.hostname}:3001`;
+    const { hostname, port, protocol } = window.location;
+    // If local dev environment on any port other than 3001 (5173, 5174, 5175, etc.)
+    const isLocalDevHost =
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('10.') ||
+      hostname.endsWith('.local');
+
+    if (isLocalDevHost && port && port !== '3001') {
+      return `${protocol}//${hostname}:3001`;
     }
-    // In production or when served by Express, connect to same origin
+    // In production or when served directly from Express on port 3001
     return window.location.origin;
   }
   return 'http://localhost:3001';
 }
 
 const SERVER_URL = getServerUrl();
+console.log('🌐 Socket target URL:', SERVER_URL);
 
 const socket = io(SERVER_URL, {
   autoConnect: true,

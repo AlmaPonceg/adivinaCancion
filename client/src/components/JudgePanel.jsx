@@ -5,26 +5,38 @@ export default function JudgePanel({ currentBuzz, onCorrect, onIncorrect }) {
 
   return (
     <div className="space-y-4">
-      {/* Player being judged well */}
+      {/* Player being judged */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="nm-inset p-4 rounded-xl text-center"
+        className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-center shadow-xs"
       >
-        <p className="label mb-1">Respondiendo ahora</p>
-        <p className="text-2xl font-extrabold" style={{ color: currentBuzz.teamColor }}>
+        <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-1">
+          Respondiendo ahora
+        </p>
+        <p className="text-2xl sm:text-3xl font-black text-slate-900 mb-1">
           {currentBuzz.playerName}
         </p>
-        <p className="text-xs font-semibold text-[var(--color-text-secondary)] mt-0.5">
+        <div
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black shadow-2xs border bg-white"
+          style={{
+            borderColor: `${currentBuzz.teamColor}40`,
+            color: currentBuzz.teamColor,
+          }}
+        >
+          <div
+            className="w-2.5 h-2.5 rounded-full"
+            style={{ backgroundColor: currentBuzz.teamColor }}
+          />
           {currentBuzz.teamName}
-        </p>
+        </div>
       </motion.div>
 
       {/* Judge Buttons */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3.5">
         <button
           onClick={onCorrect}
-          className="nm-btn py-3.5 px-4 rounded-xl font-bold text-sm bg-emerald-600 text-white flex items-center justify-center gap-2"
+          className="py-4 px-4 rounded-2xl font-black text-sm bg-emerald-600 hover:bg-emerald-700 active:translate-y-0.5 text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -34,7 +46,7 @@ export default function JudgePanel({ currentBuzz, onCorrect, onIncorrect }) {
 
         <button
           onClick={onIncorrect}
-          className="nm-btn py-3.5 px-4 rounded-xl font-bold text-sm bg-rose-600 text-white flex items-center justify-center gap-2"
+          className="py-4 px-4 rounded-2xl font-black text-sm bg-rose-600 hover:bg-rose-700 active:translate-y-0.5 text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

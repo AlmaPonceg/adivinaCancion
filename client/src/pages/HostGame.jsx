@@ -32,7 +32,7 @@ export default function HostGame() {
   const [currentJudging, setCurrentJudging] = useState(null);
   const [lastResult, setLastResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
-  const [mobileTab, setMobileTab] = useState('controls'); // 'controls' | 'music'
+  const [mobileTab, setMobileTab] = useState('controls');
 
   useEffect(() => {
     if (!roomCode) navigate('/');
@@ -61,7 +61,7 @@ export default function HostGame() {
 
   useSocketEvent('round-result', (data) => {
     setGameState('ROUND_END');
-    setTeams(prev => {
+    setTeams((prev) => {
       const updated = [...prev];
       if (data.scores) {
         data.scores.forEach((s, i) => {
@@ -99,62 +99,77 @@ export default function HostGame() {
   // ── Actions ────────────────────────────────────────────────
 
   const startRound = useCallback(async () => {
-    try { await emit('start-round', { roomCode }); }
-    catch (err) { console.error('Start round error:', err); }
+    try {
+      await emit('start-round', { roomCode });
+    } catch (err) {
+      console.error('Start round error:', err);
+    }
   }, [emit, roomCode]);
 
   const judgeCorrect = useCallback(async () => {
-    try { await emit('judge-correct', { roomCode, points: 1 }); }
-    catch (err) { console.error('Judge error:', err); }
+    try {
+      await emit('judge-correct', { roomCode, points: 1 });
+    } catch (err) {
+      console.error('Judge error:', err);
+    }
   }, [emit, roomCode]);
 
   const judgeIncorrect = useCallback(async () => {
-    try { await emit('judge-incorrect', { roomCode }); }
-    catch (err) { console.error('Judge error:', err); }
+    try {
+      await emit('judge-incorrect', { roomCode });
+    } catch (err) {
+      console.error('Judge error:', err);
+    }
   }, [emit, roomCode]);
 
   const endGame = useCallback(async () => {
     if (window.confirm('¿Estás seguro de que querés terminar la partida y ver los resultados finales?')) {
-      try { await emit('end-game', { roomCode }); }
-      catch (err) { console.error('End game error:', err); }
+      try {
+        await emit('end-game', { roomCode });
+      } catch (err) {
+        console.error('End game error:', err);
+      }
     }
   }, [emit, roomCode]);
 
   if (!roomCode) return null;
 
   return (
-    <div className="min-h-dvh bg-[var(--nm-bg)] pb-12">
+    <div className="min-h-dvh pb-12">
       {/* Header Bar */}
-      <div className="nm-flat-sm sticky top-0 z-30 px-4 sm:px-6 py-3.5 flex items-center justify-between border-b border-black/5">
+      <div className="bg-white sticky top-0 z-30 px-4 sm:px-8 py-3.5 flex items-center justify-between border-b border-slate-200 shadow-2xs">
         <div>
-          <h1 className="text-base sm:text-lg font-extrabold tracking-tight">Trivia Musical</h1>
-          <p className="mono text-xs text-[var(--color-text-muted)] mt-0.5">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <h1 className="text-base sm:text-lg font-black text-slate-900">Trivia Musical</h1>
+          </div>
+          <p className="mono text-xs text-slate-500">
             Sala {roomCode} · Ronda {roundNumber}
           </p>
         </div>
 
         <button
           onClick={endGame}
-          className="nm-btn px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold text-rose-600 hover:text-rose-700"
+          className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-black text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer"
         >
-          Terminar juego
+          Terminar Partida
         </button>
       </div>
 
       {/* Scoreboard */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 sm:pt-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-5 sm:pt-6">
         <Scoreboard teams={teams} />
       </div>
 
       {/* Mobile Tab Switcher */}
       <div className="lg:hidden max-w-7xl mx-auto px-4 pt-4">
-        <div className="nm-inset p-1.5 rounded-xl flex gap-2">
+        <div className="p-1.5 bg-slate-100 rounded-2xl flex gap-2 border border-slate-200">
           <button
             onClick={() => setMobileTab('controls')}
-            className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
               mobileTab === 'controls'
-                ? 'nm-flat text-[var(--color-accent)]'
-                : 'text-[var(--color-text-muted)]'
+                ? 'bg-white text-indigo-600 shadow-xs'
+                : 'text-slate-600'
             }`}
           >
             Control y Juez
@@ -164,10 +179,10 @@ export default function HostGame() {
           </button>
           <button
             onClick={() => setMobileTab('music')}
-            className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${
               mobileTab === 'music'
-                ? 'nm-flat text-[var(--color-accent)]'
-                : 'text-[var(--color-text-muted)]'
+                ? 'bg-white text-indigo-600 shadow-xs'
+                : 'text-slate-600'
             }`}
           >
             Música {playlist.length > 0 ? `(${playlist.length})` : ''}
@@ -176,7 +191,7 @@ export default function HostGame() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-5 sm:py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Music Player (with Playlist queue) */}
         <div className={`lg:col-span-2 ${mobileTab === 'music' ? 'block' : 'hidden lg:block'}`}>
           <MusicPlayer roomCode={roomCode} playlist={playlist} />
@@ -188,28 +203,36 @@ export default function HostGame() {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="nm-flat p-5 sm:p-6 rounded-2xl"
+            className="nm-flat p-5 sm:p-6 rounded-3xl"
           >
-            <p className="label mb-4">Control de ronda</p>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs font-black uppercase tracking-wider text-slate-700">
+                Control de Ronda
+              </p>
+              <span className="mono text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-100">
+                {gameState}
+              </span>
+            </div>
 
             {(gameState === 'TEAMS_ASSIGNED' || gameState === 'ROUND_END') && (
               <button
                 onClick={startRound}
-                className="nm-btn-primary w-full py-4 rounded-xl font-bold text-base shadow-sm"
+                className="nm-btn-primary w-full py-4 rounded-2xl font-black text-base shadow-md flex items-center justify-center gap-2"
               >
-                {roundNumber === 0 ? '▶ Iniciar primera ronda' : '▶ Iniciar siguiente ronda'}
+                <span>▶</span>
+                <span>{roundNumber === 0 ? 'Iniciar Primera Ronda' : 'Iniciar Siguiente Ronda'}</span>
               </button>
             )}
 
             {gameState === 'ROUND_ACTIVE' && (
-              <div className="nm-inset p-6 rounded-xl text-center">
+              <div className="p-6 rounded-2xl bg-indigo-50/70 border border-indigo-200 text-center">
                 <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping" />
-                  <span className="text-[var(--color-accent)] font-extrabold text-base">
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-ping" />
+                  <span className="text-indigo-900 font-black text-base">
                     Música sonando · Buzzers activos
                   </span>
                 </div>
-                <p className="text-[var(--color-text-muted)] text-xs mt-1">
+                <p className="text-slate-600 text-xs mt-1 font-medium">
                   Esperando que algún participante pulse en su celular...
                 </p>
               </div>
@@ -238,44 +261,46 @@ export default function HostGame() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4"
           >
             <motion.div
               initial={{ scale: 0.85, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.85, opacity: 0 }}
               transition={{ type: 'spring', damping: 20 }}
-              className="nm-flat p-8 sm:p-12 text-center max-w-md w-full rounded-2xl"
+              className="bg-white p-8 sm:p-12 text-center max-w-md w-full rounded-3xl shadow-2xl border border-slate-100"
             >
               {lastResult.type === 'correct' ? (
                 <>
-                  <div className="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-500
-                                  flex items-center justify-center mx-auto mb-5 shadow-sm">
-                    <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <div className="w-18 h-18 rounded-full bg-emerald-100 border-2 border-emerald-500 flex items-center justify-center mx-auto mb-5 shadow-sm">
+                    <svg className="w-10 h-10 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h2 className="text-2xl font-extrabold mb-2 text-emerald-800">¡Respuesta Correcta!</h2>
-                  <p className="text-[var(--color-text-secondary)] text-sm sm:text-base leading-relaxed">
-                    <span className="font-extrabold" style={{ color: lastResult.teamColor }}>
+                  <h2 className="text-2xl sm:text-3xl font-black mb-2 text-emerald-800">
+                    ¡Respuesta Correcta!
+                  </h2>
+                  <p className="text-slate-700 text-sm sm:text-base leading-relaxed">
+                    <span className="font-black" style={{ color: lastResult.teamColor }}>
                       {lastResult.playerName}
                     </span>
-                    {' '}sumó {lastResult.pointsAwarded} punto{lastResult.pointsAwarded !== 1 ? 's' : ''} para{' '}
-                    <span className="font-extrabold" style={{ color: lastResult.teamColor }}>
+                    {' '}sumó {lastResult.pointsAwarded} punto para{' '}
+                    <span className="font-black" style={{ color: lastResult.teamColor }}>
                       {lastResult.teamName}
                     </span>
                   </p>
                 </>
               ) : (
                 <>
-                  <div className="w-16 h-16 rounded-full bg-rose-100 border-2 border-rose-500
-                                  flex items-center justify-center mx-auto mb-5 shadow-sm">
-                    <svg className="w-8 h-8 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <div className="w-18 h-18 rounded-full bg-rose-100 border-2 border-rose-500 flex items-center justify-center mx-auto mb-5 shadow-sm">
+                    <svg className="w-10 h-10 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </div>
-                  <h2 className="text-2xl font-extrabold mb-2 text-rose-800">Ronda terminada</h2>
-                  <p className="text-[var(--color-text-secondary)] text-sm">
+                  <h2 className="text-2xl sm:text-3xl font-black mb-2 text-rose-800">
+                    Ronda Terminada
+                  </h2>
+                  <p className="text-slate-600 text-sm font-medium">
                     Todos los equipos fallaron. Nadie sumó puntos en esta ronda.
                   </p>
                 </>

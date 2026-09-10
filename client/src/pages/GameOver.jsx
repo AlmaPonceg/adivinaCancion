@@ -15,21 +15,21 @@ export default function GameOver() {
     }
 
     const colors = rankings?.[0]?.color
-      ? [rankings[0].color, '#3182CE', '#E0E5EC']
-      : ['#3182CE', '#E53E3E', '#E0E5EC'];
+      ? [rankings[0].color, '#6366F1', '#EC4899', '#F59E0B', '#10B981']
+      : ['#6366F1', '#EC4899', '#F59E0B'];
 
     confetti({
       particleCount: 120,
       spread: 90,
       origin: { y: 0.55 },
       colors,
-      ticks: 200,
+      ticks: 220,
     });
 
     const end = Date.now() + 3500;
     const frame = () => {
-      confetti({ particleCount: 2, angle: 60, spread: 45, origin: { x: 0, y: 0.65 }, colors, ticks: 150 });
-      confetti({ particleCount: 2, angle: 120, spread: 45, origin: { x: 1, y: 0.65 }, colors, ticks: 150 });
+      confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.65 }, colors, ticks: 160 });
+      confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.65 }, colors, ticks: 160 });
       if (Date.now() < end) requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
@@ -40,87 +40,94 @@ export default function GameOver() {
   const winner = rankings[0];
 
   return (
-    <div className="min-h-dvh bg-[var(--nm-bg)] flex flex-col items-center justify-center p-6">
+    <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-md">
         {/* Winner Card */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="nm-flat p-8 rounded-3xl text-center mb-8"
+          className="nm-flat p-8 rounded-3xl text-center mb-6 relative overflow-hidden"
         >
-          <p className="label mb-2">Resultado final</p>
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-50 text-amber-800 text-[11px] font-black uppercase tracking-wider mb-4 border border-amber-200">
+            🏆 ¡Gran Campeón!
+          </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2 text-[var(--color-text-primary)]">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 text-slate-900">
             Equipo Ganador
           </h1>
 
-          <div className="accent-line mx-auto mb-5" />
-
           <div
-            className="nm-inset inline-block px-8 py-5 rounded-2xl"
+            className="p-6 rounded-2xl border-2 text-center bg-slate-50 shadow-xs"
             style={{
-              borderLeft: `4px solid ${winner?.color}`,
+              borderColor: winner?.color,
             }}
           >
-            <p className="text-xl font-extrabold" style={{ color: winner?.color }}>
+            <p className="text-2xl font-black mb-1" style={{ color: winner?.color }}>
               {winner?.name}
             </p>
-            <p className="mono text-3xl font-black text-[var(--color-text-primary)] mt-1">
-              {winner?.score} <span className="text-sm font-semibold text-[var(--color-text-muted)]">
+            <p className="mono text-4xl font-black text-slate-900">
+              {winner?.score}{' '}
+              <span className="text-sm font-bold text-slate-500">
                 {winner?.score === 1 ? 'punto' : 'puntos'}
               </span>
             </p>
           </div>
         </motion.div>
 
-        {/* Rankings */}
+        {/* Rankings Leaderboard */}
         <div className="space-y-3">
-          {rankings.map((team, index) => (
-            <motion.div
-              key={team.name}
-              initial={{ opacity: 0, x: -16 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 + index * 0.1 }}
-              className="nm-flat-sm p-4 rounded-xl flex items-center gap-4"
-              style={{
-                borderLeft: `3px solid ${team.color}`,
-              }}
-            >
-              {/* Position */}
-              <div className="nm-inset w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black text-[var(--color-text-secondary)] shrink-0">
-                #{index + 1}
-              </div>
+          {rankings.map((team, index) => {
+            const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
 
-              {/* Team */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: team.color }}
-                  />
-                  <p className="font-bold text-sm truncate" style={{ color: team.color }}>
-                    {team.name}
+            return (
+              <motion.div
+                key={team.name}
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 + index * 0.1 }}
+                className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-4"
+                style={{
+                  borderLeft: `5px solid ${team.color}`,
+                }}
+              >
+                {/* Position */}
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-sm font-black text-slate-700 shrink-0">
+                  {medal}
+                </div>
+
+                {/* Team */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <div
+                      className="w-3 h-3 rounded-full shrink-0 shadow-2xs"
+                      style={{ backgroundColor: team.color }}
+                    />
+                    <p className="font-black text-sm truncate text-slate-900">
+                      {team.name}
+                    </p>
+                  </div>
+                  <p className="text-slate-500 text-xs truncate">
+                    {team.players.join(', ')}
                   </p>
                 </div>
-                <p className="text-[var(--color-text-muted)] text-xs truncate">
-                  {team.players.join(', ')}
-                </p>
-              </div>
 
-              {/* Score */}
-              <div className="text-right shrink-0">
-                <p className="mono text-2xl font-black text-[var(--color-text-primary)]">{team.score}</p>
-              </div>
-            </motion.div>
-          ))}
+                {/* Score */}
+                <div className="text-right shrink-0">
+                  <p className="mono text-2xl font-black text-slate-900">
+                    {team.score}
+                  </p>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
 
         {/* Play Again Button */}
         <div className="text-center mt-8">
           <button
             onClick={() => navigate('/')}
-            className="nm-btn-primary px-8 py-3.5 rounded-xl font-bold text-sm"
+            className="nm-btn-primary px-8 py-4 rounded-2xl font-black text-sm shadow-md"
           >
             Volver al Inicio
           </button>
