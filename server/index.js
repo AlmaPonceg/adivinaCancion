@@ -259,6 +259,20 @@ io.on('connection', (socket) => {
     callback({ success: true, teams: roomState.teams });
   });
 
+  // ── HOST: Start Game (Transition from Lobby to Game) ────────
+  socket.on('host-start-game', ({ roomCode }, callback) => {
+    const room = gm.getRoom(roomCode);
+    if (!room) return callback?.({ error: 'Sala no encontrada' });
+
+    console.log(`🎮 Host started game in room ${roomCode}`);
+    io.to(roomCode).emit('game-started', {
+      roundNumber: room.roundNumber || 0,
+      teams: room.teams,
+    });
+    broadcastPlayerStates(roomCode);
+    callback?.({ success: true });
+  });
+
   // ── HOST: Start Round ──────────────────────────────────────
 
   socket.on('start-round', ({ roomCode }, callback) => {

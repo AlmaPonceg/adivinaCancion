@@ -47,7 +47,7 @@ export default function BuzzerButton({
     if (isMyTurn) return '¡TU TURNO!';
     if (hasBuzzed) return 'REGISTRADO';
     if (canBuzz) return '¡PULSÁ YA!';
-    return 'ESPERÁ...';
+    return 'ESPERANDO';
   };
 
   const handlePointerDown = () => {

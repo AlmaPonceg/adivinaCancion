@@ -80,6 +80,12 @@ export default function PlayerJoin() {
     }
   });
 
+  useSocketEvent('game-started', () => {
+    navigate('/play/buzzer', {
+      state: { roomCode: roomCode.trim(), playerName: name.trim() },
+    });
+  });
+
   useSocketEvent('round-started', () => {
     navigate('/play/buzzer', {
       state: { roomCode: roomCode.trim(), playerName: name.trim() },
@@ -87,7 +93,7 @@ export default function PlayerJoin() {
   });
 
   useSocketEvent('player-state-updated', (state) => {
-    if (state.gameState && state.gameState !== 'LOBBY' && state.gameState !== 'TEAMS_ASSIGNED') {
+    if (state.gameState && state.gameState !== 'LOBBY') {
       navigate('/play/buzzer', {
         state: { roomCode: roomCode.trim(), playerName: name.trim() },
       });

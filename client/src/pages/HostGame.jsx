@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
@@ -33,6 +33,7 @@ export default function HostGame() {
   const [lastResult, setLastResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [mobileTab, setMobileTab] = useState('controls');
+  const musicPlayerRef = useRef(null);
 
   useEffect(() => {
     if (!roomCode) navigate('/');
@@ -101,6 +102,9 @@ export default function HostGame() {
   const startRound = useCallback(async () => {
     try {
       await emit('start-round', { roomCode });
+      setTimeout(() => {
+        musicPlayerRef.current?.play();
+      }, 60);
     } catch (err) {
       console.error('Start round error:', err);
     }
@@ -194,7 +198,13 @@ export default function HostGame() {
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-5 sm:py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Music Player (with Playlist queue) */}
         <div className={`lg:col-span-2 ${mobileTab === 'music' ? 'block' : 'hidden lg:block'}`}>
-          <MusicPlayer roomCode={roomCode} playlist={playlist} />
+          <MusicPlayer
+            ref={musicPlayerRef}
+            roomCode={roomCode}
+            playlist={playlist}
+            onStartRound={startRound}
+            gameState={gameState}
+          />
         </div>
 
         {/* Right: Game & Judge Controls */}
@@ -220,7 +230,7 @@ export default function HostGame() {
                 className="nm-btn-primary w-full py-4 rounded-2xl font-black text-base shadow-md flex items-center justify-center gap-2"
               >
                 <span>▶</span>
-                <span>{roundNumber === 0 ? 'Iniciar Primera Ronda' : 'Iniciar Siguiente Ronda'}</span>
+                <span>{roundNumber === 0 ? 'Iniciar Canción y 1ª Ronda' : 'Iniciar Siguiente Canción'}</span>
               </button>
             )}
 

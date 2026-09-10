@@ -224,6 +224,7 @@ export default function HostLobby() {
 
   // ── Start Game Navigation ───────────────────────────────────
   const handleStartGame = () => {
+    socket.emit('host-start-game', { roomCode });
     navigate('/host/game', { state: { roomCode, teams, playlist } });
   };
 

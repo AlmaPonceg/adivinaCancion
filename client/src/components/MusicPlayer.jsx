@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { motion } from 'framer-motion';
 import socket from '../socket';
 import { useSocketEvent } from '../hooks/useSocket';
@@ -33,7 +33,10 @@ function shuffleArray(arr) {
   return result;
 }
 
-export default function MusicPlayer({ roomCode, playlist = [] }) {
+const MusicPlayer = forwardRef(function MusicPlayer(
+  { roomCode, playlist = [], onStartRound, gameState },
+  ref
+) {
   const [shuffledPlaylist, setShuffledPlaylist] = useState([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isRandomMode, setIsRandomMode] = useState(true);
@@ -173,6 +176,11 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
   };
 
   const handlePlay = useCallback(() => {
+    // Notify host/server to start round so buzzers activate immediately on all phones!
+    if (onStartRound && gameState !== 'ROUND_ACTIVE') {
+      onStartRound();
+    }
+
     if (mediaType === 'youtube' && ytPlayerRef.current) {
       try {
         ytPlayerRef.current.seekTo(startTime, true);
@@ -192,7 +200,7 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
         console.error('Play error:', e);
       }
     }
-  }, [mediaType, playDuration, startTime]);
+  }, [mediaType, playDuration, startTime, onStartRound, gameState]);
 
   const handlePause = useCallback(() => {
     if (mediaType === 'youtube' && ytPlayerRef.current) {
@@ -217,6 +225,13 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
     if (timerRef.current) clearTimeout(timerRef.current);
     setIsPlaying(false);
   }, [mediaType]);
+
+  useImperativeHandle(ref, () => ({
+    play: handlePlay,
+    pause: handlePause,
+    stop: handleStop,
+    next: handleNextTrack,
+  }));
 
   // AUTOMATIC PAUSE ON BUZZ
   useSocketEvent('first-buzz', () => {
@@ -428,14 +443,14 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
             {isPlaying ? (
               <>
                 <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
-                <span>Sonando ({playDuration}s)...</span>
+                <span>Sonando ({playDuration}s)... Pulsadores Activos</span>
               </>
             ) : (
               <>
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
-                <span>Reproducir Fragmento</span>
+                <span>▶ Iniciar Canción y Activar Pulsadores</span>
               </>
             )}
           </button>
@@ -476,4 +491,6 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
       )}
     </motion.div>
   );
-}
+});
+
+export default MusicPlayer;
