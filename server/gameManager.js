@@ -101,9 +101,31 @@ class GameManager {
       return { success: true, player: existingPlayer, reconnected: true };
     }
 
-    // New player: only allow joining in lobby or teams_assigned
+    // New player: allow joining in lobby or teams_assigned, or assign to smallest team if game active
     if (room.state !== GAME_STATES.LOBBY && room.state !== GAME_STATES.TEAMS_ASSIGNED) {
-      return { error: 'La partida ya comenzó. Solo podés reingresar si ya estabas en la sala.' };
+      if (room.teams && room.teams.length > 0) {
+        let minTeam = 0;
+        let minCount = Infinity;
+        room.teams.forEach((t, idx) => {
+          if (t.players.length < minCount) {
+            minCount = t.players.length;
+            minTeam = idx;
+          }
+        });
+        const latePlayer = {
+          id: pid,
+          socketId,
+          name: trimmedName,
+          teamIndex: minTeam,
+          isManual: false,
+          connected: true,
+          lastSeen: Date.now(),
+        };
+        room.players.set(pid, latePlayer);
+        room.socketToPlayerId.set(socketId, pid);
+        room.teams[minTeam].players.push(latePlayer);
+        return { success: true, player: latePlayer, reconnected: false };
+      }
     }
 
     const player = {

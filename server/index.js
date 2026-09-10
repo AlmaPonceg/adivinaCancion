@@ -130,8 +130,17 @@ io.on('connection', (socket) => {
     const playerList = gm.getPlayerList(code);
     io.to(code).emit('player-list-updated', playerList);
 
+    const playerState = gm.getPlayerState(code, result.player.id);
+    const roomState = gm.getRoomState(code);
+
     console.log(`👤 ${name} joined room ${code} (reconnected: ${!!result.reconnected})`);
-    callback({ success: true, player: result.player, reconnected: result.reconnected });
+    callback({
+      success: true,
+      player: result.player,
+      reconnected: result.reconnected,
+      playerState,
+      roomState,
+    });
   });
 
   // ── PLAYER / HOST: Reconnect Session ───────────────────────
@@ -254,6 +263,8 @@ io.on('connection', (socket) => {
         }
       }
     }
+
+    broadcastPlayerStates(roomCode);
 
     console.log(`🎲 Teams shuffled in room ${roomCode} (${teams.length} teams, max 4 per team)`);
     callback({ success: true, teams: roomState.teams });

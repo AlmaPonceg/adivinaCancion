@@ -5,6 +5,23 @@ import socket from '../socket';
 import { useSocketEvent } from '../hooks/useSocket';
 import BuzzerButton from '../components/BuzzerButton';
 
+function computeStatusMessage(st) {
+  if (!st) return 'Conectando al juego...';
+  if (st.canBuzz) return '¡MÚSICA SONANDO! TOCÁ EL BOTÓN';
+  if (st.isMyTurn) return '¡TU TURNO! CANTÁ O RESPONDÉ';
+  if (st.hasBuzzed) return 'Registrado. Esperando al jurado...';
+  if (st.isTeamBlocked) return 'Tu equipo fue bloqueado esta ronda';
+  if (st.isPlayerBlocked) return 'Bloqueado en esta ronda';
+  if (st.gameState === 'BUZZER_LOCKED') {
+    const judging = st.currentJudging;
+    return judging ? `${judging.playerName} (${judging.teamName}) tocó primero` : 'Alguien fue más rápido';
+  }
+  if (st.gameState === 'ROUND_END') return 'Ronda finalizada. Esperando siguiente canción...';
+  if (st.gameState === 'ROUND_ACTIVE') return '¡MÚSICA SONANDO! TOCÁ EL BOTÓN';
+  if (st.teamName) return `En ${st.teamName} · Esperando que el Host lance la canción...`;
+  return 'Esperando que el Host sortee los equipos e inicie la canción...';
+}
+
 export default function PlayerBuzzer() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -19,63 +36,119 @@ export default function PlayerBuzzer() {
     }
   })();
 
-  const roomCode = location.state?.roomCode || savedSession?.roomCode;
-  const playerName = location.state?.playerName || savedSession?.playerName;
-  const playerId = location.state?.playerId || savedSession?.playerId;
+  const roomCode = location.state?.roomCode || savedSession?.roomCode || '';
+  const playerName = location.state?.playerName || savedSession?.playerName || '';
+  const playerId =
+    location.state?.playerId || savedSession?.playerId || localStorage.getItem('trivia_player_id') || '';
 
   const [playerState, setPlayerState] = useState({
-    teamName: savedSession?.teamName || '',
-    teamColor: '#4F46E5',
+    teamName: location.state?.teamName || savedSession?.teamName || '',
+    teamColor: location.state?.teamColor || savedSession?.teamColor || '#4F46E5',
     teamBg: '#F8FAFC',
     canBuzz: false,
     hasBuzzed: false,
     isTeamBlocked: false,
     isPlayerBlocked: false,
     isMyTurn: false,
-    gameState: 'ROUND_ACTIVE',
+    gameState: 'TEAMS_ASSIGNED',
     roundNumber: 1,
     teams: [],
   });
 
-  const [statusMessage, setStatusMessage] = useState('Esperando inicio de ronda...');
+  const [statusMessage, setStatusMessage] = useState(() => computeStatusMessage(playerState));
   const [buzzPosition, setBuzzPosition] = useState(null);
   const [showTeamsModal, setShowTeamsModal] = useState(false);
   const [roundNotification, setRoundNotification] = useState(null);
 
-  // ── Reconnection on Screen Unlock / Tab Visibility ──────────
+  // ── Sync & Reconnection on Unlock / Visibility Change ──────
   useEffect(() => {
     if (!roomCode || !playerId) {
       navigate('/play');
       return;
     }
 
-    const restoreSession = () => {
+    const syncSession = () => {
       socket.emit('reconnect-player', { roomCode, playerId, playerName }, (res) => {
         if (res?.success && res.playerState) {
           setPlayerState(res.playerState);
+          setStatusMessage(computeStatusMessage(res.playerState));
+        } else {
+          // Fallback if reconnect didn't find player (e.g. server restart)
+          socket.emit('join-room', { roomCode, playerName, playerId }, (joinRes) => {
+            if (joinRes?.playerState) {
+              setPlayerState(joinRes.playerState);
+              setStatusMessage(computeStatusMessage(joinRes.playerState));
+            } else {
+              socket.emit('get-player-state', { roomCode, playerId }, (st) => {
+                if (st && !st.error) {
+                  setPlayerState(st);
+                  setStatusMessage(computeStatusMessage(st));
+                }
+              });
+            }
+          });
         }
       });
     };
 
-    restoreSession();
+    // Run immediately
+    syncSession();
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        restoreSession();
+        syncSession();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    socket.on('connect', restoreSession);
+    socket.on('connect', syncSession);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      socket.off('connect', restoreSession);
+      socket.off('connect', syncSession);
     };
   }, [roomCode, playerId, playerName, navigate]);
 
+  // ── Sockets Listeners ──────────────────────────────────────
+
+  // Round started -> Immediately activate buzzer!
+  useSocketEvent('round-started', (data) => {
+    setPlayerState((prev) => ({
+      ...prev,
+      canBuzz: true,
+      hasBuzzed: false,
+      isTeamBlocked: false,
+      isPlayerBlocked: false,
+      isMyTurn: false,
+      gameState: 'ROUND_ACTIVE',
+      roundNumber: data?.roundNumber || prev.roundNumber + 1,
+    }));
+    setStatusMessage('¡MÚSICA SONANDO! TOCÁ EL BOTÓN');
+    setBuzzPosition(null);
+    setRoundNotification({
+      type: 'start',
+      message: `🎵 ¡Ronda ${data?.roundNumber || ''} en juego!`,
+    });
+    setTimeout(() => setRoundNotification(null), 2500);
+  });
+
+  useSocketEvent('buzzers-enabled', () => {
+    setPlayerState((prev) => ({
+      ...prev,
+      canBuzz: true,
+      hasBuzzed: false,
+      isTeamBlocked: false,
+      isPlayerBlocked: false,
+      gameState: 'ROUND_ACTIVE',
+    }));
+    setStatusMessage('¡MÚSICA SONANDO! TOCÁ EL BOTÓN');
+    setBuzzPosition(null);
+  });
+
   useSocketEvent('player-state-updated', (state) => {
+    if (!state) return;
     setPlayerState(state);
+    setStatusMessage(computeStatusMessage(state));
 
     try {
       const saved = localStorage.getItem('trivia_player_session');
@@ -83,37 +156,84 @@ export default function PlayerBuzzer() {
         const s = JSON.parse(saved);
         s.teamName = state.teamName;
         s.teamIndex = state.teamIndex;
+        s.teamColor = state.teamColor;
         localStorage.setItem('trivia_player_session', JSON.stringify(s));
       }
     } catch {
       /* */
     }
+  });
 
-    if (state.canBuzz) {
-      setStatusMessage('¡MÚSICA SONANDO! TOCÁ EL BOTÓN');
-      setBuzzPosition(null);
-    } else if (state.isMyTurn) {
-      setStatusMessage('¡TU TURNO! CANTÁ O RESPONDÉ');
-    } else if (state.hasBuzzed) {
-      setStatusMessage('Registrado. Esperando al jurado...');
-    } else if (state.isTeamBlocked) {
-      setStatusMessage('Tu equipo fue bloqueado esta ronda');
-    } else if (state.isPlayerBlocked) {
-      setStatusMessage('Bloqueado en esta ronda');
-    } else if (state.gameState === 'BUZZER_LOCKED') {
-      const judging = state.currentJudging;
-      if (judging) {
-        setStatusMessage(`${judging.playerName} (${judging.teamName}) tocó primero`);
-      } else {
-        setStatusMessage('Alguien fue más rápido');
+  useSocketEvent('your-team', (state) => {
+    if (!state) return;
+    setPlayerState((prev) => {
+      const updated = {
+        ...prev,
+        teamName: state.teamName || prev.teamName,
+        teamColor: state.teamColor || prev.teamColor,
+        teamBg: state.teamBg || prev.teamBg,
+        teamIndex: state.teamIndex ?? prev.teamIndex,
+        teams: state.teams || prev.teams,
+      };
+      setStatusMessage(computeStatusMessage(updated));
+      return updated;
+    });
+
+    try {
+      const saved = localStorage.getItem('trivia_player_session');
+      if (saved) {
+        const s = JSON.parse(saved);
+        s.teamName = state.teamName;
+        s.teamIndex = state.teamIndex;
+        s.teamColor = state.teamColor;
+        localStorage.setItem('trivia_player_session', JSON.stringify(s));
       }
-    } else if (state.gameState === 'ROUND_END') {
-      setStatusMessage('Ronda finalizada');
-    } else if (state.gameState === 'TEAMS_ASSIGNED') {
-      setStatusMessage('Esperando que el Host lance la canción...');
-    } else {
-      setStatusMessage('Esperando...');
+    } catch {
+      /* */
     }
+  });
+
+  useSocketEvent('teams-assigned', (data) => {
+    if (data?.teams) {
+      setPlayerState((prev) => {
+        let teamName = prev.teamName;
+        let teamColor = prev.teamColor;
+        let teamBg = prev.teamBg;
+
+        for (const t of data.teams) {
+          const found = t.players?.find(
+            (p) => p.id === playerId || (p.name && p.name.toLowerCase() === playerName.toLowerCase())
+          );
+          if (found) {
+            teamName = t.name;
+            teamColor = t.color;
+            teamBg = t.bg;
+            break;
+          }
+        }
+
+        const updated = {
+          ...prev,
+          teams: data.teams,
+          teamName,
+          teamColor,
+          teamBg,
+        };
+        setStatusMessage(computeStatusMessage(updated));
+        return updated;
+      });
+    }
+  });
+
+  useSocketEvent('game-started', (data) => {
+    if (data?.teams) {
+      setPlayerState((prev) => ({
+        ...prev,
+        teams: data.teams,
+        roundNumber: data.roundNumber || prev.roundNumber,
+      }));
+    }
+    setStatusMessage('¡Partida en curso! Esperando canción...');
   });
 
   useSocketEvent('first-buzz', (data) => {
@@ -127,18 +247,8 @@ export default function PlayerBuzzer() {
     }
   });
 
-  useSocketEvent('round-started', (data) => {
-    setStatusMessage('¡Música sonando! Pulsá apenas la reconozcas');
-    setBuzzPosition(null);
-    setRoundNotification({
-      type: 'start',
-      message: `🎵 ¡Ronda ${data?.roundNumber || ''} en juego!`,
-    });
-    setTimeout(() => setRoundNotification(null), 2500);
-  });
-
   useSocketEvent('round-result', (data) => {
-    setStatusMessage('Ronda finalizada');
+    setStatusMessage('Ronda finalizada. Esperando siguiente canción...');
     if (data.type === 'correct') {
       setRoundNotification({
         type: 'correct',
@@ -159,6 +269,12 @@ export default function PlayerBuzzer() {
         type: 'incorrect',
         message: `❌ Falló ${data.blocked?.playerName}. ¡Buzzer abierto para los demás!`,
       });
+      setPlayerState((prev) => ({
+        ...prev,
+        canBuzz: !prev.isTeamBlocked && !prev.isPlayerBlocked,
+        hasBuzzed: false,
+      }));
+      setStatusMessage('¡Buzzer reabierto! Tocá el botón');
     }
     setTimeout(() => setRoundNotification(null), 3500);
   });
@@ -174,6 +290,7 @@ export default function PlayerBuzzer() {
     });
   });
 
+  // ── Buzz Action ────────────────────────────────────────────
   const handleBuzz = useCallback(() => {
     if (!playerState.canBuzz) return;
 
@@ -207,7 +324,7 @@ export default function PlayerBuzzer() {
 
           <button
             onClick={() => setShowTeamsModal(true)}
-            className="nm-btn text-xs font-bold px-3 py-1.5 rounded-xl text-slate-700 flex items-center gap-1.5"
+            className="nm-btn text-xs font-bold px-3 py-1.5 rounded-xl text-slate-700 flex items-center gap-1.5 cursor-pointer"
           >
             <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -286,7 +403,7 @@ export default function PlayerBuzzer() {
           key={statusMessage}
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-6 text-center px-4"
+          className="mt-6 text-center px-4 max-w-xs"
         >
           <p
             className={`text-base font-black leading-snug tracking-tight ${
@@ -310,7 +427,7 @@ export default function PlayerBuzzer() {
       {/* ── FOOTER ── */}
       <div className="text-center pb-2">
         <p className="text-[11px] text-slate-500 font-medium">
-          Mantené tu teléfono desbloqueado para pulsar al instante
+          Mantené tu pantalla desbloqueada para pulsar al instante
         </p>
       </div>
 
@@ -397,7 +514,7 @@ export default function PlayerBuzzer() {
 
               <button
                 onClick={() => setShowTeamsModal(false)}
-                className="nm-btn-primary w-full mt-5 py-3.5 rounded-2xl text-xs font-black"
+                className="nm-btn-primary w-full mt-5 py-3.5 rounded-2xl text-xs font-black cursor-pointer"
               >
                 Volver al Pulsador
               </button>
