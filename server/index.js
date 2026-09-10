@@ -91,7 +91,7 @@ function broadcastPlayerStates(roomCode) {
 // ── Socket.io Connection Handler ───────────────────────────────
 
 io.on('connection', (socket) => {
-  console.log(`🔌 Connected: ${socket.id}`);
+  console.log(`[Connect] ${socket.id}`);
 
   let currentRoom = null;
 
@@ -101,7 +101,7 @@ io.on('connection', (socket) => {
     const room = gm.createRoom(socket.id);
     currentRoom = room.code;
     socket.join(room.code);
-    console.log(`🏠 Room created: ${room.code} by ${socket.id}`);
+    console.log(`[Room] Created: ${room.code} by ${socket.id}`);
     socket.emit('room-created', { code: room.code });
     if (typeof callback === 'function') {
       callback({ code: room.code });
@@ -133,7 +133,7 @@ io.on('connection', (socket) => {
     const playerState = gm.getPlayerState(code, result.player.id);
     const roomState = gm.getRoomState(code);
 
-    console.log(`👤 ${name} joined room ${code} (reconnected: ${!!result.reconnected})`);
+    console.log(`[Player] ${name} joined room ${code} (reconnected: ${!!result.reconnected})`);
     callback({
       success: true,
       player: result.player,
@@ -163,7 +163,7 @@ io.on('connection', (socket) => {
       room.hostDisconnectedAt = null;
       socket.join(code);
       currentRoom = code;
-      console.log(`👑 Host reconnected to room ${code}`);
+      console.log(`[Host] Reconnected to room ${code}`);
       return callback?.({ success: true, isHost: true, roomState: gm.getRoomState(code) });
     }
 
@@ -182,7 +182,7 @@ io.on('connection', (socket) => {
     const playerList = gm.getPlayerList(code);
     io.to(code).emit('player-list-updated', playerList);
 
-    console.log(`🔄 ${result.player.name} (${result.player.id}) reconnected to room ${code}`);
+    console.log(`[Reconnect] ${result.player.name} (${result.player.id}) reconnected to room ${code}`);
     callback?.({ success: true, player: result.player, playerState, roomState });
   });
 
@@ -203,7 +203,7 @@ io.on('connection', (socket) => {
     const playerList = gm.getPlayerList(code);
     io.to(code).emit('player-list-updated', playerList);
 
-    console.log(`📝 Manual player ${name} added to room ${code}`);
+    console.log(`[Manual] Player ${name} added to room ${code}`);
     callback?.({ success: true, player: result.player });
   });
 
@@ -238,7 +238,7 @@ io.on('connection', (socket) => {
     io.to(code).emit('teams-assigned', { teams: roomState.teams });
     broadcastPlayerStates(code);
 
-    console.log(`🔀 Player ${playerId} moved to team ${targetTeamIndex} in room ${code}`);
+    console.log(`[Move] Player ${playerId} moved to team ${targetTeamIndex} in room ${code}`);
     callback?.({ success: true, teams: roomState.teams });
   });
 
@@ -266,7 +266,7 @@ io.on('connection', (socket) => {
 
     broadcastPlayerStates(roomCode);
 
-    console.log(`🎲 Teams shuffled in room ${roomCode} (${teams.length} teams, max 4 per team)`);
+    console.log(`[Teams] Shuffled in room ${roomCode} (${teams.length} teams, max 4 per team)`);
     callback({ success: true, teams: roomState.teams });
   });
 
@@ -275,7 +275,7 @@ io.on('connection', (socket) => {
     const room = gm.getRoom(roomCode);
     if (!room) return callback?.({ error: 'Sala no encontrada' });
 
-    console.log(`🎮 Host started game in room ${roomCode}`);
+    console.log(`[Game] Host started game in room ${roomCode}`);
     io.to(roomCode).emit('game-started', {
       roundNumber: room.roundNumber || 0,
       teams: room.teams,
@@ -298,7 +298,7 @@ io.on('connection', (socket) => {
 
     broadcastPlayerStates(roomCode);
 
-    console.log(`▶️ Round started in room ${roomCode}`);
+    console.log(`[Round] Started in room ${roomCode}`);
     callback?.({ success: true });
   });
 
@@ -336,7 +336,7 @@ io.on('connection', (socket) => {
 
     broadcastPlayerStates(roomCode);
 
-    console.log(`🔔 BUZZ from ${buzzEntry.playerName} (${buzzEntry.teamName}) - Position: ${buzzEntry.position}`);
+    console.log(`[Buzz] ${buzzEntry.playerName} (${buzzEntry.teamName}) - Position: ${buzzEntry.position}`);
     callback?.({ success: true, position: buzzEntry.position });
   });
 
@@ -355,7 +355,7 @@ io.on('connection', (socket) => {
 
     broadcastPlayerStates(roomCode);
 
-    console.log(`✅ Correct! ${result.playerName} - ${result.teamName} +${points}pts`);
+    console.log(`[Correct] ${result.playerName} - ${result.teamName} +${points}pts`);
     callback?.({ success: true, result });
   });
 
@@ -374,7 +374,7 @@ io.on('connection', (socket) => {
 
     broadcastPlayerStates(roomCode);
 
-    console.log(`❌ Incorrect! ${result.blocked.playerName} blocked`);
+    console.log(`[Incorrect] ${result.blocked.playerName} blocked`);
     callback?.({ success: true, result });
   });
 
@@ -388,7 +388,7 @@ io.on('connection', (socket) => {
 
     io.to(roomCode).emit('game-over', result);
 
-    console.log(`🏆 Game over in room ${roomCode}`);
+    console.log(`[GameOver] Room ${roomCode}`);
     callback?.({ success: true, result });
   });
 
@@ -413,12 +413,12 @@ io.on('connection', (socket) => {
   // ── Disconnect ─────────────────────────────────────────────
 
   socket.on('disconnect', () => {
-    console.log(`❌ Disconnected: ${socket.id}`);
+    console.log(`[Disconnect] ${socket.id}`);
 
     const result = gm.handleDisconnect(socket.id);
     if (result) {
       if (result.wasHost) {
-        console.log(`⚠️ Host socket disconnected from room ${result.roomCode} (waiting for reconnect)`);
+        console.log(`[Host] Disconnected from room ${result.roomCode} (waiting for reconnect)`);
       } else {
         const playerList = gm.getPlayerList(result.roomCode);
         io.to(result.roomCode).emit('player-list-updated', playerList);
@@ -435,10 +435,10 @@ httpServer.listen(PORT, () => {
   const localIp = getLocalIp();
   console.log('');
   console.log('  ╔═══════════════════════════════════════════════════════╗');
-  console.log('  ║  🎵 Trivia Musical Server Running                    ║');
-  console.log(`  ║  📡 Port: ${PORT}                                       ║`);
-  console.log(`  ║  🔗 Local:   http://localhost:${PORT}                   ║`);
-  console.log(`  ║  📱 Red:     http://${localIp}:${PORT}               ║`);
+  console.log('  ║   Trivia Musical Server Running                      ║');
+  console.log(`  ║   Port: ${PORT}                                         ║`);
+  console.log(`  ║   Local:   http://localhost:${PORT}                     ║`);
+  console.log(`  ║   Red:     http://${localIp}:${PORT}                 ║`);
   console.log('  ╚═══════════════════════════════════════════════════════╝');
   console.log('');
 });

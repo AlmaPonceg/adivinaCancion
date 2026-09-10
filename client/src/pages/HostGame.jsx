@@ -57,7 +57,10 @@ export default function HostGame() {
   });
 
   useSocketEvent('buzz-queue-updated', (data) => {
-    setBuzzQueue(data.buzzQueue);
+    setBuzzQueue(data.buzzQueue || []);
+    if (!currentJudging && data.buzzQueue && data.buzzQueue.length > 0) {
+      setCurrentJudging(data.buzzQueue[0]);
+    }
   });
 
   useSocketEvent('round-result', (data) => {
@@ -99,14 +102,31 @@ export default function HostGame() {
 
   // ── Actions ────────────────────────────────────────────────
 
-  const startRound = useCallback(async () => {
+  const startNextRound = useCallback(async () => {
     try {
-      await emit('start-round', { roomCode });
-      setTimeout(() => {
+      if (roundNumber > 0) {
+        musicPlayerRef.current?.nextAndPlay();
+      } else {
         musicPlayerRef.current?.play();
-      }, 60);
+      }
+      await emit('start-round', { roomCode });
+      setGameState('ROUND_ACTIVE');
+      setBuzzQueue([]);
+      setCurrentJudging(null);
     } catch (err) {
       console.error('Start round error:', err);
+    }
+  }, [emit, roomCode, roundNumber]);
+
+  const skipCurrentSong = useCallback(async () => {
+    try {
+      musicPlayerRef.current?.nextAndPlay();
+      await emit('start-round', { roomCode });
+      setGameState('ROUND_ACTIVE');
+      setBuzzQueue([]);
+      setCurrentJudging(null);
+    } catch (err) {
+      console.error('Skip error:', err);
     }
   }, [emit, roomCode]);
 
@@ -226,31 +246,47 @@ export default function HostGame() {
 
             {(gameState === 'TEAMS_ASSIGNED' || gameState === 'ROUND_END') && (
               <button
-                onClick={startRound}
-                className="nm-btn-primary w-full py-4 rounded-2xl font-black text-base shadow-md flex items-center justify-center gap-2"
+                onClick={startNextRound}
+                className="nm-btn-primary w-full py-4 rounded-2xl font-black text-base shadow-md flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>▶</span>
-                <span>{roundNumber === 0 ? 'Iniciar Canción y 1ª Ronda' : 'Iniciar Siguiente Canción'}</span>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{roundNumber === 0 ? 'Iniciar Canción y 1ª Ronda' : 'Siguiente Ronda (Próxima Canción) →'}</span>
               </button>
             )}
 
             {gameState === 'ROUND_ACTIVE' && (
-              <div className="p-6 rounded-2xl bg-indigo-50/70 border border-indigo-200 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-ping" />
-                  <span className="text-indigo-900 font-black text-base">
-                    Música sonando · Buzzers activos
-                  </span>
+              <div className="space-y-3">
+                <div className="p-5 rounded-2xl bg-indigo-50/80 border border-indigo-200 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-ping" />
+                    <span className="text-indigo-900 font-black text-base">
+                      Música sonando · Pulsadores activos
+                    </span>
+                  </div>
+                  <p className="text-slate-600 text-xs font-medium">
+                    Esperando que algún participante pulse en su celular...
+                  </p>
                 </div>
-                <p className="text-slate-600 text-xs mt-1 font-medium">
-                  Esperando que algún participante pulse en su celular...
-                </p>
+
+                <button
+                  onClick={skipCurrentSong}
+                  className="w-full py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  title="Si nadie sabe la canción, saltar a la siguiente"
+                >
+                  <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                  </svg>
+                  Nadie la sabe: Saltar a Siguiente Canción
+                </button>
               </div>
             )}
 
-            {gameState === 'BUZZER_LOCKED' && currentJudging && (
+            {(gameState === 'BUZZER_LOCKED' || currentJudging || buzzQueue.length > 0) && (currentJudging || buzzQueue[0]) && (
               <JudgePanel
-                currentBuzz={currentJudging}
+                currentBuzz={currentJudging || buzzQueue[0]}
                 onCorrect={judgeCorrect}
                 onIncorrect={judgeIncorrect}
               />

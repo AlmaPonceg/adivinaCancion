@@ -28,8 +28,11 @@ export default function Scoreboard({ teams }) {
                   </span>
                 </div>
                 {isLeader && (
-                  <span className="text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded-md">
-                    👑
+                  <span className="text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                    <svg className="w-3 h-3 text-amber-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+                    </svg>
+                    1º
                   </span>
                 )}
               </div>

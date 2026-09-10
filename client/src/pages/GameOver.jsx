@@ -50,7 +50,10 @@ export default function GameOver() {
           className="nm-flat p-8 rounded-3xl text-center mb-6 relative overflow-hidden"
         >
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-50 text-amber-800 text-[11px] font-black uppercase tracking-wider mb-4 border border-amber-200">
-            🏆 ¡Gran Campeón!
+            <svg className="w-3.5 h-3.5 text-amber-600" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V19H7v2h10v-2h-4v-3.1c1.98-.44 3.53-2.01 3.91-4.06C19.38 11.53 21 9.47 21 7V5c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z" />
+            </svg>
+            Gran Campeón
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 text-slate-900">
@@ -78,8 +81,6 @@ export default function GameOver() {
         {/* Rankings Leaderboard */}
         <div className="space-y-3">
           {rankings.map((team, index) => {
-            const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
-
             return (
               <motion.div
                 key={team.name}
@@ -91,9 +92,19 @@ export default function GameOver() {
                   borderLeft: `5px solid ${team.color}`,
                 }}
               >
-                {/* Position */}
-                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-sm font-black text-slate-700 shrink-0">
-                  {medal}
+                {/* Position Badge */}
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
+                    index === 0
+                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                      : index === 1
+                      ? 'bg-slate-200 text-slate-800 border border-slate-300'
+                      : index === 2
+                      ? 'bg-orange-100 text-orange-900 border border-orange-300'
+                      : 'bg-slate-100 text-slate-600 border border-slate-200'
+                  }`}
+                >
+                  {index + 1}º
                 </div>
 
                 {/* Team */}
@@ -108,7 +119,7 @@ export default function GameOver() {
                     </p>
                   </div>
                   <p className="text-slate-500 text-xs truncate">
-                    {team.players.join(', ')}
+                    {team.players.map((p) => p.name || p).join(', ')}
                   </p>
                 </div>
 
@@ -127,7 +138,7 @@ export default function GameOver() {
         <div className="text-center mt-8">
           <button
             onClick={() => navigate('/')}
-            className="nm-btn-primary px-8 py-4 rounded-2xl font-black text-sm shadow-md"
+            className="nm-btn-primary px-8 py-4 rounded-2xl font-black text-sm shadow-md cursor-pointer"
           >
             Volver al Inicio
           </button>

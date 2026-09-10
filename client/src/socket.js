@@ -28,7 +28,7 @@ function getServerUrl() {
 }
 
 const SERVER_URL = getServerUrl();
-console.log('🌐 Socket target URL:', SERVER_URL);
+console.log('[Socket] Target URL:', SERVER_URL);
 
 const socket = io(SERVER_URL, {
   autoConnect: true,
@@ -40,11 +40,11 @@ const socket = io(SERVER_URL, {
 });
 
 socket.on('connect', () => {
-  console.log('🔌 Connected to server:', socket.id);
+  console.log('[Socket] Connected to server:', socket.id);
 });
 
 socket.on('disconnect', (reason) => {
-  console.log('❌ Disconnected:', reason);
+  console.log('[Socket] Disconnected:', reason);
 });
 
 socket.on('connect_error', (err) => {

@@ -404,8 +404,11 @@ export default function HostLobby() {
                       {joinUrl}
                     </div>
 
-                    <p className="text-[11px] text-slate-400 font-medium">
-                      📱 Apunta a Render para que los celulares se unan desde cualquier red sin puertos.
+                    <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-indigo-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Apunta al enlace oficial de Render para que los celulares se unan desde cualquier red.
                     </p>
 
                     {isEditingUrl && (
@@ -539,10 +542,13 @@ export default function HostLobby() {
                       </span>
                       <button
                         onClick={() => handleRemovePlaylistItem(idx)}
-                        className="text-slate-400 hover:text-rose-600 ml-2 font-bold px-1"
+                        className="text-slate-400 hover:text-rose-600 ml-2 p-1"
                         title="Eliminar canción"
+                        aria-label="Eliminar canción"
                       >
-                        ✕
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                       </button>
                     </div>
                   ))}
@@ -633,10 +639,13 @@ export default function HostLobby() {
                             {player.isManual && (
                               <button
                                 onClick={() => handleRemoveManualPlayer(player.id)}
-                                className="text-slate-400 hover:text-rose-600 text-xs font-bold px-2 py-1"
+                                className="text-slate-400 hover:text-rose-600 p-1.5"
                                 title="Eliminar jugador manual"
+                                aria-label="Eliminar jugador"
                               >
-                                ✕
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                               </button>
                             )}
                           </motion.div>
@@ -664,17 +673,23 @@ export default function HostLobby() {
                   <button
                     onClick={handleShuffle}
                     disabled={players.length < 2 || isShuffling}
-                    className="nm-btn-primary flex-1 py-4 rounded-2xl text-sm font-black disabled:opacity-40 flex items-center justify-center gap-2 shadow-md"
+                    className="nm-btn-primary flex-1 py-4 rounded-2xl text-sm font-black disabled:opacity-40 flex items-center justify-center gap-2 shadow-md cursor-pointer"
                   >
-                    {isShuffling ? 'Sorteando...' : '🎲 Sortear Equipos (Máx. 4 por equipo)'}
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    {isShuffling ? 'Sorteando...' : 'Sortear Equipos (Máx. 4 por equipo)'}
                   </button>
                 ) : (
                   <>
                     <button
                       onClick={handleShuffle}
-                      className="nm-btn flex-1 py-3.5 rounded-2xl text-xs font-bold text-slate-700"
+                      className="nm-btn flex-1 py-3.5 rounded-2xl text-xs font-bold text-slate-700 flex items-center justify-center gap-2 cursor-pointer"
                     >
-                      🎲 Volver a sortear
+                      <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Volver a sortear
                     </button>
 
                     <button

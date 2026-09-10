@@ -420,7 +420,11 @@ class GameManager {
 
   judgeCorrect(roomCode, points = 1) {
     const room = this.rooms.get(roomCode);
-    if (!room || !room.currentJudging) return null;
+    if (!room) return null;
+    if (!room.currentJudging && room.buzzQueue.length > 0) {
+      room.currentJudging = room.buzzQueue[0];
+    }
+    if (!room.currentJudging) return null;
 
     const { teamIndex, playerName, teamName } = room.currentJudging;
 
@@ -429,6 +433,8 @@ class GameManager {
     }
 
     room.state = GAME_STATES.ROUND_END;
+    room.currentJudging = null;
+    room.buzzQueue = [];
 
     return {
       playerName,
@@ -442,7 +448,11 @@ class GameManager {
 
   judgeIncorrect(roomCode) {
     const room = this.rooms.get(roomCode);
-    if (!room || !room.currentJudging) return null;
+    if (!room) return null;
+    if (!room.currentJudging && room.buzzQueue.length > 0) {
+      room.currentJudging = room.buzzQueue[0];
+    }
+    if (!room.currentJudging) return null;
 
     const blocked = room.currentJudging;
 

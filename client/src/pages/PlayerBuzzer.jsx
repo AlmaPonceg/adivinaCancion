@@ -127,7 +127,7 @@ export default function PlayerBuzzer() {
     setBuzzPosition(null);
     setRoundNotification({
       type: 'start',
-      message: `🎵 ¡Ronda ${data?.roundNumber || ''} en juego!`,
+      message: `Ronda ${data?.roundNumber || ''} en juego`,
     });
     setTimeout(() => setRoundNotification(null), 2500);
   });
@@ -233,7 +233,7 @@ export default function PlayerBuzzer() {
         roundNumber: data.roundNumber || prev.roundNumber,
       }));
     }
-    setStatusMessage('¡Partida en curso! Esperando canción...');
+    setStatusMessage('Partida en curso. Esperando canción...');
   });
 
   useSocketEvent('first-buzz', (data) => {
@@ -241,7 +241,7 @@ export default function PlayerBuzzer() {
     if (entry && entry.playerId !== playerId) {
       setRoundNotification({
         type: 'buzz',
-        message: `🔔 ${entry.playerName} (${entry.teamName}) pulsó primero`,
+        message: `${entry.playerName} (${entry.teamName}) pulsó primero`,
       });
       setTimeout(() => setRoundNotification(null), 3500);
     }
@@ -252,7 +252,7 @@ export default function PlayerBuzzer() {
     if (data.type === 'correct') {
       setRoundNotification({
         type: 'correct',
-        message: `🎉 +${data.pointsAwarded} pt para ${data.teamName} (${data.playerName})`,
+        message: `+${data.pointsAwarded} pt para ${data.teamName} (${data.playerName})`,
       });
     }
     setTimeout(() => setRoundNotification(null), 4000);
@@ -262,12 +262,12 @@ export default function PlayerBuzzer() {
     if (data.allBlocked) {
       setRoundNotification({
         type: 'incorrect',
-        message: '❌ Todos los equipos fallaron esta ronda',
+        message: 'Todos los equipos fallaron esta ronda',
       });
     } else if (data.reopened) {
       setRoundNotification({
         type: 'incorrect',
-        message: `❌ Falló ${data.blocked?.playerName}. ¡Buzzer abierto para los demás!`,
+        message: `Falló ${data.blocked?.playerName}. Pulsador reabierto`,
       });
       setPlayerState((prev) => ({
         ...prev,
@@ -286,7 +286,7 @@ export default function PlayerBuzzer() {
   useSocketEvent('host-disconnected', () => {
     setRoundNotification({
       type: 'warning',
-      message: '⚠️ El Anfitrión se desconectó momentáneamente...',
+      message: 'Anfitrión desconectado momentáneamente...',
     });
   });
 
@@ -459,8 +459,11 @@ export default function PlayerBuzzer() {
                 <button
                   onClick={() => setShowTeamsModal(false)}
                   className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-black cursor-pointer"
+                  aria-label="Cerrar"
                 >
-                  ✕
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
 

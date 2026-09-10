@@ -175,12 +175,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     loadMedia(nextUrl);
   };
 
-  const handlePlay = useCallback(() => {
-    // Notify host/server to start round so buzzers activate immediately on all phones!
-    if (onStartRound && gameState !== 'ROUND_ACTIVE') {
-      onStartRound();
-    }
-
+  const playAudioOnly = useCallback(() => {
     if (mediaType === 'youtube' && ytPlayerRef.current) {
       try {
         ytPlayerRef.current.seekTo(startTime, true);
@@ -200,7 +195,35 @@ const MusicPlayer = forwardRef(function MusicPlayer(
         console.error('Play error:', e);
       }
     }
-  }, [mediaType, playDuration, startTime, onStartRound, gameState]);
+  }, [mediaType, playDuration, startTime]);
+
+  const handlePlayFromUI = useCallback(() => {
+    if (onStartRound && gameState !== 'ROUND_ACTIVE') {
+      onStartRound();
+    } else {
+      playAudioOnly();
+    }
+  }, [onStartRound, gameState, playAudioOnly]);
+
+  const handleNextAndPlay = useCallback(() => {
+    if (!activeQueue || activeQueue.length === 0) return;
+    const nextIdx = (currentTrackIndex + 1) % activeQueue.length;
+    setCurrentTrackIndex(nextIdx);
+    const nextUrl = activeQueue[nextIdx];
+    setUrl(nextUrl);
+    loadMedia(nextUrl);
+    setTimeout(() => {
+      if (ytPlayerRef.current) {
+        try {
+          ytPlayerRef.current.seekTo(startTime, true);
+          ytPlayerRef.current.playVideo();
+          setIsPlaying(true);
+        } catch (e) {
+          /* */
+        }
+      }
+    }, 450);
+  }, [activeQueue, currentTrackIndex, loadMedia, startTime]);
 
   const handlePause = useCallback(() => {
     if (mediaType === 'youtube' && ytPlayerRef.current) {
@@ -227,10 +250,13 @@ const MusicPlayer = forwardRef(function MusicPlayer(
   }, [mediaType]);
 
   useImperativeHandle(ref, () => ({
-    play: handlePlay,
+    play: playAudioOnly,
+    nextAndPlay: handleNextAndPlay,
     pause: handlePause,
     stop: handleStop,
     next: handleNextTrack,
+    currentTrackIndex,
+    totalTracks: activeQueue.length,
   }));
 
   // AUTOMATIC PAUSE ON BUZZ
@@ -266,8 +292,11 @@ const MusicPlayer = forwardRef(function MusicPlayer(
             <span className="text-xs font-black uppercase tracking-wider text-slate-900">
               Reproductor Anfitrión
             </span>
-            <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-              🔊 Solo en este parlante / Bluetooth
+            <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+              Audio en este dispositivo (Bluetooth)
             </span>
           </div>
 
@@ -278,7 +307,10 @@ const MusicPlayer = forwardRef(function MusicPlayer(
               </span>
               {isRandomMode && (
                 <span className="text-[11px] font-black text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200 flex items-center gap-1">
-                  🔀 Orden Aleatorio
+                  <svg className="w-3.5 h-3.5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Orden Aleatorio
                 </span>
               )}
             </div>
@@ -289,10 +321,13 @@ const MusicPlayer = forwardRef(function MusicPlayer(
           {hasPlaylist && (
             <button
               onClick={handleReshuffle}
-              className="nm-btn text-xs font-black px-3 py-1.5 rounded-xl text-purple-700 hover:text-purple-900 flex items-center gap-1"
+              className="nm-btn text-xs font-black px-3 py-1.5 rounded-xl text-purple-700 hover:text-purple-900 flex items-center gap-1 cursor-pointer"
               title="Volver a mezclar el orden de las canciones aleatoriamente"
             >
-              <span>🔀</span> Mezclar
+              <svg className="w-3.5 h-3.5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Mezclar
             </button>
           )}
 
@@ -319,7 +354,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
             <button
               onClick={handlePrevTrack}
               title="Canción anterior"
-              className="nm-btn p-2.5 rounded-xl text-slate-600 hover:text-slate-900"
+              className="nm-btn p-2.5 rounded-xl text-slate-600 hover:text-slate-900 cursor-pointer"
             >
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                 <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
@@ -328,10 +363,10 @@ const MusicPlayer = forwardRef(function MusicPlayer(
 
             <button
               onClick={handleNextTrack}
-              className="nm-btn-primary px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm"
+              className="nm-btn-primary px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer"
               title="Avanzar a la siguiente canción aleatoria"
             >
-              <span>Siguiente 🔀</span>
+              <span>Siguiente Canción</span>
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                 <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
               </svg>
@@ -432,11 +467,10 @@ const MusicPlayer = forwardRef(function MusicPlayer(
       {mediaType && (
         <div className="flex items-center gap-3">
           <button
-            onClick={handlePlay}
-            disabled={isPlaying}
-            className={`flex-1 py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md ${
+            onClick={handlePlayFromUI}
+            className={`flex-1 py-4 px-6 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 shadow-md cursor-pointer transition-all ${
               isPlaying
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-amber-500 hover:bg-amber-600 text-white'
                 : 'nm-btn-primary'
             }`}
           >
@@ -450,14 +484,14 @@ const MusicPlayer = forwardRef(function MusicPlayer(
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
-                <span>▶ Iniciar Canción y Activar Pulsadores</span>
+                <span>Iniciar Canción y Activar Pulsadores</span>
               </>
             )}
           </button>
 
           <button
             onClick={handlePause}
-            className="nm-btn px-5 py-3.5 rounded-2xl font-black text-xs flex items-center gap-1.5"
+            className="nm-btn px-5 py-3.5 rounded-2xl font-black text-xs flex items-center gap-1.5 cursor-pointer"
             title="Pausar"
           >
             <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -468,7 +502,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
 
           <button
             onClick={handleStop}
-            className="nm-btn px-5 py-3.5 rounded-2xl font-black text-xs text-rose-600 flex items-center gap-1.5"
+            className="nm-btn px-5 py-3.5 rounded-2xl font-black text-xs text-rose-600 flex items-center gap-1.5 cursor-pointer"
             title="Detener"
           >
             <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -484,7 +518,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
         <div className="p-8 rounded-2xl bg-slate-50 border border-slate-200 text-center">
           <p className="text-xs text-slate-500 font-semibold">
             {hasPlaylist
-              ? 'Tocá "Siguiente 🔀" para cargar la primera pista aleatoria de la playlist.'
+              ? 'Tocá "Siguiente Canción" o "Iniciar Ronda" para comenzar.'
               : 'Cargá las canciones en el Lobby antes de comenzar para reproducirlas aleatoriamente.'}
           </p>
         </div>
