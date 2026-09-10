@@ -113,6 +113,7 @@ export default function PlayerBuzzer() {
 
   // Round started -> Immediately activate buzzer!
   useSocketEvent('round-started', (data) => {
+    setShowTeamsModal(false);
     setPlayerState((prev) => ({
       ...prev,
       canBuzz: true,
@@ -133,6 +134,7 @@ export default function PlayerBuzzer() {
   });
 
   useSocketEvent('buzzers-enabled', () => {
+    setShowTeamsModal(false);
     setPlayerState((prev) => ({
       ...prev,
       canBuzz: true,
@@ -250,11 +252,39 @@ export default function PlayerBuzzer() {
   useSocketEvent('round-result', (data) => {
     setStatusMessage('Ronda finalizada. Esperando siguiente canción...');
     if (data.type === 'correct') {
+      const pts = data.pointsAwarded || 1;
+      const speedTxt = data.elapsedSeconds !== undefined ? ` (${data.elapsedSeconds}s)` : '';
       setRoundNotification({
         type: 'correct',
-        message: `+${data.pointsAwarded} pt para ${data.teamName} (${data.playerName})`,
+        message: `+${pts} ${pts === 1 ? 'pt' : 'pts'} para ${data.teamName} (${data.playerName})${speedTxt}`,
       });
     }
+
+    if (data.scores) {
+      setPlayerState((prev) => {
+        const updatedTeams = [...(prev.teams || [])];
+        data.scores.forEach((s, i) => {
+          if (updatedTeams[i]) updatedTeams[i] = { ...updatedTeams[i], score: s.score };
+        });
+        return {
+          ...prev,
+          teams: updatedTeams,
+          canBuzz: false,
+          hasBuzzed: false,
+          gameState: 'ROUND_END',
+        };
+      });
+    } else {
+      setPlayerState((prev) => ({
+        ...prev,
+        canBuzz: false,
+        hasBuzzed: false,
+        gameState: 'ROUND_END',
+      }));
+    }
+
+    // Mostrar automáticamente la tabla de posiciones en los celulares al terminar la ronda
+    setShowTeamsModal(true);
     setTimeout(() => setRoundNotification(null), 4000);
   });
 
@@ -264,6 +294,14 @@ export default function PlayerBuzzer() {
         type: 'incorrect',
         message: 'Todos los equipos fallaron esta ronda',
       });
+      setPlayerState((prev) => ({
+        ...prev,
+        canBuzz: false,
+        hasBuzzed: false,
+        gameState: 'ROUND_END',
+      }));
+      // Mostrar automáticamente la tabla de posiciones si todos fallaron
+      setShowTeamsModal(true);
     } else if (data.reopened) {
       setRoundNotification({
         type: 'incorrect',
@@ -515,11 +553,17 @@ export default function PlayerBuzzer() {
                 )}
               </div>
 
+              <div className="mt-4 p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-100 text-center">
+                <p className="text-[11px] font-bold text-indigo-900">
+                  El pulsador volverá a salir automáticamente en tu pantalla cuando el anfitrión inicie la próxima ronda.
+                </p>
+              </div>
+
               <button
                 onClick={() => setShowTeamsModal(false)}
-                className="nm-btn-primary w-full mt-5 py-3.5 rounded-2xl text-xs font-black cursor-pointer"
+                className="nm-btn-primary w-full mt-3 py-3 rounded-2xl text-xs font-black cursor-pointer"
               >
-                Volver al Pulsador
+                Cerrar y Ver Pulsador
               </button>
             </motion.div>
           </motion.div>

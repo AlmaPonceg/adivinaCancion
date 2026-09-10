@@ -354,6 +354,7 @@ class GameManager {
     room.blockedPlayers.clear();
     room.currentJudging = null;
     room.roundNumber++;
+    room.roundStartTime = Date.now();
 
     return true;
   }
@@ -362,6 +363,7 @@ class GameManager {
     const room = this.rooms.get(roomCode);
     if (!room) return false;
     room.state = GAME_STATES.ROUND_ACTIVE;
+    room.roundStartTime = Date.now();
     return true;
   }
 
@@ -394,6 +396,20 @@ class GameManager {
       return { error: 'Estás bloqueado esta ronda' };
     }
 
+    const buzzTime = Date.now();
+    const elapsedSeconds = Math.max(
+      0.1,
+      Number(((buzzTime - (room.roundStartTime || buzzTime)) / 1000).toFixed(1))
+    );
+
+    // Dynamic speed points
+    let suggestedPoints = 1;
+    if (elapsedSeconds < 3.0) suggestedPoints = 5;
+    else if (elapsedSeconds < 6.0) suggestedPoints = 4;
+    else if (elapsedSeconds < 9.0) suggestedPoints = 3;
+    else if (elapsedSeconds < 13.0) suggestedPoints = 2;
+    else suggestedPoints = 1;
+
     const buzzEntry = {
       playerId: player.id,
       socketId,
@@ -401,8 +417,10 @@ class GameManager {
       teamIndex: player.teamIndex,
       teamName: room.teams[player.teamIndex]?.name || 'Sin equipo',
       teamColor: room.teams[player.teamIndex]?.color || '#888',
-      timestamp: Date.now(),
+      timestamp: buzzTime,
       position: room.buzzQueue.length + 1,
+      elapsedSeconds,
+      suggestedPoints,
     };
 
     room.buzzQueue.push(buzzEntry);
@@ -418,7 +436,7 @@ class GameManager {
 
   // ── Judge Actions ────────────────────────────────────────────
 
-  judgeCorrect(roomCode, points = 1) {
+  judgeCorrect(roomCode, points = null) {
     const room = this.rooms.get(roomCode);
     if (!room) return null;
     if (!room.currentJudging && room.buzzQueue.length > 0) {
@@ -426,10 +444,11 @@ class GameManager {
     }
     if (!room.currentJudging) return null;
 
-    const { teamIndex, playerName, teamName } = room.currentJudging;
+    const { teamIndex, playerName, teamName, elapsedSeconds, suggestedPoints } = room.currentJudging;
+    const finalPoints = points !== null && points !== undefined ? points : (suggestedPoints || 1);
 
     if (room.teams[teamIndex]) {
-      room.teams[teamIndex].score += points;
+      room.teams[teamIndex].score += finalPoints;
     }
 
     room.state = GAME_STATES.ROUND_END;
@@ -441,9 +460,21 @@ class GameManager {
       teamName,
       teamIndex,
       teamColor: room.teams[teamIndex]?.color,
-      pointsAwarded: points,
+      pointsAwarded: finalPoints,
+      elapsedSeconds: elapsedSeconds || 0,
       scores: room.teams.map(t => ({ name: t.name, color: t.color, score: t.score })),
     };
+  }
+
+  renameTeam(roomCode, teamIndex, newName) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return { error: 'Sala no encontrada' };
+    const trimmed = (newName || '').trim();
+    if (!trimmed) return { error: 'El nombre no puede estar vacío' };
+    if (!room.teams[teamIndex]) return { error: 'Equipo no encontrado' };
+
+    room.teams[teamIndex].name = trimmed;
+    return { success: true, teams: room.teams };
   }
 
   judgeIncorrect(roomCode) {

@@ -132,11 +132,11 @@ export default function HostGame() {
 
   const judgeCorrect = useCallback(async () => {
     try {
-      await emit('judge-correct', { roomCode, points: 1 });
+      await emit('judge-correct', { roomCode, points: currentJudging?.suggestedPoints });
     } catch (err) {
       console.error('Judge error:', err);
     }
-  }, [emit, roomCode]);
+  }, [emit, roomCode, currentJudging]);
 
   const judgeIncorrect = useCallback(async () => {
     try {
@@ -156,6 +156,16 @@ export default function HostGame() {
     }
   }, [emit, roomCode]);
 
+  const finishGameDirectly = useCallback(async () => {
+    try {
+      await emit('end-game', { roomCode });
+    } catch (err) {
+      console.error('End game error:', err);
+    }
+  }, [emit, roomCode]);
+
+  const isPlaylistFinished = playlist.length > 0 && roundNumber >= playlist.length;
+
   if (!roomCode) return null;
 
   return (
@@ -168,7 +178,7 @@ export default function HostGame() {
             <h1 className="text-base sm:text-lg font-black text-slate-900">Trivia Musical</h1>
           </div>
           <p className="mono text-xs text-slate-500">
-            Sala {roomCode} · Ronda {roundNumber}
+            Sala {roomCode} · Ronda {roundNumber}{playlist.length > 0 ? ` de ${playlist.length}` : ''}
           </p>
         </div>
 
@@ -245,16 +255,28 @@ export default function HostGame() {
             </div>
 
             {(gameState === 'TEAMS_ASSIGNED' || gameState === 'ROUND_END') && (
-              <button
-                onClick={startNextRound}
-                className="nm-btn-primary w-full py-4 rounded-2xl font-black text-base shadow-md flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>{roundNumber === 0 ? 'Iniciar Canción y 1ª Ronda' : 'Siguiente Ronda (Próxima Canción) →'}</span>
-              </button>
+              isPlaylistFinished ? (
+                <button
+                  onClick={finishGameDirectly}
+                  className="w-full py-4 rounded-2xl font-black text-base shadow-lg flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white transition-all transform active:scale-98"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                  <span>Ver Podio Final (¡Canciones Completadas!) →</span>
+                </button>
+              ) : (
+                <button
+                  onClick={startNextRound}
+                  className="nm-btn-primary w-full py-4 rounded-2xl font-black text-base shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{roundNumber === 0 ? 'Iniciar Canción y 1ª Ronda' : 'Siguiente Ronda (Próxima Canción) →'}</span>
+                </button>
+              )
             )}
 
             {gameState === 'ROUND_ACTIVE' && (
@@ -330,7 +352,16 @@ export default function HostGame() {
                     <span className="font-black" style={{ color: lastResult.teamColor }}>
                       {lastResult.playerName}
                     </span>
-                    {' '}sumó {lastResult.pointsAwarded} punto para{' '}
+                    {' '}sumó{' '}
+                    <span className="font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+                      +{lastResult.pointsAwarded || 1} {lastResult.pointsAwarded === 1 ? 'punto' : 'puntos'}
+                    </span>
+                    {lastResult.elapsedSeconds !== undefined && (
+                      <span className="text-slate-500 font-bold ml-1 text-xs">
+                        (en {lastResult.elapsedSeconds}s)
+                      </span>
+                    )}
+                    {' '}para{' '}
                     <span className="font-black" style={{ color: lastResult.teamColor }}>
                       {lastResult.teamName}
                     </span>

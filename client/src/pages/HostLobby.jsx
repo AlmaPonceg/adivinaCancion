@@ -179,6 +179,15 @@ export default function HostLobby() {
     });
   };
 
+  // ── Rename Team ─────────────────────────────────────────────
+  const handleRenameTeam = (teamIndex, newName) => {
+    socket.emit('rename-team', { roomCode, teamIndex, newName }, (res) => {
+      if (res?.error) {
+        alert(res.error);
+      }
+    });
+  };
+
   // ── Add Manual Player ───────────────────────────────────────
   const handleAddManualPlayer = (e) => {
     e.preventDefault();
@@ -663,7 +672,7 @@ export default function HostLobby() {
                     </span>
                   </div>
 
-                  <TeamDisplay teams={teams} onMovePlayer={handleMovePlayer} />
+                  <TeamDisplay teams={teams} onMovePlayer={handleMovePlayer} onRenameTeam={handleRenameTeam} />
                 </div>
               )}
 

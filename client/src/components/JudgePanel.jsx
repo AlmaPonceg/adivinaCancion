@@ -30,6 +30,18 @@ export default function JudgePanel({ currentBuzz, onCorrect, onIncorrect }) {
           />
           {currentBuzz.teamName}
         </div>
+
+        {currentBuzz.elapsedSeconds !== undefined && (
+          <div className="mt-3 flex items-center justify-center gap-2 text-xs font-bold text-slate-600 bg-white/70 py-1 px-3 rounded-lg border border-slate-200/60 max-w-xs mx-auto">
+            <svg className="w-3.5 h-3.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{currentBuzz.elapsedSeconds}s de reacción</span>
+            <span className="text-emerald-700 font-extrabold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              +{currentBuzz.suggestedPoints || 1} pts por velocidad
+            </span>
+          </div>
+        )}
       </motion.div>
 
       {/* Judge Buttons */}
@@ -41,7 +53,7 @@ export default function JudgePanel({ currentBuzz, onCorrect, onIncorrect }) {
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
-          <span>Correcto (+1)</span>
+          <span>Correcto (+{currentBuzz.suggestedPoints || 1} pts)</span>
         </button>
 
         <button

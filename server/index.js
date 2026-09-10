@@ -242,6 +242,22 @@ io.on('connection', (socket) => {
     callback?.({ success: true, teams: roomState.teams });
   });
 
+  // ── HOST: Rename Team ───────────────────────────────────────
+
+  socket.on('rename-team', ({ roomCode, teamIndex, newName }, callback) => {
+    const code = String(roomCode).trim();
+    const result = gm.renameTeam(code, teamIndex, newName);
+    if (result.error) {
+      return callback?.({ error: result.error });
+    }
+
+    io.to(code).emit('teams-assigned', { teams: result.teams });
+    broadcastPlayerStates(code);
+
+    console.log(`[Teams] Team ${teamIndex} renamed to "${newName}" in room ${code}`);
+    callback?.({ success: true, teams: result.teams });
+  });
+
   // ── HOST: Shuffle Teams (Max 4 players per team rule) ───────
 
   socket.on('shuffle-teams', ({ roomCode, numTeams }, callback) => {
@@ -342,7 +358,7 @@ io.on('connection', (socket) => {
 
   // ── HOST: Judge Correct ────────────────────────────────────
 
-  socket.on('judge-correct', ({ roomCode, points = 1 }, callback) => {
+  socket.on('judge-correct', ({ roomCode, points }, callback) => {
     const result = gm.judgeCorrect(roomCode, points);
     if (!result) {
       return callback?.({ error: 'Error al juzgar' });
@@ -355,7 +371,7 @@ io.on('connection', (socket) => {
 
     broadcastPlayerStates(roomCode);
 
-    console.log(`[Correct] ${result.playerName} - ${result.teamName} +${points}pts`);
+    console.log(`[Correct] ${result.playerName} - ${result.teamName} +${result.pointsAwarded}pts (${result.elapsedSeconds}s)`);
     callback?.({ success: true, result });
   });
 
