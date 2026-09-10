@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════
+   Design System — Trivia Musical
+   Warm editorial palette, no emojis, handcrafted feel
+   ═══════════════════════════════════════════════════════════════ */
+
+@theme {
+  --color-bg-primary: #111113;
+  --color-bg-surface: #19191d;
+  --color-bg-elevated: #222228;
+  --color-bg-hover: #2c2c34;
+  --color-accent: #D4A853;
+  --color-accent-dim: #b8923f;
+  --color-accent-soft: rgba(212, 168, 83, 0.12);
+  --color-coral: #E8665A;
+  --color-coral-dim: #c9554a;
+  --color-team-red: #E8665A;
+  --color-team-blue: #5B8DEF;
+  --color-team-green: #4EBF8B;
+  --color-team-yellow: #D4A853;
+  --color-correct: #4EBF8B;
+  --color-incorrect: #E8665A;
+  --color-text-primary: #F0EBE3;
+  --color-text-secondary: #9E9A93;
+  --color-text-muted: #5E5B56;
+  --color-border: #2a2a30;
+  --color-border-light: #3a3a42;
+  --font-mono: 'Space Mono', 'Courier New', monospace;
+}
+
+/* ── Base ─────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+/* ── Noise texture overlay ────────────────────────────────────── */
+
+.noise::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────── */
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+/* ── Card styles ──────────────────────────────────────────────── */
+
+.card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+}
+
+.card-elevated {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+}
+
+/* ── Label style ──────────────────────────────────────────────── */
+
+.label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* ── Mono digits ──────────────────────────────────────────────── */
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* ── Buzzer ────────────────────────────────────────────────────── */
+
+@keyframes buzzer-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 168, 83, 0.35); }
+  50% { box-shadow: 0 0 0 20px rgba(212, 168, 83, 0); }
+}
+
+.buzzer-breathe {
+  animation: buzzer-breathe 2s ease-in-out infinite;
+}
+
+/* ── Animations ───────────────────────────────────────────────── */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes score-bump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s ease-out both;
+}
+
+.score-bump {
+  animation: score-bump 0.35s ease-out;
+}
+
+/* ── Background subtle accent ─────────────────────────────────── */
+
+.bg-glow {
+  background:
+    radial-gradient(ellipse at 25% 0%, rgba(212, 168, 83, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 75% 100%, rgba(232, 102, 90, 0.03) 0%, transparent 60%),
+    var(--color-bg-primary);
+}
+
+/* ── QR Code container ────────────────────────────────────────── */
+
+.qr-container {
+  background: #F0EBE3;
+  padding: 0.875rem;
+  border-radius: 0.75rem;
+  display: inline-flex;
+}
+
+/* ── Divider ──────────────────────────────────────────────────── */
+
+.divider {
+  height: 1px;
+  background: var(--color-border);
+  width: 100%;
+}
+
+/* ── Team backgrounds for buzzer ──────────────────────────────── */
+
+.team-gradient-red { background: linear-gradient(160deg, #2d1614 0%, #1a0f0e 100%); }
+.team-gradient-blue { background: linear-gradient(160deg, #141c2d 0%, #0e1220 100%); }
+.team-gradient-green { background: linear-gradient(160deg, #122418 0%, #0d1a12 100%); }
+.team-gradient-yellow { background: linear-gradient(160deg, #2a2214 0%, #1f1a0e 100%); }
+
+/* ── Accent underline ─────────────────────────────────────────── */
+
+.accent-line {
+  width: 2.5rem;
+  height: 2px;
+  background: var(--color-accent);
+  border-radius: 1px;
+}
