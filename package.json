@@ -7,7 +7,7 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && npm run dev",
     "client": "cd client && npm run dev",
-    "build": "cd client && npm run build",
+    "build": "cd client && npm install && npm run build && cd ../server && npm install",
     "start": "node server/index.js",
     "install:all": "cd server && npm install && cd ../client && npm install"
   },
