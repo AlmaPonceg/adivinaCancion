@@ -8,12 +8,25 @@ import BuzzerButton from '../components/BuzzerButton';
 export default function PlayerBuzzer() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { roomCode, playerName } = location.state || {};
+
+  // Load identity from route state or fallback to localStorage
+  const savedSession = (() => {
+    try {
+      const item = localStorage.getItem('trivia_player_session');
+      return item ? JSON.parse(item) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const roomCode = location.state?.roomCode || savedSession?.roomCode;
+  const playerName = location.state?.playerName || savedSession?.playerName;
+  const playerId = location.state?.playerId || savedSession?.playerId;
 
   const [playerState, setPlayerState] = useState({
-    teamName: '',
-    teamColor: '#D4A853',
-    teamBg: '#19191d',
+    teamName: savedSession?.teamName || '',
+    teamColor: '#3182CE',
+    teamBg: '#e0e5ec',
     canBuzz: false,
     hasBuzzed: false,
     isTeamBlocked: false,
@@ -26,24 +39,56 @@ export default function PlayerBuzzer() {
 
   const [statusMessage, setStatusMessage] = useState('Esperando inicio de ronda...');
   const [buzzPosition, setBuzzPosition] = useState(null);
-  const [showFlash, setShowFlash] = useState(false);
   const [showTeamsModal, setShowTeamsModal] = useState(false);
   const [roundNotification, setRoundNotification] = useState(null);
 
+  // ── Reconnection on Screen Unlock / Tab Visibility (Requirement 1) ──
   useEffect(() => {
-    if (!roomCode) navigate('/play');
-  }, [roomCode, navigate]);
-
-  useEffect(() => {
-    if (roomCode) {
-      socket.emit('get-player-state', { roomCode }, (state) => {
-        if (state && !state.error) setPlayerState(state);
-      });
+    if (!roomCode || !playerId) {
+      navigate('/play');
+      return;
     }
-  }, [roomCode]);
+
+    const restoreSession = () => {
+      socket.emit('reconnect-player', { roomCode, playerId, playerName }, (res) => {
+        if (res?.success && res.playerState) {
+          setPlayerState(res.playerState);
+        }
+      });
+    };
+
+    // Restore on mount
+    restoreSession();
+
+    // Reconnect automatically when phone is unlocked or app gains focus
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        restoreSession();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    socket.on('connect', restoreSession);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      socket.off('connect', restoreSession);
+    };
+  }, [roomCode, playerId, playerName, navigate]);
 
   useSocketEvent('player-state-updated', (state) => {
     setPlayerState(state);
+
+    // Keep session updated in localStorage
+    try {
+      const saved = localStorage.getItem('trivia_player_session');
+      if (saved) {
+        const s = JSON.parse(saved);
+        s.teamName = state.teamName;
+        s.teamIndex = state.teamIndex;
+        localStorage.setItem('trivia_player_session', JSON.stringify(s));
+      }
+    } catch { /* */ }
 
     if (state.canBuzz) {
       setStatusMessage('¡Pulsá ahora!');
@@ -74,14 +119,12 @@ export default function PlayerBuzzer() {
 
   useSocketEvent('first-buzz', (data) => {
     const entry = data?.buzzEntry;
-    if (entry) {
-      if (entry.playerId !== socket.id) {
-        setRoundNotification({
-          type: 'buzz',
-          message: `${entry.playerName} (${entry.teamName}) tocó primero`,
-        });
-        setTimeout(() => setRoundNotification(null), 3500);
-      }
+    if (entry && entry.playerId !== playerId) {
+      setRoundNotification({
+        type: 'buzz',
+        message: `${entry.playerName} (${entry.teamName}) tocó primero`,
+      });
+      setTimeout(() => setRoundNotification(null), 3500);
     }
   });
 
@@ -126,16 +169,16 @@ export default function PlayerBuzzer() {
   });
 
   useSocketEvent('host-disconnected', () => {
-    navigate('/play', { state: { error: 'El host se desconectó' } });
+    setRoundNotification({
+      type: 'warning',
+      message: 'El Host se desconectó momentáneamente, esperando su regreso...',
+    });
   });
 
   const handleBuzz = useCallback(() => {
     if (!playerState.canBuzz) return;
 
     if (navigator.vibrate) navigator.vibrate(60);
-
-    setShowFlash(true);
-    setTimeout(() => setShowFlash(false), 250);
 
     socket.emit('buzz', { roomCode }, (response) => {
       if (response?.success) {
@@ -147,49 +190,19 @@ export default function PlayerBuzzer() {
     });
   }, [playerState.canBuzz, roomCode]);
 
-  const teamBgColor = playerState.teamBg || '#19191d';
-
   if (!roomCode) return null;
 
   return (
-    <div
-      className="min-h-dvh flex flex-col justify-between p-4 relative overflow-hidden select-none"
-      style={{
-        background: `linear-gradient(160deg, ${lighten(teamBgColor, 15)} 0%, ${teamBgColor} 45%, #0d0d10 100%)`,
-      }}
-    >
-      {/* Screen flash on buzz */}
-      <AnimatePresence>
-        {showFlash && (
-          <motion.div
-            initial={{ opacity: 0.5 }}
-            animate={{ opacity: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-50 pointer-events-none"
-            style={{ backgroundColor: playerState.teamColor || '#D4A853' }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Glow backdrop */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] rounded-full blur-[120px] opacity-20"
-          style={{ backgroundColor: playerState.teamColor || '#D4A853' }}
-        />
-      </div>
-
-      {/* ── TOP SECTION: Room Info, Team & Live Scores ── */}
-      <div className="relative z-10 w-full pt-1">
-        {/* Upper bar: Room Code, Round, View Teams Button */}
-        <div className="flex items-center justify-between gap-2 mb-2.5">
+    <div className="min-h-dvh flex flex-col justify-between p-4 bg-[var(--nm-bg)] select-none">
+      {/* ── TOP BAR: Room, Round & Teams Ticker ── */}
+      <div className="w-full pt-1">
+        <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
-            <span className="mono text-xs font-semibold px-2 py-0.5 rounded bg-white/10 text-white/90">
+            <span className="mono text-xs font-extrabold px-2.5 py-1 rounded-lg nm-inset text-[var(--color-text-secondary)]">
               SALA {roomCode}
             </span>
             {playerState.roundNumber > 0 && (
-              <span className="mono text-xs text-white/50">
+              <span className="mono text-xs font-bold text-[var(--color-text-muted)]">
                 Ronda {playerState.roundNumber}
               </span>
             )}
@@ -197,33 +210,28 @@ export default function PlayerBuzzer() {
 
           <button
             onClick={() => setShowTeamsModal(true)}
-            className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/15
-                       border border-white/15 text-white/80 transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="nm-btn text-xs font-bold px-3 py-1.5 rounded-xl text-[var(--color-text-secondary)] flex items-center gap-1.5"
           >
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
-            Tabla y Equipos
+            Tabla / Equipos
           </button>
         </div>
 
-        {/* Live Scoreboard Ticker: Always visible for players without TV */}
+        {/* Live Scoreboard ticker */}
         {playerState.teams && playerState.teams.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
             {playerState.teams.map((t) => (
               <div
                 key={t.name}
-                className="flex items-center gap-2 px-3 py-1 rounded-lg shrink-0"
-                style={{
-                  backgroundColor: `${t.color}18`,
-                  border: `1px solid ${t.color}40`,
-                }}
+                className="nm-flat-sm flex items-center gap-2 px-3 py-1.5 rounded-xl shrink-0"
+                style={{ borderLeft: `3px solid ${t.color}` }}
               >
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
-                <span className="text-xs font-medium text-white/90 truncate max-w-[90px]">
+                <span className="text-xs font-bold text-[var(--color-text-primary)] truncate max-w-[90px]">
                   {t.name}
                 </span>
-                <span className="mono text-xs font-bold text-white">
+                <span className="mono text-xs font-extrabold text-[var(--color-accent)]">
                   {t.score}
                 </span>
               </div>
@@ -231,15 +239,14 @@ export default function PlayerBuzzer() {
           </div>
         )}
 
-        {/* Dynamic Activity Banner */}
+        {/* Notification Toast */}
         <AnimatePresence>
           {roundNotification && (
             <motion.div
-              initial={{ opacity: 0, y: -8 }}
+              initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="mt-2 py-1.5 px-3 rounded-lg text-center text-xs font-medium
-                         bg-white/10 backdrop-blur-md border border-white/15 text-white/95 shadow-lg"
+              exit={{ opacity: 0, y: -6 }}
+              className="nm-inset mt-2.5 py-2 px-3.5 rounded-xl text-center text-xs font-bold text-[var(--color-text-primary)]"
             >
               {roundNotification.message}
             </motion.div>
@@ -247,28 +254,24 @@ export default function PlayerBuzzer() {
         </AnimatePresence>
       </div>
 
-      {/* ── MIDDLE SECTION: Player Identity & Buzzer ── */}
-      <div className="relative z-10 flex flex-col items-center justify-center my-auto py-4">
-        {/* Player Name and Team Badge */}
+      {/* ── MIDDLE: Player info & Circular Neumorphic Buzzer ── */}
+      <div className="flex flex-col items-center justify-center my-auto py-2">
+        {/* Player Name and Team Pill */}
         <div className="text-center mb-6">
           <div
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-1.5"
-            style={{
-              backgroundColor: `${playerState.teamColor || '#D4A853'}25`,
-              color: playerState.teamColor || '#D4A853',
-              border: `1px solid ${playerState.teamColor || '#D4A853'}50`,
-            }}
+            className="nm-flat-sm inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold mb-1.5"
+            style={{ color: playerState.teamColor || '#3182CE' }}
           >
             <div
-              className="w-2 h-2 rounded-full animate-pulse"
-              style={{ backgroundColor: playerState.teamColor || '#D4A853' }}
+              className="w-2.5 h-2.5 rounded-full"
+              style={{ backgroundColor: playerState.teamColor || '#3182CE' }}
             />
-            {playerState.teamName ? `Equipo ${playerState.teamName}` : 'Sin equipo asignado'}
+            {playerState.teamName ? playerState.teamName : 'Sin equipo asignado'}
           </div>
-          <h2 className="text-xl font-bold text-white/95">{playerName}</h2>
+          <h2 className="text-xl font-extrabold text-[var(--color-text-primary)]">{playerName}</h2>
         </div>
 
-        {/* Central Buzzer Button */}
+        {/* Neumorphic Circular Buzzer with Sunken Inset Active State */}
         <BuzzerButton
           onBuzz={handleBuzz}
           canBuzz={playerState.canBuzz}
@@ -278,28 +281,28 @@ export default function PlayerBuzzer() {
           isMyTurn={playerState.isMyTurn}
         />
 
-        {/* Status Text & Position Indicator */}
+        {/* Status Text & Position */}
         <motion.div
           key={statusMessage}
-          initial={{ opacity: 0, y: 6 }}
+          initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           className="mt-6 text-center px-4"
         >
-          <p className="text-base font-semibold text-white/90 leading-tight">
+          <p className="text-base font-bold text-[var(--color-text-primary)] leading-snug">
             {statusMessage}
           </p>
           {buzzPosition && (
-            <p className="mono text-white/40 text-xs mt-1">
-              Posición registrada: #{buzzPosition}
+            <p className="mono text-[var(--color-text-muted)] text-xs mt-1 font-semibold">
+              Puesto registrado: #{buzzPosition}
             </p>
           )}
         </motion.div>
       </div>
 
-      {/* ── BOTTOM BAR: Mini Footer Tip ── */}
-      <div className="relative z-10 text-center pb-2">
-        <p className="text-[11px] text-white/35">
-          Tocá el pulsador apenas reconozcas el tema
+      {/* ── FOOTER ── */}
+      <div className="text-center pb-2">
+        <p className="text-[11px] text-[var(--color-text-muted)] font-medium">
+          Presioná el botón apenas reconozcas la canción
         </p>
       </div>
 
@@ -310,7 +313,7 @@ export default function PlayerBuzzer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4"
             onClick={() => setShowTeamsModal(false)}
           >
             <motion.div
@@ -318,69 +321,61 @@ export default function PlayerBuzzer() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="w-full max-w-md bg-[#161619] border-t sm:border border-[var(--color-border)]
-                         rounded-t-2xl sm:rounded-2xl p-6 text-[var(--color-text-primary)] max-h-[80vh] flex flex-col"
+              className="w-full max-w-md nm-flat rounded-t-3xl sm:rounded-3xl p-6 text-[var(--color-text-primary)] max-h-[80vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between pb-4 border-b border-[var(--color-border)] mb-4">
+              <div className="flex items-center justify-between pb-4 border-b border-black/5 mb-4">
                 <div>
-                  <h3 className="text-base font-bold">Equipos y Puntuación</h3>
+                  <h3 className="text-base font-bold">Equipos y Puntuaciones</h3>
                   <p className="text-xs text-[var(--color-text-muted)]">
                     Sala {roomCode} · Ronda {playerState.roundNumber || 1}
                   </p>
                 </div>
                 <button
                   onClick={() => setShowTeamsModal(false)}
-                  className="w-8 h-8 rounded-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)]
-                             flex items-center justify-center text-[var(--color-text-muted)] hover:text-white"
+                  className="nm-btn w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-text-muted)] hover:text-black font-bold"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  ✕
                 </button>
               </div>
 
-              {/* Team list with players & scores */}
+              {/* Team list */}
               <div className="space-y-3 overflow-y-auto flex-1 pr-1">
                 {playerState.teams && playerState.teams.length > 0 ? (
                   playerState.teams.map((t) => (
                     <div
                       key={t.name}
-                      className="p-3.5 rounded-xl border"
-                      style={{
-                        backgroundColor: `${t.color}10`,
-                        borderColor: `${t.color}35`,
-                      }}
+                      className="nm-inset-sm p-3.5 rounded-2xl"
+                      style={{ borderLeft: `4px solid ${t.color}` }}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: t.color }} />
-                          <span className="font-bold text-sm" style={{ color: t.color }}>
-                            {t.name}
-                          </span>
-                        </div>
-                        <span className="mono text-base font-bold text-white">
+                        <span className="font-extrabold text-sm" style={{ color: t.color }}>
+                          {t.name}
+                        </span>
+                        <span className="mono text-sm font-extrabold text-[var(--color-text-primary)]">
                           {t.score} {t.score === 1 ? 'pt' : 'pts'}
                         </span>
                       </div>
 
-                      {/* Players on this team */}
+                      {/* Members */}
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {t.players && t.players.length > 0 ? (
                           t.players.map((p) => (
                             <span
-                              key={p.name || p}
-                              className={`text-xs px-2.5 py-0.5 rounded-full border ${
+                              key={p.id || p.name || p}
+                              className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
                                 (p.name || p) === playerName
-                                  ? 'bg-white/20 border-white/40 text-white font-semibold'
-                                  : 'bg-black/30 border-white/10 text-white/70'
+                                  ? 'nm-flat text-blue-700 font-bold'
+                                  : 'bg-black/5 text-[var(--color-text-secondary)]'
                               }`}
                             >
                               {(p.name || p)} {(p.name || p) === playerName ? '(Vos)' : ''}
                             </span>
                           ))
                         ) : (
-                          <span className="text-xs text-white/40 italic">Sin integrantes</span>
+                          <span className="text-xs text-[var(--color-text-muted)] italic">
+                            Sin integrantes
+                          </span>
                         )}
                       </div>
                     </div>
@@ -394,10 +389,9 @@ export default function PlayerBuzzer() {
 
               <button
                 onClick={() => setShowTeamsModal(false)}
-                className="w-full mt-5 py-3 rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)]
-                           text-sm font-semibold hover:bg-white/10 transition-colors"
+                className="nm-btn-primary w-full mt-5 py-3.5 rounded-xl text-xs font-bold"
               >
-                Volver al pulsador
+                Volver al Pulsador
               </button>
             </motion.div>
           </motion.div>
@@ -405,14 +399,4 @@ export default function PlayerBuzzer() {
       </AnimatePresence>
     </div>
   );
-}
-
-function lighten(hex, amount) {
-  const clamp = (v) => Math.min(255, Math.max(0, v));
-  let c = (hex || '#19191d').replace('#', '');
-  if (c.length === 3) c = c.split('').map((x) => x + x).join('');
-  const r = clamp(parseInt(c.substring(0, 2), 16) + amount);
-  const g = clamp(parseInt(c.substring(2, 4), 16) + amount);
-  const b = clamp(parseInt(c.substring(4, 6), 16) + amount);
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }

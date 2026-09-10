@@ -5,58 +5,49 @@ export default function Landing() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-dvh bg-glow noise flex flex-col items-center justify-center p-6">
+    <div className="min-h-dvh bg-[var(--nm-bg)] flex flex-col items-center justify-center p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 text-center max-w-md"
+        transition={{ duration: 0.6 }}
+        className="nm-flat p-8 sm:p-14 rounded-3xl text-center max-w-md w-full"
       >
-        {/* Mark */}
-        <div className="flex justify-center mb-8">
-          <div className="w-14 h-14 rounded-full border-2 border-[var(--color-accent)] flex items-center justify-center">
-            <div className="w-3 h-3 rounded-full bg-[var(--color-accent)]" />
+        {/* Neumorphic Emblem */}
+        <div className="flex justify-center mb-6">
+          <div className="nm-inset w-16 h-16 rounded-full flex items-center justify-center">
+            <div className="nm-convex w-8 h-8 rounded-full flex items-center justify-center">
+              <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-accent)]" />
+            </div>
           </div>
         </div>
 
-        <p className="label mb-4">Edición Cumpleaños</p>
+        <p className="label mb-2">Edición Cumpleaños</p>
 
-        <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight leading-none mb-4">
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-3 text-[var(--color-text-primary)]">
           Trivia<br />
           <span className="text-[var(--color-accent)]">Musical</span>
         </h1>
 
-        <div className="accent-line mx-auto mb-6" />
+        <div className="accent-line mx-auto mb-5" />
 
-        <p className="text-[var(--color-text-secondary)] text-base mb-14 max-w-xs mx-auto leading-relaxed">
-          Pongan a prueba quién conoce mejor las canciones. Tiempo real, sin excusas.
+        <p className="text-[var(--color-text-secondary)] text-sm mb-10 leading-relaxed max-w-xs mx-auto">
+          Descubran quién conoce mejor las canciones. En tiempo real, con pulsador táctil en tu celular.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
+        <div className="flex flex-col gap-3.5">
+          <button
             onClick={() => navigate('/host')}
-            className="px-8 py-4 rounded-xl font-semibold text-base
-                       bg-[var(--color-accent)] text-[var(--color-bg-primary)]
-                       hover:bg-[var(--color-accent-dim)]
-                       transition-colors duration-200 cursor-pointer"
+            className="nm-btn-primary py-4 px-6 rounded-xl font-bold text-sm tracking-wide shadow-sm"
           >
-            Crear partida
-          </motion.button>
+            Crear Partida (Host)
+          </button>
 
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
+          <button
             onClick={() => navigate('/play')}
-            className="px-8 py-4 rounded-xl font-semibold text-base
-                       bg-transparent text-[var(--color-text-primary)]
-                       border border-[var(--color-border-light)]
-                       hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-bg-elevated)]
-                       transition-all duration-200 cursor-pointer"
+            className="nm-btn py-4 px-6 rounded-xl font-bold text-sm text-[var(--color-text-primary)] tracking-wide"
           >
-            Unirse como jugador
-          </motion.button>
+            Unirse como Jugador
+          </button>
         </div>
       </motion.div>
     </div>

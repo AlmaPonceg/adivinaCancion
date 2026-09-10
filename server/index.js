@@ -10,7 +10,7 @@ import os from 'os';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { GameManager, GAME_STATES } from './gameManager.js';
+import { GameManager, GAME_STATES, TEAM_COLORS } from './gameManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,13 +18,14 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const httpServer = createServer(app);
 
+// Robust heartbeat configuration: 60s timeout prevents mobile disconnects on sleep
 const io = new Server(httpServer, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST'],
   },
   pingInterval: 10000,
-  pingTimeout: 5000,
+  pingTimeout: 60000,
 });
 
 app.use(cors());
@@ -73,6 +74,18 @@ if (fs.existsSync(clientDistPath)) {
   });
 }
 
+// Helper: Broadcast updated player states to all connected sockets in a room
+function broadcastPlayerStates(roomCode) {
+  const room = gm.getRoom(roomCode);
+  if (!room) return;
+  for (const [, player] of room.players) {
+    if (player.socketId) {
+      const playerState = gm.getPlayerState(roomCode, player.id);
+      io.to(player.socketId).emit('player-state-updated', playerState);
+    }
+  }
+}
+
 // ── Socket.io Connection Handler ───────────────────────────────
 
 io.on('connection', (socket) => {
@@ -92,7 +105,7 @@ io.on('connection', (socket) => {
 
   // ── PLAYER: Join Room ──────────────────────────────────────
 
-  socket.on('join-room', ({ roomCode, playerName }, callback) => {
+  socket.on('join-room', ({ roomCode, playerName, playerId }, callback) => {
     const code = String(roomCode).trim();
     const name = String(playerName).trim();
 
@@ -100,7 +113,7 @@ io.on('connection', (socket) => {
       return callback({ error: 'Código y nombre requeridos' });
     }
 
-    const result = gm.addPlayer(code, socket.id, name);
+    const result = gm.addPlayer(code, socket.id, name, playerId);
     if (result.error) {
       return callback({ error: result.error });
     }
@@ -108,17 +121,116 @@ io.on('connection', (socket) => {
     currentRoom = code;
     socket.join(code);
 
-    // Notify host about new player
+    // Notify host and room about player list
     const playerList = gm.getPlayerList(code);
     io.to(code).emit('player-list-updated', playerList);
 
-    console.log(`👤 ${name} joined room ${code}`);
-    callback({ success: true, player: result.player });
+    console.log(`👤 ${name} joined room ${code} (reconnected: ${!!result.reconnected})`);
+    callback({ success: true, player: result.player, reconnected: result.reconnected });
   });
 
-  // ── HOST: Shuffle Teams ────────────────────────────────────
+  // ── PLAYER / HOST: Reconnect Session ───────────────────────
 
-  socket.on('shuffle-teams', ({ roomCode, numTeams = 2 }, callback) => {
+  socket.on('reconnect-player', ({ roomCode, playerId, playerName }, callback) => {
+    const code = String(roomCode).trim();
+    if (!code || !playerId) {
+      return callback?.({ error: 'Código de sala e ID requeridos' });
+    }
+
+    const room = gm.getRoom(code);
+    if (!room) {
+      return callback?.({ error: 'La sala ya no está activa' });
+    }
+
+    // If reconnecting as host
+    if (room.hostSocketId && !room.hostConnected) {
+      room.hostSocketId = socket.id;
+      room.hostConnected = true;
+      room.hostDisconnectedAt = null;
+      socket.join(code);
+      currentRoom = code;
+      console.log(`👑 Host reconnected to room ${code}`);
+      return callback?.({ success: true, isHost: true, roomState: gm.getRoomState(code) });
+    }
+
+    const result = gm.reconnectPlayer(code, playerId, socket.id, playerName);
+    if (result.error) {
+      return callback?.({ error: result.error });
+    }
+
+    currentRoom = code;
+    socket.join(code);
+
+    const playerState = gm.getPlayerState(code, result.player.id);
+    const roomState = gm.getRoomState(code);
+
+    // Notify others
+    const playerList = gm.getPlayerList(code);
+    io.to(code).emit('player-list-updated', playerList);
+
+    console.log(`🔄 ${result.player.name} (${result.player.id}) reconnected to room ${code}`);
+    callback?.({ success: true, player: result.player, playerState, roomState });
+  });
+
+  // ── HOST: Add Manual Player ────────────────────────────────
+
+  socket.on('add-manual-player', ({ roomCode, playerName }, callback) => {
+    const code = String(roomCode).trim();
+    const name = String(playerName).trim();
+    if (!code || !name) {
+      return callback?.({ error: 'Nombre requerido' });
+    }
+
+    const result = gm.addManualPlayer(code, name);
+    if (result.error) {
+      return callback?.({ error: result.error });
+    }
+
+    const playerList = gm.getPlayerList(code);
+    io.to(code).emit('player-list-updated', playerList);
+
+    console.log(`📝 Manual player ${name} added to room ${code}`);
+    callback?.({ success: true, player: result.player });
+  });
+
+  // ── HOST: Remove Manual Player ─────────────────────────────
+
+  socket.on('remove-manual-player', ({ roomCode, playerId }, callback) => {
+    const code = String(roomCode).trim();
+    const result = gm.removeManualPlayer(code, playerId);
+    if (result.error) {
+      return callback?.({ error: result.error });
+    }
+
+    const playerList = gm.getPlayerList(code);
+    io.to(code).emit('player-list-updated', playerList);
+
+    const roomState = gm.getRoomState(code);
+    io.to(code).emit('teams-assigned', { teams: roomState.teams });
+
+    callback?.({ success: true });
+  });
+
+  // ── HOST: Move Player to Team (Manual Team Editing) ─────────
+
+  socket.on('move-player-team', ({ roomCode, playerId, targetTeamIndex }, callback) => {
+    const code = String(roomCode).trim();
+    const result = gm.movePlayerToTeam(code, playerId, targetTeamIndex);
+    if (result.error) {
+      return callback?.({ error: result.error });
+    }
+
+    const roomState = gm.getRoomState(code);
+    io.to(code).emit('teams-assigned', { teams: roomState.teams });
+    broadcastPlayerStates(code);
+
+    console.log(`🔀 Player ${playerId} moved to team ${targetTeamIndex} in room ${code}`);
+    callback?.({ success: true, teams: roomState.teams });
+  });
+
+  // ── HOST: Shuffle Teams (Max 4 players per team rule) ───────
+
+  socket.on('shuffle-teams', ({ roomCode, numTeams }, callback) => {
     const teams = gm.shuffleTeams(roomCode, numTeams);
     if (!teams) {
       return callback({ error: 'No se pudo sortear equipos' });
@@ -128,12 +240,17 @@ io.on('connection', (socket) => {
     io.to(roomCode).emit('teams-assigned', { teams: roomState.teams });
 
     // Send individual team assignment to each player
-    for (const [socketId, player] of gm.getRoom(roomCode).players) {
-      const playerState = gm.getPlayerState(roomCode, socketId);
-      io.to(socketId).emit('your-team', playerState);
+    const room = gm.getRoom(roomCode);
+    if (room) {
+      for (const [, player] of room.players) {
+        if (player.socketId) {
+          const playerState = gm.getPlayerState(roomCode, player.id);
+          io.to(player.socketId).emit('your-team', playerState);
+        }
+      }
     }
 
-    console.log(`🎲 Teams shuffled in room ${roomCode}`);
+    console.log(`🎲 Teams shuffled in room ${roomCode} (${teams.length} teams, max 4 per team)`);
     callback({ success: true, teams: roomState.teams });
   });
 
@@ -149,12 +266,7 @@ io.on('connection', (socket) => {
       roundNumber: gm.getRoom(roomCode).roundNumber,
     });
 
-    // Send updated player states
-    const room = gm.getRoom(roomCode);
-    for (const [socketId] of room.players) {
-      const playerState = gm.getPlayerState(roomCode, socketId);
-      io.to(socketId).emit('player-state-updated', playerState);
-    }
+    broadcastPlayerStates(roomCode);
 
     console.log(`▶️ Round started in room ${roomCode}`);
     callback?.({ success: true });
@@ -167,19 +279,10 @@ io.on('connection', (socket) => {
     if (!success) return;
 
     io.to(roomCode).emit('buzzers-enabled');
-
-    // Send updated player states
-    const room = gm.getRoom(roomCode);
-    if (room) {
-      for (const [socketId] of room.players) {
-        const playerState = gm.getPlayerState(roomCode, socketId);
-        io.to(socketId).emit('player-state-updated', playerState);
-      }
-    }
+    broadcastPlayerStates(roomCode);
   });
 
   // ── PLAYER: Buzz ───────────────────────────────────────────
-  // This is the most critical event — server timestamp is truth
 
   socket.on('buzz', ({ roomCode }, callback) => {
     const result = gm.registerBuzz(roomCode, socket.id);
@@ -191,26 +294,17 @@ io.on('connection', (socket) => {
     const { buzzEntry, isFirst } = result;
 
     if (isFirst) {
-      // Announce to the entire room who buzzed first
       io.to(roomCode).emit('first-buzz', {
         buzzEntry,
         roomState: gm.getRoomState(roomCode),
       });
     }
 
-    // Send buzz queue update to host
     io.to(roomCode).emit('buzz-queue-updated', {
       buzzQueue: gm.getRoomState(roomCode).buzzQueue,
     });
 
-    // Update all player states (disable buzzers for everyone)
-    const room = gm.getRoom(roomCode);
-    if (room) {
-      for (const [socketId] of room.players) {
-        const playerState = gm.getPlayerState(roomCode, socketId);
-        io.to(socketId).emit('player-state-updated', playerState);
-      }
-    }
+    broadcastPlayerStates(roomCode);
 
     console.log(`🔔 BUZZ from ${buzzEntry.playerName} (${buzzEntry.teamName}) - Position: ${buzzEntry.position}`);
     callback?.({ success: true, position: buzzEntry.position });
@@ -229,14 +323,7 @@ io.on('connection', (socket) => {
       ...result,
     });
 
-    // Update all player states
-    const room = gm.getRoom(roomCode);
-    if (room) {
-      for (const [socketId] of room.players) {
-        const playerState = gm.getPlayerState(roomCode, socketId);
-        io.to(socketId).emit('player-state-updated', playerState);
-      }
-    }
+    broadcastPlayerStates(roomCode);
 
     console.log(`✅ Correct! ${result.playerName} - ${result.teamName} +${points}pts`);
     callback?.({ success: true, result });
@@ -255,14 +342,7 @@ io.on('connection', (socket) => {
       ...result,
     });
 
-    // Update all player states
-    const room = gm.getRoom(roomCode);
-    if (room) {
-      for (const [socketId] of room.players) {
-        const playerState = gm.getPlayerState(roomCode, socketId);
-        io.to(socketId).emit('player-state-updated', playerState);
-      }
-    }
+    broadcastPlayerStates(roomCode);
 
     console.log(`❌ Incorrect! ${result.blocked.playerName} blocked`);
     callback?.({ success: true, result });
@@ -285,7 +365,6 @@ io.on('connection', (socket) => {
   // ── HOST: Music Control ────────────────────────────────────
 
   socket.on('music-control', ({ roomCode, action, data }) => {
-    // Forward music control events to all clients in the room
     io.to(roomCode).emit('music-control', { action, data });
   });
 
@@ -296,8 +375,8 @@ io.on('connection', (socket) => {
     callback?.(state || { error: 'Sala no encontrada' });
   });
 
-  socket.on('get-player-state', ({ roomCode }, callback) => {
-    const state = gm.getPlayerState(roomCode, socket.id);
+  socket.on('get-player-state', ({ roomCode, playerId }, callback) => {
+    const state = gm.getPlayerState(roomCode, playerId || socket.id);
     callback?.(state || { error: 'Estado no encontrado' });
   });
 
@@ -306,15 +385,11 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`❌ Disconnected: ${socket.id}`);
 
-    const result = gm.removePlayer(socket.id);
+    const result = gm.handleDisconnect(socket.id);
     if (result) {
       if (result.wasHost) {
-        // Notify all players in the room that the host left
-        io.to(result.roomCode).emit('host-disconnected');
-        gm.deleteRoom(result.roomCode);
-        console.log(`🗑️ Room ${result.roomCode} deleted (host left)`);
+        console.log(`⚠️ Host socket disconnected from room ${result.roomCode} (waiting for reconnect)`);
       } else {
-        // Update player list
         const playerList = gm.getPlayerList(result.roomCode);
         io.to(result.roomCode).emit('player-list-updated', playerList);
       }

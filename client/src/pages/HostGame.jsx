@@ -13,9 +13,19 @@ export default function HostGame() {
   const navigate = useNavigate();
   const emit = useSocketEmit();
 
-  const { roomCode, teams: initialTeams } = location.state || {};
+  const { roomCode, teams: initialTeams, playlist: initialPlaylist } = location.state || {};
 
   const [teams, setTeams] = useState(initialTeams || []);
+  const [playlist] = useState(() => {
+    if (initialPlaylist && initialPlaylist.length > 0) return initialPlaylist;
+    try {
+      const saved = localStorage.getItem('trivia_playlist');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [gameState, setGameState] = useState('TEAMS_ASSIGNED');
   const [roundNumber, setRoundNumber] = useState(0);
   const [buzzQueue, setBuzzQueue] = useState([]);
@@ -42,7 +52,6 @@ export default function HostGame() {
   useSocketEvent('first-buzz', (data) => {
     setGameState('BUZZER_LOCKED');
     setCurrentJudging(data.buzzEntry);
-    // If on mobile and in music tab, switch to controls tab automatically
     setMobileTab('controls');
   });
 
@@ -114,181 +123,167 @@ export default function HostGame() {
   if (!roomCode) return null;
 
   return (
-    <div className="min-h-dvh bg-glow noise pb-12">
-      <div className="relative z-10">
-        {/* Header Bar */}
-        <div className="border-b border-[var(--color-border)] bg-[var(--color-bg-surface)]/90 backdrop-blur-md sticky top-0 z-30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-            <div>
-              <h1 className="text-base sm:text-lg font-bold tracking-tight">Trivia Musical</h1>
-              <p className="mono text-xs text-[var(--color-text-muted)] mt-0.5">
-                Sala {roomCode} · Ronda {roundNumber}
-              </p>
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={endGame}
-              className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium
-                         bg-transparent border border-[var(--color-border)]
-                         text-[var(--color-text-muted)] hover:border-[var(--color-coral)]/40 hover:text-[var(--color-coral)]
-                         transition-all duration-200 cursor-pointer"
-            >
-              Terminar juego
-            </motion.button>
-          </div>
+    <div className="min-h-dvh bg-[var(--nm-bg)] pb-12">
+      {/* Header Bar */}
+      <div className="nm-flat-sm sticky top-0 z-30 px-4 sm:px-6 py-3.5 flex items-center justify-between border-b border-black/5">
+        <div>
+          <h1 className="text-base sm:text-lg font-extrabold tracking-tight">Trivia Musical</h1>
+          <p className="mono text-xs text-[var(--color-text-muted)] mt-0.5">
+            Sala {roomCode} · Ronda {roundNumber}
+          </p>
         </div>
 
-        {/* Scoreboard (Always visible on mobile & desktop) */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6">
-          <Scoreboard teams={teams} />
-        </div>
-
-        {/* Mobile Tab Switcher (Visible only on mobile/tablet) */}
-        <div className="lg:hidden max-w-7xl mx-auto px-4 pt-4">
-          <div className="flex rounded-xl bg-[var(--color-bg-elevated)] p-1 border border-[var(--color-border)]">
-            <button
-              onClick={() => setMobileTab('controls')}
-              className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                mobileTab === 'controls'
-                  ? 'bg-[var(--color-accent)] text-[var(--color-bg-primary)] shadow'
-                  : 'text-[var(--color-text-muted)] hover:text-white'
-              }`}
-            >
-              Control y Juez
-              {gameState === 'BUZZER_LOCKED' && (
-                <span className="w-2 h-2 rounded-full bg-[var(--color-coral)] animate-ping" />
-              )}
-            </button>
-            <button
-              onClick={() => setMobileTab('music')}
-              className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all ${
-                mobileTab === 'music'
-                  ? 'bg-[var(--color-accent)] text-[var(--color-bg-primary)] shadow'
-                  : 'text-[var(--color-text-muted)] hover:text-white'
-              }`}
-            >
-              Reproductor de Música
-            </button>
-          </div>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Music Player (Desktop always, Mobile when tab is 'music') */}
-          <div className={`lg:col-span-2 ${mobileTab === 'music' ? 'block' : 'hidden lg:block'}`}>
-            <MusicPlayer roomCode={roomCode} />
-          </div>
-
-          {/* Right: Game & Judge Controls (Desktop always, Mobile when tab is 'controls') */}
-          <div className={`space-y-6 ${mobileTab === 'controls' ? 'block' : 'hidden lg:block'}`}>
-            {/* Round Controls */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="card p-5 sm:p-6"
-            >
-              <p className="label mb-4">Control de ronda</p>
-
-              {(gameState === 'TEAMS_ASSIGNED' || gameState === 'ROUND_END') && (
-                <motion.button
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={startRound}
-                  className="w-full py-3.5 rounded-xl font-semibold
-                             bg-[var(--color-accent)] text-[var(--color-bg-primary)]
-                             hover:bg-[var(--color-accent-dim)]
-                             transition-colors duration-200 cursor-pointer text-base shadow-md"
-                >
-                  {roundNumber === 0 ? 'Iniciar primera ronda' : 'Iniciar siguiente ronda'}
-                </motion.button>
-              )}
-
-              {gameState === 'ROUND_ACTIVE' && (
-                <div className="text-center py-6">
-                  <motion.div
-                    animate={{ opacity: [1, 0.4, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="text-[var(--color-accent)] font-bold text-base"
-                  >
-                    Música sonando · Buzzers activos
-                  </motion.div>
-                  <p className="text-[var(--color-text-muted)] text-xs sm:text-sm mt-1.5">
-                    Esperando que algún jugador pulse el botón en su celular...
-                  </p>
-                </div>
-              )}
-
-              {gameState === 'BUZZER_LOCKED' && currentJudging && (
-                <JudgePanel
-                  currentBuzz={currentJudging}
-                  onCorrect={judgeCorrect}
-                  onIncorrect={judgeIncorrect}
-                />
-              )}
-            </motion.div>
-
-            {/* Buzz Queue */}
-            {buzzQueue.length > 0 && (
-              <BuzzQueue queue={buzzQueue} currentJudging={currentJudging} />
-            )}
-          </div>
-        </div>
-
-        {/* Result Overlay Banner */}
-        <AnimatePresence>
-          {showResult && lastResult && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-            >
-              <motion.div
-                initial={{ scale: 0.85, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.85, opacity: 0 }}
-                transition={{ type: 'spring', damping: 20 }}
-                className="card p-8 sm:p-12 text-center max-w-md w-full"
-              >
-                {lastResult.type === 'correct' ? (
-                  <>
-                    <div className="w-16 h-16 rounded-full bg-[var(--color-correct)]/15 border-2 border-[var(--color-correct)]
-                                    flex items-center justify-center mx-auto mb-5">
-                      <svg className="w-8 h-8 text-[var(--color-correct)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <h2 className="text-2xl font-bold mb-2">¡Correcto!</h2>
-                    <p className="text-[var(--color-text-secondary)] leading-relaxed text-sm sm:text-base">
-                      <span className="font-bold" style={{ color: lastResult.teamColor }}>
-                        {lastResult.playerName}
-                      </span>
-                      {' '}sumó {lastResult.pointsAwarded} punto{lastResult.pointsAwarded !== 1 ? 's' : ''} para{' '}
-                      <span className="font-bold" style={{ color: lastResult.teamColor }}>
-                        {lastResult.teamName}
-                      </span>
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-16 h-16 rounded-full bg-[var(--color-text-muted)]/10 border-2 border-[var(--color-text-muted)]
-                                    flex items-center justify-center mx-auto mb-5">
-                      <svg className="w-8 h-8 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </div>
-                    <h2 className="text-2xl font-bold mb-2">Ronda terminada</h2>
-                    <p className="text-[var(--color-text-secondary)] text-sm">
-                      Todos los equipos fallaron. Nadie sumó puntos en esta ronda.
-                    </p>
-                  </>
-                )}
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <button
+          onClick={endGame}
+          className="nm-btn px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold text-rose-600 hover:text-rose-700"
+        >
+          Terminar juego
+        </button>
       </div>
+
+      {/* Scoreboard */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 sm:pt-6">
+        <Scoreboard teams={teams} />
+      </div>
+
+      {/* Mobile Tab Switcher */}
+      <div className="lg:hidden max-w-7xl mx-auto px-4 pt-4">
+        <div className="nm-inset p-1.5 rounded-xl flex gap-2">
+          <button
+            onClick={() => setMobileTab('controls')}
+            className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              mobileTab === 'controls'
+                ? 'nm-flat text-[var(--color-accent)]'
+                : 'text-[var(--color-text-muted)]'
+            }`}
+          >
+            Control y Juez
+            {gameState === 'BUZZER_LOCKED' && (
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+            )}
+          </button>
+          <button
+            onClick={() => setMobileTab('music')}
+            className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${
+              mobileTab === 'music'
+                ? 'nm-flat text-[var(--color-accent)]'
+                : 'text-[var(--color-text-muted)]'
+            }`}
+          >
+            Música {playlist.length > 0 ? `(${playlist.length})` : ''}
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Music Player (with Playlist queue) */}
+        <div className={`lg:col-span-2 ${mobileTab === 'music' ? 'block' : 'hidden lg:block'}`}>
+          <MusicPlayer roomCode={roomCode} playlist={playlist} />
+        </div>
+
+        {/* Right: Game & Judge Controls */}
+        <div className={`space-y-6 ${mobileTab === 'controls' ? 'block' : 'hidden lg:block'}`}>
+          {/* Round Controls */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="nm-flat p-5 sm:p-6 rounded-2xl"
+          >
+            <p className="label mb-4">Control de ronda</p>
+
+            {(gameState === 'TEAMS_ASSIGNED' || gameState === 'ROUND_END') && (
+              <button
+                onClick={startRound}
+                className="nm-btn-primary w-full py-4 rounded-xl font-bold text-base shadow-sm"
+              >
+                {roundNumber === 0 ? '▶ Iniciar primera ronda' : '▶ Iniciar siguiente ronda'}
+              </button>
+            )}
+
+            {gameState === 'ROUND_ACTIVE' && (
+              <div className="nm-inset p-6 rounded-xl text-center">
+                <div className="flex items-center justify-center gap-2 mb-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping" />
+                  <span className="text-[var(--color-accent)] font-extrabold text-base">
+                    Música sonando · Buzzers activos
+                  </span>
+                </div>
+                <p className="text-[var(--color-text-muted)] text-xs mt-1">
+                  Esperando que algún participante pulse en su celular...
+                </p>
+              </div>
+            )}
+
+            {gameState === 'BUZZER_LOCKED' && currentJudging && (
+              <JudgePanel
+                currentBuzz={currentJudging}
+                onCorrect={judgeCorrect}
+                onIncorrect={judgeIncorrect}
+              />
+            )}
+          </motion.div>
+
+          {/* Buzz Queue */}
+          {buzzQueue.length > 0 && (
+            <BuzzQueue queue={buzzQueue} currentJudging={currentJudging} />
+          )}
+        </div>
+      </div>
+
+      {/* Result Overlay Banner */}
+      <AnimatePresence>
+        {showResult && lastResult && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              transition={{ type: 'spring', damping: 20 }}
+              className="nm-flat p-8 sm:p-12 text-center max-w-md w-full rounded-2xl"
+            >
+              {lastResult.type === 'correct' ? (
+                <>
+                  <div className="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-500
+                                  flex items-center justify-center mx-auto mb-5 shadow-sm">
+                    <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-extrabold mb-2 text-emerald-800">¡Respuesta Correcta!</h2>
+                  <p className="text-[var(--color-text-secondary)] text-sm sm:text-base leading-relaxed">
+                    <span className="font-extrabold" style={{ color: lastResult.teamColor }}>
+                      {lastResult.playerName}
+                    </span>
+                    {' '}sumó {lastResult.pointsAwarded} punto{lastResult.pointsAwarded !== 1 ? 's' : ''} para{' '}
+                    <span className="font-extrabold" style={{ color: lastResult.teamColor }}>
+                      {lastResult.teamName}
+                    </span>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 rounded-full bg-rose-100 border-2 border-rose-500
+                                  flex items-center justify-center mx-auto mb-5 shadow-sm">
+                    <svg className="w-8 h-8 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-extrabold mb-2 text-rose-800">Ronda terminada</h2>
+                  <p className="text-[var(--color-text-secondary)] text-sm">
+                    Todos los equipos fallaron. Nadie sumó puntos en esta ronda.
+                  </p>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

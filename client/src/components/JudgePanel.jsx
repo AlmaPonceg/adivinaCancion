@@ -4,53 +4,43 @@ export default function JudgePanel({ currentBuzz, onCorrect, onIncorrect }) {
   if (!currentBuzz) return null;
 
   return (
-    <div>
-      {/* Player being judged */}
+    <div className="space-y-4">
+      {/* Player being judged well */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="text-center mb-5"
+        className="nm-inset p-4 rounded-xl text-center"
       >
-        <p className="label mb-2">Responde</p>
-        <p className="text-xl font-bold" style={{ color: currentBuzz.teamColor }}>
+        <p className="label mb-1">Respondiendo ahora</p>
+        <p className="text-2xl font-extrabold" style={{ color: currentBuzz.teamColor }}>
           {currentBuzz.playerName}
         </p>
-        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
+        <p className="text-xs font-semibold text-[var(--color-text-secondary)] mt-0.5">
           {currentBuzz.teamName}
         </p>
       </motion.div>
 
       {/* Judge Buttons */}
-      <div className="flex gap-2.5">
-        <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.95 }}
+      <div className="grid grid-cols-2 gap-3">
+        <button
           onClick={onCorrect}
-          className="flex-1 py-3.5 rounded-xl font-semibold
-                     bg-[var(--color-correct)] text-[var(--color-bg-primary)]
-                     hover:brightness-110
-                     transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+          className="nm-btn py-3.5 px-4 rounded-xl font-bold text-sm bg-emerald-600 text-white flex items-center justify-center gap-2"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
-          Correcto
-        </motion.button>
+          <span>Correcto (+1)</span>
+        </button>
 
-        <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           onClick={onIncorrect}
-          className="flex-1 py-3.5 rounded-xl font-semibold
-                     bg-[var(--color-coral)] text-white
-                     hover:brightness-110
-                     transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+          className="nm-btn py-3.5 px-4 rounded-xl font-bold text-sm bg-rose-600 text-white flex items-center justify-center gap-2"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
-          Incorrecto
-        </motion.button>
+          <span>Incorrecto</span>
+        </button>
       </div>
     </div>
   );

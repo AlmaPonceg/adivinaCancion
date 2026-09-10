@@ -7,11 +7,11 @@ export default function BuzzQueue({ queue, currentJudging }) {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="card p-6"
+      className="nm-flat p-5 rounded-2xl"
     >
-      <p className="label mb-4">Cola de pulsadores</p>
+      <p className="label mb-3">Cola de pulsadores registrados</p>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <AnimatePresence>
           {queue.map((buzz, index) => {
             const isJudging = currentJudging?.playerId === buzz.playerId;
@@ -19,45 +19,44 @@ export default function BuzzQueue({ queue, currentJudging }) {
             return (
               <motion.div
                 key={buzz.playerId}
-                initial={{ opacity: 0, x: -12 }}
+                initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.08 }}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-all duration-200 ${
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all ${
                   isJudging
-                    ? 'bg-[var(--color-accent-soft)] ring-1 ring-[var(--color-accent)]/30'
-                    : 'bg-[var(--color-bg-elevated)]'
+                    ? 'nm-inset border-2 border-emerald-500/50 bg-emerald-50/50'
+                    : 'nm-flat-sm'
                 }`}
               >
                 {/* Position */}
-                <span className={`mono text-sm font-bold w-6 text-center shrink-0 ${
-                  index === 0 ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)]'
-                }`}>
-                  {index + 1}
+                <span
+                  className={`mono text-sm font-extrabold w-6 text-center shrink-0 ${
+                    index === 0 ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)]'
+                  }`}
+                >
+                  #{index + 1}
                 </span>
 
                 {/* Player */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{buzz.playerName}</p>
-                  <p className="text-xs truncate" style={{ color: buzz.teamColor }}>
+                  <p className="font-bold text-xs sm:text-sm truncate text-[var(--color-text-primary)]">
+                    {buzz.playerName}
+                  </p>
+                  <p className="text-[11px] font-medium truncate" style={{ color: buzz.teamColor }}>
                     {buzz.teamName}
                   </p>
                 </div>
 
                 {/* Team dot */}
                 <div
-                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  className="w-3 h-3 rounded-full shrink-0"
                   style={{ backgroundColor: buzz.teamColor }}
                 />
 
-                {/* Judging */}
+                {/* Active indicator */}
                 {isJudging && (
-                  <motion.span
-                    animate={{ opacity: [1, 0.4, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    className="text-[10px] font-semibold text-[var(--color-accent)] uppercase tracking-wider shrink-0"
-                  >
-                    Activo
-                  </motion.span>
+                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider shrink-0 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    Respondiendo
+                  </span>
                 )}
               </motion.div>
             );

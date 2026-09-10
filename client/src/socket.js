@@ -24,9 +24,10 @@ const SERVER_URL = getServerUrl();
 const socket = io(SERVER_URL, {
   autoConnect: true,
   reconnection: true,
-  reconnectionAttempts: 10,
+  reconnectionAttempts: Infinity,
   reconnectionDelay: 1000,
-  timeout: 10000,
+  reconnectionDelayMax: 5000,
+  timeout: 30000,
 });
 
 socket.on('connect', () => {
