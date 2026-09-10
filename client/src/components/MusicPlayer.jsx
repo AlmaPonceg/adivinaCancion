@@ -53,13 +53,22 @@ const MusicPlayer = forwardRef(function MusicPlayer(
       return 15;
     }
   });
+  const [durationInput, setDurationInput] = useState(() => {
+    try {
+      const saved = localStorage.getItem('trivia_play_duration');
+      return saved ? String(Math.max(1, parseInt(saved, 10))) : '15';
+    } catch {
+      return '15';
+    }
+  });
   const [startTime, setStartTime] = useState(0);
   const [playbackSeconds, setPlaybackSeconds] = useState(0);
   const [showManualInput, setShowManualInput] = useState(false);
 
-  const updateDuration = useCallback((val) => {
+  const applyDuration = useCallback((val) => {
     const parsed = Math.max(1, Math.min(120, parseInt(val, 10) || 1));
     setPlayDuration(parsed);
+    setDurationInput(String(parsed));
     try {
       localStorage.setItem('trivia_play_duration', String(parsed));
     } catch {
@@ -67,6 +76,34 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     }
     onDurationChange?.(parsed);
   }, [onDurationChange]);
+
+  const handleInputChange = (e) => {
+    // Keep only numbers and allow completely emptying the field to type new digits
+    const rawDigits = e.target.value.replace(/\D/g, '');
+    setDurationInput(rawDigits);
+    if (rawDigits !== '') {
+      const parsed = parseInt(rawDigits, 10);
+      if (parsed > 0) {
+        const clamped = Math.min(120, parsed);
+        setPlayDuration(clamped);
+        try {
+          localStorage.setItem('trivia_play_duration', String(clamped));
+        } catch {
+          /* ignore */
+        }
+        onDurationChange?.(clamped);
+      }
+    }
+  };
+
+  const handleInputBlur = () => {
+    if (!durationInput || parseInt(durationInput, 10) < 1) {
+      applyDuration(1);
+    } else {
+      const clamped = Math.min(120, parseInt(durationInput, 10));
+      applyDuration(clamped);
+    }
+  };
 
   const playerRef = useRef(null);
   const timerRef = useRef(null);
@@ -535,32 +572,35 @@ const MusicPlayer = forwardRef(function MusicPlayer(
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
               Duración:
             </span>
-            <div className="flex items-center bg-slate-900 border border-slate-700 rounded-xl p-0.5 shadow-inner">
+            <div className="flex items-center bg-slate-950 border border-slate-700/90 rounded-xl p-0.5 shadow-inner">
               <button
                 type="button"
-                onClick={() => updateDuration(playDuration - 1)}
-                className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black text-xs cursor-pointer transition-colors"
+                onClick={() => applyDuration(playDuration - 1)}
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white font-black text-xs cursor-pointer transition-all active:scale-90"
                 title="Restar 1 segundo"
                 aria-label="Restar 1 segundo"
               >
                 -
               </button>
-              <div className="flex items-center px-1">
+              <div className="flex items-center px-1.5 gap-0.5">
                 <input
-                  type="number"
-                  min="1"
-                  max="120"
-                  value={playDuration}
-                  onChange={(e) => updateDuration(e.target.value)}
-                  className="mono w-8 text-center text-xs font-black bg-transparent text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={durationInput}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  onFocus={(e) => e.target.select()}
+                  className="w-8 text-center text-xs font-black bg-transparent text-white focus:outline-none focus:ring-1 focus:ring-indigo-500/80 rounded py-0.5 tracking-tight selection:bg-indigo-600 selection:text-white"
                   title="Escribí los segundos exactos que querés"
+                  placeholder="15"
                 />
-                <span className="text-[11px] font-bold text-indigo-400 pr-0.5">s</span>
+                <span className="text-[11px] font-extrabold text-indigo-400 select-none">s</span>
               </div>
               <button
                 type="button"
-                onClick={() => updateDuration(playDuration + 1)}
-                className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black text-xs cursor-pointer transition-colors"
+                onClick={() => applyDuration(playDuration + 1)}
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white font-black text-xs cursor-pointer transition-all active:scale-90"
                 title="Sumar 1 segundo"
                 aria-label="Sumar 1 segundo"
               >
@@ -575,7 +615,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
               <button
                 key={sec}
                 type="button"
-                onClick={() => updateDuration(sec)}
+                onClick={() => applyDuration(sec)}
                 className={`mono text-[11px] font-bold px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
                   playDuration === sec
                     ? 'bg-indigo-600 text-white shadow-xs font-black'
