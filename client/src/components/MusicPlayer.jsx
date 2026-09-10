@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import socket from '../socket';
+import { useSocketEvent } from '../hooks/useSocket';
 
 function extractYoutubeId(url) {
   if (!url) return null;
@@ -22,8 +23,21 @@ function extractSpotifyEmbed(url) {
   return null;
 }
 
+// Fisher-Yates shuffle helper
+function shuffleArray(arr) {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 export default function MusicPlayer({ roomCode, playlist = [] }) {
+  const [shuffledPlaylist, setShuffledPlaylist] = useState([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [isRandomMode, setIsRandomMode] = useState(true); // Active by default
+
   const [url, setUrl] = useState('');
   const [mediaType, setMediaType] = useState(null);
   const [mediaId, setMediaId] = useState(null);
@@ -80,14 +94,17 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
     setMediaId(null);
   }, []);
 
-  // Initialize from playlist when playlist is provided
+  // Initialize and shuffle playlist in random order by default
   useEffect(() => {
     if (playlist && playlist.length > 0) {
-      const trackUrl = playlist[currentTrackIndex] || playlist[0];
-      setUrl(trackUrl);
-      loadMedia(trackUrl);
+      const ordered = isRandomMode ? shuffleArray(playlist) : [...playlist];
+      setShuffledPlaylist(ordered);
+      setCurrentTrackIndex(0);
+      const initialTrack = ordered[0];
+      setUrl(initialTrack);
+      loadMedia(initialTrack);
     }
-  }, [playlist, currentTrackIndex, loadMedia]);
+  }, [playlist, isRandomMode, loadMedia]);
 
   const initYoutubePlayer = useCallback((videoId) => {
     const checkAndInit = () => {
@@ -118,22 +135,34 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
     checkAndInit();
   }, [startTime]);
 
+  const activeQueue = shuffledPlaylist.length > 0 ? shuffledPlaylist : playlist;
+
   const handleNextTrack = () => {
-    if (!playlist || playlist.length === 0) return;
-    const nextIdx = (currentTrackIndex + 1) % playlist.length;
+    if (!activeQueue || activeQueue.length === 0) return;
+    const nextIdx = (currentTrackIndex + 1) % activeQueue.length;
     setCurrentTrackIndex(nextIdx);
-    const nextUrl = playlist[nextIdx];
+    const nextUrl = activeQueue[nextIdx];
     setUrl(nextUrl);
     loadMedia(nextUrl);
   };
 
   const handlePrevTrack = () => {
-    if (!playlist || playlist.length === 0) return;
-    const prevIdx = currentTrackIndex === 0 ? playlist.length - 1 : currentTrackIndex - 1;
+    if (!activeQueue || activeQueue.length === 0) return;
+    const prevIdx = currentTrackIndex === 0 ? activeQueue.length - 1 : currentTrackIndex - 1;
     setCurrentTrackIndex(prevIdx);
-    const prevUrl = playlist[prevIdx];
+    const prevUrl = activeQueue[prevIdx];
     setUrl(prevUrl);
     loadMedia(prevUrl);
+  };
+
+  const handleReshuffle = () => {
+    if (!playlist || playlist.length === 0) return;
+    const randomized = shuffleArray(playlist);
+    setShuffledPlaylist(randomized);
+    setCurrentTrackIndex(0);
+    const nextUrl = randomized[0];
+    setUrl(nextUrl);
+    loadMedia(nextUrl);
   };
 
   const handlePlay = useCallback(() => {
@@ -150,8 +179,7 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
         }, playDuration * 1000);
       } catch (e) { console.error('Play error:', e); }
     }
-    socket.emit('music-control', { roomCode, action: 'play', data: { duration: playDuration, startTime } });
-  }, [mediaType, playDuration, startTime, roomCode]);
+  }, [mediaType, playDuration, startTime]);
 
   const handlePause = useCallback(() => {
     if (mediaType === 'youtube' && ytPlayerRef.current) {
@@ -159,8 +187,7 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
     }
     if (timerRef.current) clearTimeout(timerRef.current);
     setIsPlaying(false);
-    socket.emit('music-control', { roomCode, action: 'pause' });
-  }, [mediaType, roomCode]);
+  }, [mediaType]);
 
   const handleStop = useCallback(() => {
     if (mediaType === 'youtube' && ytPlayerRef.current) {
@@ -168,8 +195,12 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
     }
     if (timerRef.current) clearTimeout(timerRef.current);
     setIsPlaying(false);
-    socket.emit('music-control', { roomCode, action: 'stop' });
-  }, [mediaType, roomCode]);
+  }, [mediaType]);
+
+  // AUTOMATIC PAUSE ON BUZZ: When any player buzzes, pause the music instantly!
+  useSocketEvent('first-buzz', () => {
+    handlePause();
+  });
 
   useEffect(() => {
     return () => {
@@ -178,7 +209,7 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
     };
   }, []);
 
-  const hasPlaylist = playlist && playlist.length > 0;
+  const hasPlaylist = activeQueue && activeQueue.length > 0;
 
   return (
     <motion.div
@@ -186,32 +217,55 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
       animate={{ opacity: 1, y: 0 }}
       className="nm-flat p-5 sm:p-6 rounded-2xl"
     >
-      {/* Header bar: Track counter or manual toggle */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Header bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div>
-          <span className="label">Reproductor de Música</span>
+          <div className="flex items-center gap-2">
+            <span className="label">Reproductor Host (Parlante Bluetooth)</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+              🔊 Solo suena en esta PC
+            </span>
+          </div>
+
           {hasPlaylist && (
-            <div className="flex items-center gap-2 mt-1">
-              <span className="mono text-xs font-bold text-[var(--color-accent)] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                Canción {currentTrackIndex + 1} de {playlist.length}
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="mono text-xs font-bold text-[var(--color-accent)] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+                Pista {currentTrackIndex + 1} de {activeQueue.length}
               </span>
+              {isRandomMode && (
+                <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200 flex items-center gap-1">
+                  🔀 Orden Aleatorio
+                </span>
+              )}
             </div>
           )}
         </div>
 
-        <button
-          onClick={() => setShowManualInput(!showManualInput)}
-          className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] cursor-pointer"
-        >
-          {showManualInput ? 'Ocultar URL manual' : 'Cargar URL manual'}
-        </button>
+        <div className="flex items-center gap-2">
+          {hasPlaylist && (
+            <button
+              onClick={handleReshuffle}
+              className="nm-btn text-xs font-bold px-2.5 py-1.5 rounded-lg text-purple-700 hover:text-purple-900 flex items-center gap-1"
+              title="Volver a mezclar el orden de las canciones aleatoriamente"
+            >
+              <span>🔀</span> Mezclar
+            </button>
+          )}
+
+          <button
+            onClick={() => setShowManualInput(!showManualInput)}
+            className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] cursor-pointer"
+          >
+            {showManualInput ? 'Ocultar URL manual' : 'URL manual'}
+          </button>
+        </div>
       </div>
 
-      {/* Playlist Queue Controller (Requirement 2) */}
+      {/* Playlist Queue Controller with Random Order */}
       {hasPlaylist && (
-        <div className="nm-inset p-3 rounded-xl mb-4 flex items-center justify-between gap-2">
+        <div className="nm-inset p-3.5 rounded-xl mb-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
             <span className="mono text-xs text-[var(--color-text-secondary)] truncate">
               {url || 'Cargando pista...'}
             </span>
@@ -230,10 +284,10 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
 
             <button
               onClick={handleNextTrack}
-              className="nm-btn-primary px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm"
-              title="Avanzar a la siguiente canción de la lista"
+              className="nm-btn-primary px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm"
+              title="Avanzar a la siguiente canción aleatoria"
             >
-              <span>Siguiente Canción</span>
+              <span>Siguiente Canción 🔀</span>
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
               </svg>
@@ -294,9 +348,13 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
           />
           <span className="text-[11px] text-[var(--color-text-muted)]">seg</span>
         </div>
+
+        <span className="text-[11px] text-[var(--color-text-muted)] ml-auto italic">
+          * Al pulsar el buzzer, la música se frena automáticamente
+        </span>
       </div>
 
-      {/* Video Container (embedded with sunken well) */}
+      {/* Video Container */}
       {mediaType === 'youtube' && (
         <div className="nm-inset p-2 rounded-xl overflow-hidden mb-4">
           <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
@@ -341,7 +399,7 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
             {isPlaying ? (
               <>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                <span>Reproduciendo ({playDuration}s)</span>
+                <span>Sonando ({playDuration}s)...</span>
               </>
             ) : (
               <>
@@ -372,7 +430,7 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6 6h12v12H6z" />
             </svg>
-            Detener
+            Stop
           </button>
         </div>
       )}
@@ -382,8 +440,8 @@ export default function MusicPlayer({ roomCode, playlist = [] }) {
         <div className="nm-inset p-8 rounded-xl text-center">
           <p className="text-xs text-[var(--color-text-muted)]">
             {hasPlaylist
-              ? 'Tocá "Siguiente Canción" para cargar una pista de la lista.'
-              : 'Prepará la lista de canciones en el Lobby o pegá una URL arriba.'}
+              ? 'Tocá "Siguiente Canción 🔀" para cargar la primera pista aleatoria.'
+              : 'Cargá las URLs en el Lobby antes de comenzar para reproducirlas aleatoriamente.'}
           </p>
         </div>
       )}
