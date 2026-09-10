@@ -693,7 +693,7 @@ export default function HostLobby() {
                   <>
                     <button
                       onClick={handleShuffle}
-                      className="nm-btn flex-1 py-3.5 rounded-2xl text-xs font-bold text-slate-700 flex items-center justify-center gap-2 cursor-pointer"
+                      className="nm-btn py-3.5 px-4 rounded-2xl text-xs font-bold text-slate-700 flex items-center justify-center gap-2 cursor-pointer shrink-0"
                     >
                       <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -701,12 +701,30 @@ export default function HostLobby() {
                       Volver a sortear
                     </button>
 
-                    <button
-                      onClick={handleStartGame}
-                      className="nm-btn-primary flex-1 py-3.5 rounded-2xl text-sm font-black flex items-center justify-center gap-1.5 shadow-md"
-                    >
-                      Iniciar Partida →
-                    </button>
+                    {teams && teams.length > 0 && teams.every((t) => t.isReady) ? (
+                      <button
+                        onClick={handleStartGame}
+                        className="nm-btn-primary flex-1 py-3.5 rounded-2xl text-sm font-black flex items-center justify-center gap-1.5 shadow-md animate-pulse cursor-pointer"
+                      >
+                        Iniciar Partida →
+                      </button>
+                    ) : (
+                      <div className="flex-1 py-2 px-3.5 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-2 text-amber-900">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
+                          <p className="text-xs font-bold leading-tight truncate">
+                            Esperando confirmación ({teams ? teams.filter((t) => t.isReady).length : 0} de {teams ? teams.length : 0} listos)
+                          </p>
+                        </div>
+                        <button
+                          onClick={handleStartGame}
+                          className="text-[11px] font-black underline text-amber-800 hover:text-amber-950 shrink-0 cursor-pointer"
+                          title="Iniciar de todos modos si algún integrante no puede tocar el celular"
+                        >
+                          Forzar inicio
+                        </button>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

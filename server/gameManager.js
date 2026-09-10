@@ -288,6 +288,7 @@ class GameManager {
         bg: TEAM_COLORS[t].bg,
         score: 0,
         players: [],
+        isReady: false,
       });
     }
 
@@ -340,6 +341,55 @@ class GameManager {
     });
 
     return { success: true, teams: room.teams, player };
+  }
+
+  renameTeam(roomCode, teamIndex, newName) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return { error: 'Sala no encontrada' };
+
+    const idx = Number(teamIndex);
+    if (isNaN(idx) || idx < 0 || !room.teams || idx >= room.teams.length) {
+      return { error: 'Equipo no encontrado' };
+    }
+
+    const trimmed = String(newName || '').trim();
+    if (!trimmed) return { error: 'El nombre no puede estar vacío' };
+
+    room.teams[idx].name = trimmed;
+    const allTeamsReady = room.teams.length > 0 && room.teams.every(t => t.isReady);
+    return { success: true, teams: room.teams, allTeamsReady };
+  }
+
+  setTeamReady(roomCode, teamIndex, isReady = true) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return { error: 'Sala no encontrada' };
+
+    const idx = Number(teamIndex);
+    if (isNaN(idx) || idx < 0 || !room.teams || idx >= room.teams.length) {
+      return { error: 'Equipo no encontrado' };
+    }
+
+    room.teams[idx].isReady = !!isReady;
+    const allTeamsReady = room.teams.length > 0 && room.teams.every(t => t.isReady);
+    return { success: true, teams: room.teams, allTeamsReady, teamIndex: idx };
+  }
+
+  setPlayerTeamReady(roomCode, playerIdOrSocketId, isReady = true) {
+    const room = this.rooms.get(roomCode);
+    if (!room || !room.teams) return { error: 'Sala no encontrada' };
+
+    let player = room.players.get(playerIdOrSocketId);
+    if (!player) {
+      const pid = room.socketToPlayerId.get(playerIdOrSocketId);
+      if (pid) player = room.players.get(pid);
+    }
+    if (!player || player.teamIndex < 0 || !room.teams[player.teamIndex]) {
+      return { error: 'Jugador no tiene equipo asignado' };
+    }
+
+    room.teams[player.teamIndex].isReady = !!isReady;
+    const allTeamsReady = room.teams.length > 0 && room.teams.every(t => t.isReady);
+    return { success: true, teamIndex: player.teamIndex, teams: room.teams, allTeamsReady };
   }
 
   // ── Round Management ─────────────────────────────────────────
@@ -552,6 +602,8 @@ class GameManager {
     const room = this.rooms.get(roomCode);
     if (!room) return null;
 
+    const allTeamsReady = room.teams.length > 0 && room.teams.every(t => t.isReady);
+
     return {
       code: room.code,
       state: room.state,
@@ -562,7 +614,9 @@ class GameManager {
         bg: t.bg,
         score: t.score,
         players: t.players,
+        isReady: !!t.isReady,
       })),
+      allTeamsReady,
       buzzQueue: room.buzzQueue,
       currentJudging: room.currentJudging,
       blockedTeams: Array.from(room.blockedTeams),
@@ -586,6 +640,7 @@ class GameManager {
     const hasBuzzed = room.buzzQueue.some(b => b.playerId === player.id);
     const isTeamBlocked = room.blockedTeams.has(player.teamIndex);
     const isPlayerBlocked = room.blockedPlayers.has(player.id);
+    const allTeamsReady = room.teams.length > 0 && room.teams.every(t => t.isReady);
 
     return {
       id: player.id,
@@ -594,6 +649,8 @@ class GameManager {
       teamName: team?.name || null,
       teamColor: team?.color || null,
       teamBg: team?.bg || null,
+      isTeamReady: team ? !!team.isReady : false,
+      allTeamsReady,
       gameState: room.state,
       canBuzz: room.state === GAME_STATES.ROUND_ACTIVE && !hasBuzzed && !isTeamBlocked && !isPlayerBlocked,
       hasBuzzed,
@@ -607,6 +664,7 @@ class GameManager {
         color: t.color,
         bg: t.bg,
         score: t.score,
+        isReady: !!t.isReady,
         players: t.players.map(p => ({ name: p.name, id: p.id, isManual: !!p.isManual })),
       })),
     };

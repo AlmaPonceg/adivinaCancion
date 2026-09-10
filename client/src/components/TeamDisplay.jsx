@@ -93,15 +93,31 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam }) {
                 )}
               </div>
 
-              <span
-                className={`mono text-xs font-bold px-2.5 py-0.5 rounded-full border shrink-0 ${
-                  team.players.length >= 4
-                    ? 'bg-amber-50 text-amber-800 border-amber-200'
-                    : 'bg-slate-50 text-slate-600 border-slate-200'
-                }`}
-              >
-                {team.players.length}/4 integrantes
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                {team.isReady ? (
+                  <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 shadow-2xs">
+                    <svg className="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    ¡Listo!
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                    Esperando listo
+                  </span>
+                )}
+
+                <span
+                  className={`mono text-xs font-bold px-2.5 py-0.5 rounded-full border shrink-0 ${
+                    team.players.length >= 4
+                      ? 'bg-amber-50 text-amber-800 border-amber-200'
+                      : 'bg-slate-50 text-slate-600 border-slate-200'
+                  }`}
+                >
+                  {team.players.length}/4
+                </span>
+              </div>
             </div>
 
             {/* Players list */}

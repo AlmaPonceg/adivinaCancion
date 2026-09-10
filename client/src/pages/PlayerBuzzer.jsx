@@ -60,6 +60,48 @@ export default function PlayerBuzzer() {
   const [showTeamsModal, setShowTeamsModal] = useState(false);
   const [roundNotification, setRoundNotification] = useState(null);
 
+  // ── Team Setup & Readiness State (Phone) ───────────────────
+  const [isEditingTeamName, setIsEditingTeamName] = useState(false);
+  const [customTeamName, setCustomTeamName] = useState('');
+
+  const myTeam =
+    playerState.teams && playerState.teamIndex >= 0
+      ? playerState.teams[playerState.teamIndex]
+      : playerState.teams?.find((t) =>
+          t.players?.some(
+            (p) => p.id === playerId || (p.name && p.name.toLowerCase() === playerName.toLowerCase())
+          )
+        );
+
+  const handleSaveTeamName = () => {
+    if (!customTeamName.trim()) return;
+    const teamIdx =
+      playerState.teamIndex >= 0
+        ? playerState.teamIndex
+        : playerState.teams?.indexOf(myTeam);
+    socket.emit('rename-team', {
+      roomCode,
+      teamIndex: teamIdx,
+      newName: customTeamName.trim(),
+      playerId,
+    });
+    setIsEditingTeamName(false);
+  };
+
+  const handleToggleReady = () => {
+    const nextReady = !myTeam?.isReady;
+    const teamIdx =
+      playerState.teamIndex >= 0
+        ? playerState.teamIndex
+        : playerState.teams?.indexOf(myTeam);
+    socket.emit('team-ready', {
+      roomCode,
+      teamIndex: teamIdx,
+      isReady: nextReady,
+      playerId,
+    });
+  };
+
   // ── Sync & Reconnection on Unlock / Visibility Change ──────
   useEffect(() => {
     if (!roomCode || !playerId) {
@@ -201,8 +243,9 @@ export default function PlayerBuzzer() {
         let teamName = prev.teamName;
         let teamColor = prev.teamColor;
         let teamBg = prev.teamBg;
+        let teamIndex = prev.teamIndex;
 
-        for (const t of data.teams) {
+        data.teams.forEach((t, idx) => {
           const found = t.players?.find(
             (p) => p.id === playerId || (p.name && p.name.toLowerCase() === playerName.toLowerCase())
           );
@@ -210,9 +253,9 @@ export default function PlayerBuzzer() {
             teamName = t.name;
             teamColor = t.color;
             teamBg = t.bg;
-            break;
+            teamIndex = idx;
           }
-        }
+        });
 
         const updated = {
           ...prev,
@@ -220,6 +263,7 @@ export default function PlayerBuzzer() {
           teamName,
           teamColor,
           teamBg,
+          teamIndex,
         };
         setStatusMessage(computeStatusMessage(updated));
         return updated;
@@ -406,61 +450,214 @@ export default function PlayerBuzzer() {
         </AnimatePresence>
       </div>
 
-      {/* ── MIDDLE: Player info & Circular Arcade Buzzer ── */}
-      <div className="flex flex-col items-center justify-center my-auto py-2">
-        {/* Player Name and Team Pill */}
-        <div className="text-center mb-5">
-          <div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black mb-1.5 shadow-2xs border bg-white"
-            style={{
-              borderColor: `${playerState.teamColor}40`,
-              color: playerState.teamColor || '#4F46E5',
-            }}
-          >
-            <div
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ backgroundColor: playerState.teamColor || '#4F46E5' }}
-            />
-            {playerState.teamName ? playerState.teamName : 'Sin equipo asignado'}
+      {/* ── MIDDLE: Player info & Circular Arcade Buzzer OR Team Setup Card ── */}
+      {playerState.gameState === 'TEAMS_ASSIGNED' ? (
+        playerState.teamName ? (
+          <div className="flex flex-col items-center justify-center my-auto py-2 w-full max-w-sm mx-auto">
+            {/* Team Confirmation & Setup Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full bg-white rounded-3xl p-6 shadow-md border-2 relative overflow-hidden"
+              style={{ borderColor: playerState.teamColor || '#4F46E5' }}
+            >
+              <div className="text-center mb-4">
+                <span
+                  className="text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full text-white shadow-xs inline-block mb-2"
+                  style={{ backgroundColor: playerState.teamColor || '#4F46E5' }}
+                >
+                  ¡Equipos Sorteados!
+                </span>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+                  Te tocó jugar en:
+                </p>
+              </div>
+
+              {/* Editable Team Name */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-4 text-center">
+                {isEditingTeamName ? (
+                  <div className="space-y-2.5">
+                    <p className="text-xs font-bold text-slate-600">Nuevo nombre del equipo:</p>
+                    <input
+                      type="text"
+                      value={customTeamName}
+                      onChange={(e) => setCustomTeamName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSaveTeamName()}
+                      maxLength={25}
+                      autoFocus
+                      placeholder="Ej. Los Cumpleañeros"
+                      className="w-full px-3 py-2 text-sm font-black rounded-xl border-2 border-indigo-400 text-center bg-white"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setIsEditingTeamName(false)}
+                        className="flex-1 py-2 text-xs font-bold text-slate-500 hover:text-slate-800"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleSaveTeamName}
+                        className="flex-1 py-2 text-xs font-black bg-indigo-600 text-white rounded-xl shadow-xs"
+                      >
+                        Guardar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <h3
+                      className="text-2xl font-black mb-1.5 break-words"
+                      style={{ color: playerState.teamColor || '#4F46E5' }}
+                    >
+                      {myTeam?.name || playerState.teamName}
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setCustomTeamName(myTeam?.name || playerState.teamName);
+                        setIsEditingTeamName(true);
+                      }}
+                      className="text-xs font-bold text-indigo-600 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      Cambiar nombre del equipo
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Teammates */}
+              <div className="mb-5">
+                <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2 text-center">
+                  Integrantes ({myTeam?.players?.length || 1}/4):
+                </p>
+                <div className="flex flex-wrap justify-center gap-1.5">
+                  {myTeam?.players?.map((p) => {
+                    const pName = p.name || p;
+                    const isMe = pName.toLowerCase() === playerName.toLowerCase();
+                    return (
+                      <span
+                        key={p.id || pName}
+                        className={`text-xs px-3 py-1 rounded-full font-bold shadow-2xs ${
+                          isMe
+                            ? 'bg-slate-900 text-white font-black'
+                            : 'bg-white border border-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {pName} {isMe ? '(Vos)' : ''}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Ready Button */}
+              {myTeam?.isReady ? (
+                <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-500 text-center">
+                  <div className="flex items-center justify-center gap-2 text-emerald-800 font-black text-sm mb-1">
+                    <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    ¡Tu equipo está LISTO!
+                  </div>
+                  <p className="text-xs text-emerald-700 font-medium">
+                    Esperando que los demás equipos confirmen para que el anfitrión inicie la partida...
+                  </p>
+                  <button
+                    onClick={handleToggleReady}
+                    className="text-[11px] font-bold text-slate-500 hover:text-slate-800 underline mt-2.5 cursor-pointer block mx-auto"
+                  >
+                    Desmarcar o cambiar nombre
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <button
+                    onClick={handleToggleReady}
+                    className="w-full py-4 px-6 rounded-2xl font-black text-base bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    ¡Estamos Listos!
+                  </button>
+                  <p className="text-[11px] text-slate-500 text-center mt-2 font-medium">
+                    Con que 1 integrante toque este botón, tu equipo ya queda confirmado para el host.
+                  </p>
+                </div>
+              )}
+            </motion.div>
           </div>
-          <h2 className="text-2xl font-black text-slate-900">{playerName}</h2>
-        </div>
-
-        {/* 3D Arcade Buzzer */}
-        <BuzzerButton
-          onBuzz={handleBuzz}
-          canBuzz={playerState.canBuzz}
-          hasBuzzed={playerState.hasBuzzed}
-          isBlocked={playerState.isTeamBlocked || playerState.isPlayerBlocked}
-          teamColor={playerState.teamColor}
-          isMyTurn={playerState.isMyTurn}
-        />
-
-        {/* Status Text & Position */}
-        <motion.div
-          key={statusMessage}
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-6 text-center px-4 max-w-xs"
-        >
-          <p
-            className={`text-base font-black leading-snug tracking-tight ${
-              playerState.canBuzz
-                ? 'text-indigo-600 animate-pulse'
-                : playerState.isMyTurn
-                ? 'text-emerald-600'
-                : 'text-slate-700'
-            }`}
-          >
-            {statusMessage}
-          </p>
-          {buzzPosition && (
-            <p className="mono text-slate-500 text-xs mt-1 font-bold">
-              Puesto en la cola: #{buzzPosition}
+        ) : (
+          <div className="text-center my-auto p-6 max-w-sm mx-auto">
+            <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-3 text-indigo-600">
+              <svg className="w-6 h-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-black text-slate-900 mb-1">¡Estás conectado!</h2>
+            <p className="text-xs text-slate-500 font-medium">
+              Esperando que el anfitrión sortee los equipos en la pantalla principal para asignarte...
             </p>
-          )}
-        </motion.div>
-      </div>
+          </div>
+        )
+      ) : (
+        <div className="flex flex-col items-center justify-center my-auto py-2">
+          {/* Player Name and Team Pill */}
+          <div className="text-center mb-5">
+            <div
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black mb-1.5 shadow-2xs border bg-white"
+              style={{
+                borderColor: `${playerState.teamColor}40`,
+                color: playerState.teamColor || '#4F46E5',
+              }}
+            >
+              <div
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ backgroundColor: playerState.teamColor || '#4F46E5' }}
+              />
+              {playerState.teamName ? playerState.teamName : 'Sin equipo asignado'}
+            </div>
+            <h2 className="text-2xl font-black text-slate-900">{playerName}</h2>
+          </div>
+
+          {/* 3D Arcade Buzzer */}
+          <BuzzerButton
+            onBuzz={handleBuzz}
+            canBuzz={playerState.canBuzz}
+            hasBuzzed={playerState.hasBuzzed}
+            isBlocked={playerState.isTeamBlocked || playerState.isPlayerBlocked}
+            teamColor={playerState.teamColor}
+            isMyTurn={playerState.isMyTurn}
+          />
+
+          {/* Status Text & Position */}
+          <motion.div
+            key={statusMessage}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 text-center px-4 max-w-xs"
+          >
+            <p
+              className={`text-base font-black leading-snug tracking-tight ${
+                playerState.canBuzz
+                  ? 'text-indigo-600 animate-pulse'
+                  : playerState.isMyTurn
+                  ? 'text-emerald-600'
+                  : 'text-slate-700'
+              }`}
+            >
+              {statusMessage}
+            </p>
+            {buzzPosition && (
+              <p className="mono text-slate-500 text-xs mt-1 font-bold">
+                Puesto en la cola: #{buzzPosition}
+              </p>
+            )}
+          </motion.div>
+        </div>
+      )}
 
       {/* ── FOOTER ── */}
       <div className="text-center pb-2">

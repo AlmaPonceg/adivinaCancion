@@ -242,20 +242,59 @@ io.on('connection', (socket) => {
     callback?.({ success: true, teams: roomState.teams });
   });
 
-  // ── HOST: Rename Team ───────────────────────────────────────
-
-  socket.on('rename-team', ({ roomCode, teamIndex, newName }, callback) => {
+  // ── HOST & PLAYER: Rename Team ─────────────────────────────
+  socket.on('rename-team', ({ roomCode, teamIndex, newName, playerId }, callback) => {
     const code = String(roomCode).trim();
-    const result = gm.renameTeam(code, teamIndex, newName);
+    let idx = teamIndex;
+    if (idx === undefined || idx === null) {
+      const room = gm.getRoom(code);
+      if (room) {
+        const pid = playerId || room.socketToPlayerId.get(socket.id);
+        const p = pid ? room.players.get(pid) : null;
+        if (p) idx = p.teamIndex;
+      }
+    }
+
+    const result = gm.renameTeam(code, idx, newName);
     if (result.error) {
       return callback?.({ error: result.error });
     }
 
-    io.to(code).emit('teams-assigned', { teams: result.teams });
+    const roomState = gm.getRoomState(code);
+    io.to(code).emit('teams-assigned', {
+      teams: roomState.teams,
+      allTeamsReady: roomState.allTeamsReady,
+    });
     broadcastPlayerStates(code);
 
-    console.log(`[Teams] Team ${teamIndex} renamed to "${newName}" in room ${code}`);
-    callback?.({ success: true, teams: result.teams });
+    console.log(`[Teams] Team ${idx} renamed to "${newName}" in room ${code}`);
+    callback?.({ success: true, teams: roomState.teams, allTeamsReady: roomState.allTeamsReady });
+  });
+
+  // ── PLAYER & HOST: Set Team Ready ───────────────────────────
+  socket.on('team-ready', ({ roomCode, teamIndex, isReady, playerId }, callback) => {
+    const code = String(roomCode).trim();
+    let result;
+    if (teamIndex !== undefined && teamIndex !== null) {
+      result = gm.setTeamReady(code, teamIndex, isReady !== false);
+    } else {
+      const pid = playerId || socket.id;
+      result = gm.setPlayerTeamReady(code, pid, isReady !== false);
+    }
+
+    if (result.error) {
+      return callback?.({ error: result.error });
+    }
+
+    const roomState = gm.getRoomState(code);
+    io.to(code).emit('teams-assigned', {
+      teams: roomState.teams,
+      allTeamsReady: roomState.allTeamsReady,
+    });
+    broadcastPlayerStates(code);
+
+    console.log(`[Ready] Team ready toggled in room ${code}. All ready: ${roomState.allTeamsReady}`);
+    callback?.({ success: true, teams: roomState.teams, allTeamsReady: roomState.allTeamsReady });
   });
 
   // ── HOST: Shuffle Teams (Max 4 players per team rule) ───────
@@ -267,7 +306,10 @@ io.on('connection', (socket) => {
     }
 
     const roomState = gm.getRoomState(roomCode);
-    io.to(roomCode).emit('teams-assigned', { teams: roomState.teams });
+    io.to(roomCode).emit('teams-assigned', {
+      teams: roomState.teams,
+      allTeamsReady: roomState.allTeamsReady,
+    });
 
     // Send individual team assignment to each player
     const room = gm.getRoom(roomCode);
