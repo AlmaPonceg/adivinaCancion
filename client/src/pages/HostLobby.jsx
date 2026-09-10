@@ -32,33 +32,52 @@ export default function HostLobby() {
   const [manualError, setManualError] = useState('');
 
   // ── URL & Sharing State ─────────────────────────────────────
+  // Default to Render URL so QR codes and WhatsApp links NEVER contain localhost or local ports
+  const DEFAULT_RENDER_URL = 'https://adivina-cancion.onrender.com';
+
   const [baseUrl, setBaseUrl] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('trivia_base_url');
       if (saved) return saved;
-      return window.location.origin;
+
+      const hostname = window.location.hostname;
+      const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+      if (!isLocal) {
+        return window.location.origin;
+      }
+      return DEFAULT_RENDER_URL;
     }
-    return '';
+    return DEFAULT_RENDER_URL;
   });
   const [isEditingUrl, setIsEditingUrl] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // Fetch local IP from backend if running on localhost
+  // Sync baseUrl with backend config / Render detection
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('trivia_base_url');
-      if (!saved) {
-        fetch('/api/config')
-          .then((res) => res.json())
-          .then((data) => {
-            if (data?.localIp && data.localIp !== 'localhost') {
-              const detected = `http://${data.localIp}:${window.location.port || 5173}`;
-              setBaseUrl(detected);
-            }
-          })
-          .catch(() => {});
-      }
+      const hostname = window.location.hostname;
+      const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+
+      fetch('/api/config')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.publicUrl) {
+            setBaseUrl(data.publicUrl);
+            return;
+          }
+          if (!isLocal) {
+            setBaseUrl(window.location.origin);
+            return;
+          }
+          const saved = localStorage.getItem('trivia_base_url');
+          if (saved) {
+            setBaseUrl(saved);
+          } else {
+            setBaseUrl(DEFAULT_RENDER_URL);
+          }
+        })
+        .catch(() => {});
     }
   }, []);
 
@@ -234,10 +253,14 @@ export default function HostLobby() {
       if (!formatted.startsWith('http://') && !formatted.startsWith('https://')) {
         formatted = `https://${formatted}`;
       }
+      formatted = formatted.replace(/\/+$/, '');
       setBaseUrl(formatted);
       localStorage.setItem('trivia_base_url', formatted);
     } else {
-      const fallback = window.location.origin;
+      const fallback =
+        window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+          ? DEFAULT_RENDER_URL
+          : window.location.origin;
       setBaseUrl(fallback);
       localStorage.removeItem('trivia_base_url');
     }
@@ -360,45 +383,73 @@ export default function HostLobby() {
                   </div>
 
                   {/* URL Config */}
-                  <div className="w-full">
-                    {!isEditingUrl ? (
-                      <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
-                        <span className="mono truncate max-w-[240px]">{joinUrl}</span>
-                        <button
-                          onClick={() => {
-                            setUrlInput(baseUrl);
-                            setIsEditingUrl(true);
-                          }}
-                          className="text-indigo-600 font-bold hover:underline cursor-pointer ml-1"
-                        >
-                          (cambiar)
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="nm-inset p-3 rounded-xl text-left space-y-2 bg-slate-50">
-                        <span className="text-[11px] font-bold text-slate-600">URL del servidor / deploy:</span>
+                  <div className="w-full mt-1 pt-3 border-t border-slate-100 text-left">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+                        Destino del QR y WhatsApp:
+                      </span>
+                      <button
+                        onClick={() => {
+                          setUrlInput(baseUrl);
+                          setIsEditingUrl(!isEditingUrl);
+                        }}
+                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
+                      >
+                        {isEditingUrl ? 'Cerrar' : 'Editar link'}
+                      </button>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 truncate mb-1">
+                      {joinUrl}
+                    </div>
+
+                    <p className="text-[11px] text-slate-400 font-medium">
+                      📱 Apunta a Render para que los celulares se unan desde cualquier red sin puertos.
+                    </p>
+
+                    {isEditingUrl && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200 mt-2 space-y-2.5"
+                      >
+                        <p className="text-xs font-bold text-indigo-900">
+                          Personalizar URL de Render:
+                        </p>
                         <input
                           type="text"
                           value={urlInput}
                           onChange={(e) => setUrlInput(e.target.value)}
                           placeholder="https://tu-app.onrender.com"
-                          className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300"
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-indigo-200 bg-white font-mono"
                         />
-                        <div className="flex justify-end gap-2 pt-1">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-1">
                           <button
-                            onClick={() => setIsEditingUrl(false)}
-                            className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1 font-semibold"
+                            onClick={() => {
+                              setBaseUrl(DEFAULT_RENDER_URL);
+                              localStorage.setItem('trivia_base_url', DEFAULT_RENDER_URL);
+                              setIsEditingUrl(false);
+                            }}
+                            className="text-xs text-indigo-700 hover:underline font-bold cursor-pointer"
                           >
-                            Cancelar
+                            Restablecer Render oficial
                           </button>
-                          <button
-                            onClick={handleSaveCustomUrl}
-                            className="nm-btn-primary px-3 py-1.5 text-xs font-bold"
-                          >
-                            Guardar
-                          </button>
+                          <div className="flex gap-2 self-end sm:self-auto">
+                            <button
+                              onClick={() => setIsEditingUrl(false)}
+                              className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1 font-semibold"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              onClick={handleSaveCustomUrl}
+                              className="nm-btn-primary px-3.5 py-1.5 text-xs font-bold"
+                            >
+                              Guardar
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                      </motion.div>
                     )}
                   </div>
                 </>

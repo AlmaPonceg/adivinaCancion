@@ -54,11 +54,13 @@ app.get('/api/health', (req, res) => {
 // Config & network info endpoint
 app.get('/api/config', (req, res) => {
   const localIp = getLocalIp();
+  const publicUrl = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL || null;
   res.json({
     status: 'ok',
     localIp,
     port: process.env.PORT || 3001,
-    publicUrl: process.env.PUBLIC_URL || null,
+    publicUrl,
+    isProduction: process.env.NODE_ENV === 'production',
   });
 });
 
