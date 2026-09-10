@@ -32,6 +32,14 @@ export default function HostGame() {
   const [currentJudging, setCurrentJudging] = useState(null);
   const [lastResult, setLastResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
+  const [musicDuration, setMusicDuration] = useState(() => {
+    try {
+      const saved = localStorage.getItem('trivia_play_duration');
+      return saved ? Math.max(1, parseInt(saved, 10)) : 15;
+    } catch {
+      return 15;
+    }
+  });
   const musicPlayerRef = useRef(null);
 
   useEffect(() => {
@@ -206,6 +214,7 @@ export default function HostGame() {
             roomCode={roomCode}
             playlist={playlist}
             gameState={gameState}
+            onDurationChange={setMusicDuration}
           />
         </div>
 
@@ -301,7 +310,7 @@ export default function HostGame() {
                     <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    Repetir Audio (15s)
+                    Repetir Audio ({musicDuration}s)
                   </button>
 
                   <button

@@ -34,7 +34,7 @@ function shuffleArray(arr) {
 }
 
 const MusicPlayer = forwardRef(function MusicPlayer(
-  { roomCode, playlist = [], gameState },
+  { roomCode, playlist = [], gameState, onDurationChange },
   ref
 ) {
   const [shuffledPlaylist, setShuffledPlaylist] = useState([]);
@@ -45,10 +45,28 @@ const MusicPlayer = forwardRef(function MusicPlayer(
   const [mediaType, setMediaType] = useState(null);
   const [mediaId, setMediaId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playDuration, setPlayDuration] = useState(15);
+  const [playDuration, setPlayDuration] = useState(() => {
+    try {
+      const saved = localStorage.getItem('trivia_play_duration');
+      return saved ? Math.max(1, parseInt(saved, 10)) : 15;
+    } catch {
+      return 15;
+    }
+  });
   const [startTime, setStartTime] = useState(0);
   const [playbackSeconds, setPlaybackSeconds] = useState(0);
   const [showManualInput, setShowManualInput] = useState(false);
+
+  const updateDuration = useCallback((val) => {
+    const parsed = Math.max(1, Math.min(120, parseInt(val, 10) || 1));
+    setPlayDuration(parsed);
+    try {
+      localStorage.setItem('trivia_play_duration', String(parsed));
+    } catch {
+      /* ignore */
+    }
+    onDurationChange?.(parsed);
+  }, [onDurationChange]);
 
   const playerRef = useRef(null);
   const timerRef = useRef(null);
@@ -511,21 +529,59 @@ const MusicPlayer = forwardRef(function MusicPlayer(
 
       {/* Audio Deck Bottom Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2 relative z-10 border-t border-slate-800/80">
-        {/* Duration pills */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Clip:
-          </span>
-          <div className="flex gap-1">
-            {[10, 15, 30].map((sec) => (
+        {/* Custom Duration Controller */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+              Duración:
+            </span>
+            <div className="flex items-center bg-slate-900 border border-slate-700 rounded-xl p-0.5 shadow-inner">
+              <button
+                type="button"
+                onClick={() => updateDuration(playDuration - 1)}
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black text-xs cursor-pointer transition-colors"
+                title="Restar 1 segundo"
+                aria-label="Restar 1 segundo"
+              >
+                -
+              </button>
+              <div className="flex items-center px-1">
+                <input
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={playDuration}
+                  onChange={(e) => updateDuration(e.target.value)}
+                  className="mono w-8 text-center text-xs font-black bg-transparent text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  title="Escribí los segundos exactos que querés"
+                />
+                <span className="text-[11px] font-bold text-indigo-400 pr-0.5">s</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => updateDuration(playDuration + 1)}
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black text-xs cursor-pointer transition-colors"
+                title="Sumar 1 segundo"
+                aria-label="Sumar 1 segundo"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {/* Quick preset chips */}
+          <div className="flex items-center gap-1">
+            {[2, 3, 4, 5, 10, 15].map((sec) => (
               <button
                 key={sec}
-                onClick={() => setPlayDuration(sec)}
-                className={`mono text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                type="button"
+                onClick={() => updateDuration(sec)}
+                className={`mono text-[11px] font-bold px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
                   playDuration === sec
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-indigo-600 text-white shadow-xs font-black'
+                    : 'bg-slate-800/90 text-slate-400 hover:text-white hover:bg-slate-700'
                 }`}
+                title={`Fijar en ${sec} segundos`}
               >
                 {sec}s
               </button>
