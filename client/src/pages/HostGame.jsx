@@ -222,7 +222,7 @@ export default function HostGame() {
             ref={musicPlayerRef}
             roomCode={roomCode}
             playlist={playlist}
-            onStartRound={startRound}
+            onStartRound={startNextRound}
             gameState={gameState}
           />
         </div>
