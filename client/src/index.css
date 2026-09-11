@@ -6,26 +6,31 @@
    high-stakes birthday trivia with arcade tactile controls.
    ═══════════════════════════════════════════════════════════════ */
 
+@theme {
+  --color-console-bg: #0B0F19;
+  --color-console-surface: #111827;
+  --color-console-elevated: #1F2937;
+  --color-neon-indigo: #818CF8;
+  --color-neon-pink: #F472B6;
+  --color-neon-emerald: #34D399;
+  --color-text-on-dark: #F1F5F9;
+  --color-text-muted-dark: #94A3B8;
+}
+
 :root {
-  --nm-bg: #f8fafc;
-  --nm-bg-darker: #f1f5f9;
-  --nm-shadow-light: #ffffff;
-  --nm-shadow-dark: rgba(148, 163, 184, 0.25);
-  --nm-shadow-dark-deep: rgba(100, 116, 139, 0.35);
+  --color-bg-primary: #0B0F19;
+  --color-bg-surface: #111827;
+  --color-bg-elevated: #1F2937;
 
-  --color-bg-primary: #f8fafc;
-  --color-bg-surface: #ffffff;
-  --color-bg-elevated: #ffffff;
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #CBD5E1;
+  --color-text-muted: #94A3B8;
 
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #334155;
-  --color-text-muted: #64748b;
-
-  --color-accent: #4f46e5;
-  --color-accent-dim: #4338ca;
-  --color-coral: #ef4444;
-  --color-correct: #10b981;
-  --color-incorrect: #ef4444;
+  --color-accent: #818CF8;
+  --color-accent-dim: #6366F1;
+  --color-coral: #F472B6;
+  --color-correct: #34D399;
+  --color-incorrect: #EF4444;
 
   --font-heading: 'Outfit', 'Plus Jakarta Sans', -apple-system, sans-serif;
   --font-body: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
@@ -45,8 +50,8 @@ html {
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--nm-bg);
-  background-image: radial-gradient(ellipse at 50% 0%, #e0e7ff 0%, #f8fafc 65%);
+  background-color: var(--color-console-bg);
+  background-image: radial-gradient(ellipse at 50% 0%, #111827 0%, #0B0F19 75%);
   background-attachment: fixed;
   color: var(--color-text-primary);
   min-height: 100dvh;
@@ -59,82 +64,76 @@ body {
 
 h1, h2, h3, .font-heading {
   font-family: var(--font-heading);
+  font-weight: 900;
 }
 
-/* ── Modern Elevation Classes ────────────────────────────────── */
+/* ── Console Surface & Elevation Classes ─────────────────────── */
 
 /* Elevated Cards (Hosts, Lobbies, Modals) */
-.nm-flat, .card {
-  background: #ffffff;
+.console-card, .card {
+  background: #111827;
   border-radius: 1.25rem;
-  border: 1px solid rgba(226, 232, 240, 0.85);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03),
-              0 12px 28px -4px rgba(15, 23, 42, 0.07),
-              0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  border: 1px solid rgba(55, 65, 81, 0.85);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4),
+              0 12px 28px -4px rgba(0, 0, 0, 0.5),
+              0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
 /* Subtle flat elevation */
-.nm-flat-sm {
-  background: #ffffff;
+.console-card-sm {
+  background: #111827;
   border-radius: 0.875rem;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.02),
-              0 6px 16px -2px rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(55, 65, 81, 0.8);
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.3),
+              0 6px 16px -2px rgba(0, 0, 0, 0.4);
 }
 
 /* Sunken / Inset surface (Inputs, wells, tracks) */
-.nm-inset {
-  background: #f1f5f9;
+.console-inset {
+  background: #0B0F19;
   border-radius: 0.875rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: inset 0 2px 4px 0 rgba(15, 23, 42, 0.05);
+  border: 1px solid #1F2937;
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.6);
 }
 
-.nm-inset-sm {
-  background: #f8fafc;
+.console-inset-sm {
+  background: #0B0F19;
   border-radius: 0.75rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: inset 0 1.5px 3px 0 rgba(15, 23, 42, 0.03);
-}
-
-/* Convex pill / badge */
-.nm-convex {
-  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.15);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  border: 1px solid #1F2937;
+  box-shadow: inset 0 1.5px 3px 0 rgba(0, 0, 0, 0.4);
 }
 
 /* ── Interactive Buttons ─────────────────────────────────────── */
 
 /* Neutral button */
-.nm-btn {
-  background: #ffffff;
+.console-btn {
+  background: #1F2937;
   color: var(--color-text-primary);
   border-radius: 0.875rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04),
-              0 6px 12px -2px rgba(15, 23, 42, 0.04);
+  border: 1px solid #374151;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3),
+              0 6px 12px -2px rgba(0, 0, 0, 0.4);
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   user-select: none;
   font-weight: 600;
 }
 
-.nm-btn:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+.console-btn:hover:not(:disabled) {
+  background: #283548;
+  border-color: #4B5563;
   transform: translateY(-1.5px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06),
-              0 10px 20px -3px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4),
+              0 10px 20px -3px rgba(0, 0, 0, 0.5);
 }
 
-.nm-btn:active:not(:disabled), .nm-btn.active {
+.console-btn:active:not(:disabled), .console-btn.active {
   transform: translateY(1px);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08) !important;
-  background: #f1f5f9;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+  background: #111827;
 }
 
-.nm-btn:disabled {
+.console-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
@@ -142,12 +141,12 @@ h1, h2, h3, .font-heading {
 }
 
 /* Primary highlighted button */
-.nm-btn-primary {
-  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+.console-btn-primary {
+  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
   color: #ffffff;
   border-radius: 0.875rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.35),
+  box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.4),
               inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
@@ -155,20 +154,20 @@ h1, h2, h3, .font-heading {
   user-select: none;
 }
 
-.nm-btn-primary:hover:not(:disabled) {
-  filter: brightness(1.06);
+.console-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
   transform: translateY(-1.5px);
-  box-shadow: 0 6px 20px 0 rgba(79, 70, 229, 0.45),
+  box-shadow: 0 6px 20px 0 rgba(79, 70, 229, 0.55),
               inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
 }
 
-.nm-btn-primary:active:not(:disabled) {
+.console-btn-primary:active:not(:disabled) {
   transform: translateY(1px);
-  filter: brightness(0.96);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+  filter: brightness(0.95);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4) !important;
 }
 
-.nm-btn-primary:disabled {
+.console-btn-primary:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
@@ -181,11 +180,11 @@ input[type="text"],
 input[type="number"],
 textarea,
 select {
-  background: #ffffff;
+  background: #111827;
   color: var(--color-text-primary);
   border-radius: 0.75rem;
-  border: 1.5px solid #cbd5e1;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  border: 1.5px solid #374151;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   transition: all 0.18s ease;
   font-family: inherit;
 }
@@ -194,42 +193,8 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3.5px rgba(79, 70, 229, 0.15);
-}
-
-/* ── Buzzer Arcade Party Controls ────────────────────────────── */
-
-.nm-buzzer-socket {
-  background: radial-gradient(circle, #f8fafc 50%, #e2e8f0 100%);
-  border-radius: 9999px;
-  border: 4px solid #ffffff;
-  box-shadow: inset 0 8px 18px rgba(15, 23, 42, 0.12),
-              0 12px 32px rgba(15, 23, 42, 0.08);
-  padding: 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nm-buzzer-button {
-  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #f1f5f9 50%, #cbd5e1 100%);
-  border-radius: 9999px;
-  border: 3px solid #ffffff;
-  box-shadow: 0 16px 32px -4px rgba(15, 23, 42, 0.18),
-              0 8px 16px -2px rgba(15, 23, 42, 0.1),
-              inset 0 3px 6px rgba(255, 255, 255, 0.9);
-  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.1s ease;
-  cursor: pointer;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.nm-buzzer-button:active,
-.nm-buzzer-button.is-pressed {
-  transform: translateY(8px) scale(0.96) !important;
-  box-shadow: 0 4px 8px rgba(15, 23, 42, 0.2),
-              inset 0 6px 14px rgba(15, 23, 42, 0.18) !important;
+  border-color: #818CF8;
+  box-shadow: 0 0 0 3.5px rgba(129, 140, 248, 0.2);
 }
 
 /* ── Typography & Helpers ────────────────────────────────────── */
