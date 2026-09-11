@@ -1,39 +1,43 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════
-   Design System — Modern Luminous / Crisp Party Arcade Theme
-   Vibrant, high-contrast, premium aesthetic designed for
-   high-stakes birthday trivia with arcade tactile controls.
+   Design System — Sunlit Vinyl Festival & Bright Retro-Arcade
+   Tailored for Alma's 24th Birthday Music Trivia (Daytime Edition).
+   High-contrast, outdoor daylight readability: warm alabaster & cream,
+   vibrant sunset coral, electric pop magenta, sunburst gold,
+   and physical 3D arcade buttons.
    ═══════════════════════════════════════════════════════════════ */
 
 @theme {
-  --color-console-bg: #0B0F19;
-  --color-console-surface: #111827;
-  --color-console-elevated: #1F2937;
-  --color-neon-indigo: #818CF8;
-  --color-neon-pink: #F472B6;
-  --color-neon-emerald: #34D399;
-  --color-text-on-dark: #F1F5F9;
-  --color-text-muted-dark: #94A3B8;
+  --color-console-bg: #F7F4EE;
+  --color-console-surface: #FFFFFF;
+  --color-console-elevated: #EDE8DF;
+  --color-neon-indigo: #4F46E5;
+  --color-neon-pink: #E11D48;
+  --color-neon-emerald: #059669;
+  --color-text-on-dark: #181226;
+  --color-text-muted-dark: #6B6280;
 }
 
 :root {
-  --color-bg-primary: #0B0F19;
-  --color-bg-surface: #111827;
-  --color-bg-elevated: #1F2937;
+  --color-bg-primary: #F7F4EE;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-elevated: #EDE8DF;
 
-  --color-text-primary: #F1F5F9;
-  --color-text-secondary: #CBD5E1;
-  --color-text-muted: #94A3B8;
+  --color-text-primary: #181226;
+  --color-text-secondary: #4A425E;
+  --color-text-muted: #746B8A;
 
-  --color-accent: #818CF8;
-  --color-accent-dim: #6366F1;
-  --color-coral: #F472B6;
-  --color-correct: #34D399;
-  --color-incorrect: #EF4444;
+  --color-accent-orange: #FF5722;
+  --color-accent-pink: #E11D48;
+  --color-accent-mint: #059669;
+  --color-accent-gold: #D97706;
+  --color-accent-cyan: #0284C7;
+  --color-accent-violet: #6366F1;
 
-  --font-heading: 'Outfit', 'Plus Jakarta Sans', -apple-system, sans-serif;
-  --font-body: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+  --font-display: 'Syne', -apple-system, sans-serif;
+  --font-tactical: 'Space Grotesk', -apple-system, sans-serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, sans-serif;
   --font-mono: 'Space Mono', 'Courier New', monospace;
 }
 
@@ -50,10 +54,13 @@ html {
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--color-console-bg);
-  background-image: radial-gradient(ellipse at 50% 0%, #111827 0%, #0B0F19 75%);
+  background-color: #F7F4EE;
+  background-image: 
+    radial-gradient(ellipse 90% 60% at 50% -15%, rgba(255, 87, 34, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 85% 90%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 15% 70%, rgba(225, 29, 72, 0.08) 0%, transparent 50%);
   background-attachment: fixed;
-  color: var(--color-text-primary);
+  color: #181226;
   min-height: 100dvh;
   overflow-x: hidden;
 }
@@ -62,116 +69,152 @@ body {
   min-height: 100dvh;
 }
 
-h1, h2, h3, .font-heading {
-  font-family: var(--font-heading);
-  font-weight: 900;
+h1, h2, h3, .font-heading, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
 }
 
-/* ── Console Surface & Elevation Classes ─────────────────────── */
-
-/* Elevated Cards (Hosts, Lobbies, Modals) */
-.console-card, .card {
-  background: #111827;
-  border-radius: 1.25rem;
-  border: 1px solid rgba(55, 65, 81, 0.85);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4),
-              0 12px 28px -4px rgba(0, 0, 0, 0.5),
-              0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+.font-tactical {
+  font-family: var(--font-tactical);
 }
 
-/* Subtle flat elevation */
-.console-card-sm {
-  background: #111827;
-  border-radius: 0.875rem;
-  border: 1px solid rgba(55, 65, 81, 0.8);
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.3),
-              0 6px 16px -2px rgba(0, 0, 0, 0.4);
+/* ── Daytime Sunlit Cards & Surfaces ────────────────────────── */
+
+.console-card, .card, .party-card {
+  background: #FFFFFF;
+  border-radius: 1.5rem;
+  border: 2px solid #EAE3D5;
+  box-shadow: 0 10px 30px -4px rgba(24, 18, 38, 0.07),
+              0 4px 12px -2px rgba(24, 18, 38, 0.04),
+              inset 0 1px 0 rgba(255, 255, 255, 1);
+  position: relative;
 }
 
-/* Sunken / Inset surface (Inputs, wells, tracks) */
+.party-card-glow {
+  position: relative;
+}
+.party-card-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, rgba(255, 87, 34, 0.4), rgba(225, 29, 72, 0.25), transparent 70%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Inset Wells & Screens */
 .console-inset {
-  background: #0B0F19;
-  border-radius: 0.875rem;
-  border: 1px solid #1F2937;
-  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.6);
+  background: #F1ECE3;
+  border-radius: 1rem;
+  border: 1.5px solid #DDD5C5;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 .console-inset-sm {
-  background: #0B0F19;
+  background: #F1ECE3;
   border-radius: 0.75rem;
-  border: 1px solid #1F2937;
-  box-shadow: inset 0 1.5px 3px 0 rgba(0, 0, 0, 0.4);
+  border: 1px solid #DDD5C5;
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* ── Interactive Buttons ─────────────────────────────────────── */
+/* ── Tactile 3D Daytime Arcade Buttons ──────────────────────── */
 
-/* Neutral button */
-.console-btn {
-  background: #1F2937;
-  color: var(--color-text-primary);
-  border-radius: 0.875rem;
-  border: 1px solid #374151;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3),
-              0 6px 12px -2px rgba(0, 0, 0, 0.4);
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+/* Primary Vibrant Coral Button */
+.console-btn-primary, .arcade-btn-primary {
+  background: linear-gradient(135deg, #FF5722 0%, #E60067 100%);
+  color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 5px 0 #9E0B42,
+              0 10px 22px -3px rgba(230, 0, 103, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.08s ease;
   cursor: pointer;
+  font-family: var(--font-tactical);
+  font-weight: 800;
+  letter-spacing: 0.02em;
   user-select: none;
-  font-weight: 600;
 }
 
-.console-btn:hover:not(:disabled) {
-  background: #283548;
-  border-color: #4B5563;
-  transform: translateY(-1.5px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4),
-              0 10px 20px -3px rgba(0, 0, 0, 0.5);
+.console-btn-primary:hover:not(:disabled), .arcade-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #9E0B42,
+              0 14px 28px -2px rgba(230, 0, 103, 0.45),
+              inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
-.console-btn:active:not(:disabled), .console-btn.active {
-  transform: translateY(1px);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5) !important;
-  background: #111827;
+.console-btn-primary:active:not(:disabled), .arcade-btn-primary:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #9E0B42,
+              0 4px 10px rgba(230, 0, 103, 0.25),
+              inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
 
-.console-btn:disabled {
+/* Neutral Arcade Button (Crisp Ivory Bevel) */
+.console-btn, .arcade-btn {
+  background: #FFFFFF;
+  color: #181226;
+  border-radius: 1rem;
+  border: 1.5px solid #D6CEBF;
+  box-shadow: 0 4px 0 #D6CEBF,
+              0 6px 14px -2px rgba(24, 18, 38, 0.08),
+              inset 0 1px 0 rgba(255, 255, 255, 1);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease;
+  cursor: pointer;
+  font-family: var(--font-tactical);
+  font-weight: 700;
+  user-select: none;
+}
+
+.console-btn:hover:not(:disabled), .arcade-btn:hover:not(:disabled) {
+  background: #FAF7F2;
+  border-color: #C7BEAD;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #C7BEAD,
+              0 10px 20px -2px rgba(24, 18, 38, 0.12);
+}
+
+.console-btn:active:not(:disabled), .arcade-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #D6CEBF,
+              inset 0 2px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+.console-btn:disabled, .console-btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-/* Primary highlighted button */
-.console-btn-primary {
-  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
-  color: #ffffff;
-  border-radius: 0.875rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.4),
-              inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+/* Daytime Mint / Emerald Button */
+.arcade-btn-mint {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 5px 0 #064E3B,
+              0 10px 20px -3px rgba(5, 150, 105, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  font-family: var(--font-tactical);
+  font-weight: 800;
   cursor: pointer;
-  font-weight: 700;
   user-select: none;
+  transition: all 0.08s ease;
 }
-
-.console-btn-primary:hover:not(:disabled) {
-  filter: brightness(1.1);
-  transform: translateY(-1.5px);
-  box-shadow: 0 6px 20px 0 rgba(79, 70, 229, 0.55),
-              inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+.arcade-btn-mint:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #064E3B, 0 14px 26px rgba(5, 150, 105, 0.4);
 }
-
-.console-btn-primary:active:not(:disabled) {
-  transform: translateY(1px);
-  filter: brightness(0.95);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4) !important;
-}
-
-.console-btn-primary:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+.arcade-btn-mint:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #064E3B, inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* ── Input Fields ────────────────────────────────────────────── */
@@ -180,12 +223,12 @@ input[type="text"],
 input[type="number"],
 textarea,
 select {
-  background: #111827;
-  color: var(--color-text-primary);
-  border-radius: 0.75rem;
-  border: 1.5px solid #374151;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  transition: all 0.18s ease;
+  background: #FFFFFF;
+  color: #181226;
+  border-radius: 0.875rem;
+  border: 2px solid #DDD5C5;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
   font-family: inherit;
 }
 
@@ -193,41 +236,46 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: #818CF8;
-  box-shadow: 0 0 0 3.5px rgba(129, 140, 248, 0.2);
+  border-color: #FF5722;
+  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.2);
 }
 
-/* ── Typography & Helpers ────────────────────────────────────── */
+/* ── Typography & Tags ───────────────────────────────────────── */
 
 .mono {
   font-family: var(--font-mono);
 }
 
-.label {
-  font-size: 0.6875rem;
+.badge-tag {
+  font-family: var(--font-tactical);
   font-weight: 800;
-  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+  font-size: 0.6875rem;
 }
 
-.accent-line {
-  height: 3px;
-  width: 42px;
-  border-radius: 9999px;
-  background: linear-gradient(90deg, #4f46e5, #ec4899);
+/* Equalizer Bars Animation */
+@keyframes eq-bounce-1 {
+  0%, 100% { height: 8px; }
+  50% { height: 26px; }
+}
+@keyframes eq-bounce-2 {
+  0%, 100% { height: 22px; }
+  50% { height: 10px; }
+}
+@keyframes eq-bounce-3 {
+  0%, 100% { height: 12px; }
+  50% { height: 30px; }
+}
+@keyframes eq-bounce-4 {
+  0%, 100% { height: 28px; }
+  50% { height: 14px; }
 }
 
-/* Scrollbars */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
+.eq-bar-1 { animation: eq-bounce-1 0.7s infinite ease-in-out; }
+.eq-bar-2 { animation: eq-bounce-2 0.55s infinite ease-in-out; }
+.eq-bar-3 { animation: eq-bounce-3 0.85s infinite ease-in-out; }
+.eq-bar-4 { animation: eq-bounce-4 0.65s infinite ease-in-out; }
 
 /* ── Print Media Optimization (Diploma Export) ─────────────── */
 @media print {

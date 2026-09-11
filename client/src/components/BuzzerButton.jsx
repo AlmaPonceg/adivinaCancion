@@ -116,28 +116,28 @@ export default function BuzzerButton({
 
   return (
     <div className="relative flex flex-col items-center justify-center p-2 select-none touch-none">
-      {/* Arcade Cabinet Mounting Plate */}
-      <div className="relative p-5 sm:p-7 rounded-[42px] bg-[#111827] border-2 border-slate-700/80 shadow-[0_12px_28px_rgba(0,0,0,0.4),0_2px_8px_rgba(0,0,0,0.3),inset_0_2px_4px_rgba(255,255,255,0.06)]">
+      {/* Arcade Cabinet Mounting Plate (Daytime Brushed Finish) */}
+      <div className="relative p-5 sm:p-7 rounded-[42px] bg-[#EDE7DC] border-2 border-[#D6CDBC] shadow-[0_16px_36px_rgba(24,18,38,0.12),0_2px_8px_rgba(24,18,38,0.06),inset_0_2px_4px_rgba(255,255,255,0.9)]">
         {/* Cabinet screws with Phillips cross slots */}
         {SCREW_POSITIONS.map((pos) => (
           <span
             key={pos}
-            className={`absolute ${pos} w-4 h-4 rounded-full border border-slate-950/80 shadow-[inset_0_1px_2px_rgba(255,255,255,0.35),0_2px_6px_rgba(0,0,0,0.45)] pointer-events-none`}
+            className={`absolute ${pos} w-4 h-4 rounded-full border border-[#B8AE9D] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_4px_rgba(0,0,0,0.15)] pointer-events-none`}
             style={{
               background:
-                'radial-gradient(circle at 35% 30%, #CBD5E1 0%, #64748B 45%, #1E293B 100%)',
+                'radial-gradient(circle at 35% 30%, #FFFFFF 0%, #D4CDBC 50%, #A89F8D 100%)',
             }}
           >
-            <span className="absolute top-1/2 left-[2px] right-[2px] h-[1.5px] -translate-y-1/2 bg-slate-950/80 rounded-full" />
-            <span className="absolute left-1/2 top-[2px] bottom-[2px] w-[1.5px] -translate-x-1/2 bg-slate-950/80 rounded-full" />
+            <span className="absolute top-1/2 left-[2px] right-[2px] h-[1.5px] -translate-y-1/2 bg-[#706654] rounded-full" />
+            <span className="absolute left-1/2 top-[2px] bottom-[2px] w-[1.5px] -translate-x-1/2 bg-[#706654] rounded-full" />
           </span>
         ))}
 
         {/* Knurled chrome bezel ring with specular highlight */}
         <div
-          className="relative w-52 h-52 sm:w-60 sm:h-60 rounded-full flex items-center justify-center p-2 shadow-[0_18px_28px_-10px_rgba(0,0,0,0.45),0_8px_12px_-8px_rgba(0,0,0,0.4),inset_0_3px_8px_rgba(0,0,0,0.35),inset_0_-2px_6px_rgba(255,255,255,0.08)]"
+          className="relative w-52 h-52 sm:w-60 sm:h-60 rounded-full flex items-center justify-center p-2 shadow-[0_18px_28px_-10px_rgba(24,18,38,0.2),0_8px_12px_-8px_rgba(24,18,38,0.15),inset_0_3px_8px_rgba(0,0,0,0.15),inset_0_-2px_6px_rgba(255,255,255,0.8)]"
           style={{
-            background: `repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,0.04) 0px 1px, rgba(0,0,0,0.05) 1px 2px), conic-gradient(from 0deg, #8E9BB0 0deg, #5C687E 70deg, #333C4F 140deg, #3A4459 180deg, #5A687F 230deg, #8A96AC 285deg, #AEB9CC 328deg, #9AA6BB 355deg, #8E9BB0 360deg)`,
+            background: `repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0px 1px, rgba(0,0,0,0.04) 1px 2px), conic-gradient(from 0deg, #D4CDBC 0deg, #B5AC98 70deg, #8C826E 140deg, #9C927E 180deg, #B8AE9A 230deg, #D6CDBC 285deg, #F0EAE0 328deg, #D4CDBC 355deg, #D4CDBC 360deg)`,
           }}
         >
           {/* Single soft specular crescent (top-left) + gentle dark falloff (bottom) */}

@@ -383,10 +383,10 @@ const MusicPlayer = forwardRef(function MusicPlayer(
   ];
 
   return (
-    <div className="bg-slate-950 text-white rounded-3xl p-5 sm:p-7 border border-slate-800 shadow-2xl relative overflow-hidden">
+    <div className="party-card p-5 sm:p-7 rounded-[2rem] text-[#FAF8F5] relative overflow-hidden">
       {/* Background ambient lighting glow */}
-      <div className="absolute -top-24 -right-24 w-72 h-72 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#FF5E36]/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-[#FF1493]/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* HIDDEN YOUTUBE PLAYER CONTAINER - Plays audio without revealing the video/title */}
       <div
@@ -424,15 +424,15 @@ const MusicPlayer = forwardRef(function MusicPlayer(
           <span
             className={`w-3 h-3 rounded-full ${
               isPlaying
-                ? 'bg-emerald-500 shadow-[0_0_12px_#10B981] animate-pulse'
-                : 'bg-slate-600'
+                ? 'bg-[#059669] shadow-[0_0_12px_#059669] animate-pulse'
+                : 'bg-[#D0C8B8]'
             }`}
           />
           <div>
-            <span className="text-xs font-black tracking-wider uppercase text-slate-200">
+            <span className="font-tactical text-xs font-black tracking-wider uppercase text-[#181226]">
               Deck de Audio Bluetooth
             </span>
-            <p className="text-[11px] text-slate-400 font-medium">
+            <p className="text-[11px] text-[#6B6280] font-medium">
               {isPlaying ? 'Sonando en parlante' : 'Audio en espera'}
             </p>
           </div>
@@ -440,7 +440,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
 
         <div className="flex items-center gap-2">
           {hasPlaylist && (
-            <span className="mono text-xs font-black text-indigo-400 bg-indigo-950/80 px-3 py-1 rounded-full border border-indigo-800/80">
+            <span className="mono text-xs font-black text-[#FF5722] bg-[#FFF0EB] px-3 py-1 rounded-full border border-[#FF5722]/30 shadow-2xs">
               Pista {currentTrackIndex + 1} de {activeQueue.length}
             </span>
           )}
@@ -448,10 +448,10 @@ const MusicPlayer = forwardRef(function MusicPlayer(
           {hasPlaylist && (
             <button
               onClick={handleReshuffle}
-              className="text-xs font-bold text-slate-400 hover:text-white px-2.5 py-1 rounded-lg hover:bg-slate-800 transition-colors flex items-center gap-1 cursor-pointer"
+              className="text-xs font-bold text-[#6B6280] hover:text-[#181226] px-2.5 py-1 rounded-lg hover:bg-[#FAF7F2] transition-colors flex items-center gap-1 cursor-pointer"
               title="Volver a mezclar orden"
             >
-              <svg className="w-3.5 h-3.5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
               Mezclar
@@ -460,7 +460,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
 
           <button
             onClick={() => setShowManualInput(!showManualInput)}
-            className="text-xs font-bold text-slate-400 hover:text-indigo-400 px-2.5 py-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+            className="text-xs font-bold text-[#6B6280] hover:text-[#FF5722] px-2.5 py-1 rounded-lg hover:bg-[#FAF7F2] transition-colors cursor-pointer"
           >
             {showManualInput ? 'Cerrar' : '+ URL'}
           </button>
@@ -468,24 +468,24 @@ const MusicPlayer = forwardRef(function MusicPlayer(
       </div>
 
       {/* CENTER STAGE: Turntable Vinyl Disc + Sound Wave Visualizer */}
-      <div className="my-4 p-5 rounded-2xl bg-slate-900/90 border border-slate-800/90 flex flex-col sm:flex-row items-center gap-6 relative z-10">
+      <div className="my-4 p-5 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] flex flex-col sm:flex-row items-center gap-6 relative z-10 shadow-inner">
         {/* Animated Vinyl Disc */}
         <div className="relative shrink-0 flex items-center justify-center">
           <motion.div
             animate={{ rotate: isPlaying ? 360 : 0 }}
             transition={{ repeat: Infinity, duration: 3.5, ease: 'linear' }}
-            className={`w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-slate-800 shadow-2xl relative flex items-center justify-center ${
-              isPlaying ? 'ring-4 ring-indigo-500/30' : ''
+            className={`w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-[#DDD5C5] shadow-xl relative flex items-center justify-center ${
+              isPlaying ? 'ring-4 ring-[#FF5722]/30' : ''
             }`}
             style={{
-              background: 'radial-gradient(circle, #1e1b4b 0%, #0f172a 60%, #020617 100%)',
+              background: 'radial-gradient(circle, #2C2638 0%, #151020 60%, #08060E 100%)',
             }}
           >
             {/* Concentric groove lines */}
-            <div className="w-20 h-20 rounded-full border border-slate-700/60" />
-            <div className="w-14 h-14 rounded-full border border-slate-700/40 absolute" />
+            <div className="w-20 h-20 rounded-full border border-white/10" />
+            <div className="w-14 h-14 rounded-full border border-white/5 absolute" />
             {/* Center label */}
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 border-2 border-slate-950 flex items-center justify-center absolute shadow-md">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FF5722] via-[#E11D48] to-[#F59E0B] border-2 border-black flex items-center justify-center absolute shadow-md">
               <svg className="w-3.5 h-3.5 text-white fill-current" viewBox="0 0 24 24">
                 <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
               </svg>
@@ -494,8 +494,8 @@ const MusicPlayer = forwardRef(function MusicPlayer(
 
           {/* Playing badge on disk */}
           {isPlaying && (
-            <span className="absolute -bottom-1 text-[10px] font-black uppercase tracking-wider bg-indigo-600 text-white px-2 py-0.5 rounded-full shadow-md">
-              En vivo
+            <span className="badge-tag absolute -bottom-1 text-[9px] bg-[#FF5722] text-white px-2.5 py-0.5 rounded-full shadow-lg">
+              EN VIVO
             </span>
           )}
         </div>
@@ -503,7 +503,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
         {/* Equalizer Waveform & Live Progress */}
         <div className="flex-1 w-full flex flex-col justify-between space-y-3">
           {/* Animated Waveform Bars */}
-          <div className="h-16 flex items-end justify-between gap-1 px-1 bg-slate-950/60 rounded-xl p-2 border border-slate-800/60">
+          <div className="h-16 flex items-end justify-between gap-1 px-1 bg-white rounded-xl p-2 border border-[#EAE3D5] shadow-inner">
             {equalizerBars.map((baseHeight, idx) => (
               <motion.div
                 key={idx}
@@ -518,25 +518,25 @@ const MusicPlayer = forwardRef(function MusicPlayer(
                   repeatType: 'reverse',
                   ease: 'easeInOut',
                 }}
-                className="flex-1 rounded-full bg-gradient-to-t from-indigo-500 via-purple-500 to-pink-500 min-w-[2px]"
+                className="flex-1 rounded-full bg-gradient-to-t from-[#FF5722] via-[#E11D48] to-[#F59E0B] min-w-[2px]"
               />
             ))}
           </div>
 
           {/* Digital Timer & Progress Bar */}
           <div>
-            <div className="flex items-center justify-between text-xs font-mono font-black text-slate-400 mb-1.5">
-              <span className="text-white">
+            <div className="flex items-center justify-between text-xs font-mono font-black text-[#6B6280] mb-1.5">
+              <span className="text-[#181226]">
                 00:{String(Math.floor(playbackSeconds)).padStart(2, '0')}
               </span>
-              <span className="text-slate-500">
+              <span className="text-[#FF5722]">
                 00:{String(playDuration).padStart(2, '0')}
               </span>
             </div>
 
-            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-[#EAE3D5] rounded-full overflow-hidden border border-[#DDD5C5]">
               <div
-                className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-100 ease-linear rounded-full"
+                className="h-full bg-gradient-to-r from-[#FF5722] via-[#E11D48] to-[#F59E0B] transition-all duration-100 ease-linear rounded-full shadow-[0_0_8px_#FF5722]"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -553,11 +553,11 @@ const MusicPlayer = forwardRef(function MusicPlayer(
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && loadMedia(url)}
             placeholder="Pegá enlace de YouTube o Spotify"
-            className="flex-1 px-3 py-2 text-xs rounded-xl bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500"
+            className="flex-1 px-3 py-2 text-xs rounded-xl bg-white border border-[#EAE3D5] text-[#181226] placeholder:text-[#8E869E] focus:outline-none focus:border-[#FF5722]"
           />
           <button
             onClick={() => loadMedia(url)}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shrink-0 cursor-pointer"
+            className="arcade-btn-primary px-4 py-2 text-xs font-bold shrink-0 cursor-pointer rounded-xl"
           >
             Cargar
           </button>
@@ -565,18 +565,18 @@ const MusicPlayer = forwardRef(function MusicPlayer(
       )}
 
       {/* Audio Deck Bottom Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 relative z-10 border-t border-slate-800/80">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 relative z-10 border-t border-[#EAE3D5]">
         {/* Custom Duration Controller */}
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+            <span className="badge-tag text-[#6B6280]">
               Duración:
             </span>
-            <div className="flex items-center bg-slate-950 border border-slate-700/90 rounded-xl p-0.5 shadow-inner">
+            <div className="flex items-center bg-white border border-[#EAE3D5] rounded-xl p-0.5 shadow-2xs">
               <button
                 type="button"
                 onClick={() => applyDuration(playDuration - 1)}
-                className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white font-black text-xs cursor-pointer transition-all active:scale-90"
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-[#FAF7F2] hover:bg-[#EAE3D5] text-[#181226] font-black text-xs cursor-pointer transition-all active:scale-90"
                 title="Restar 1 segundo"
                 aria-label="Restar 1 segundo"
               >
@@ -585,22 +585,18 @@ const MusicPlayer = forwardRef(function MusicPlayer(
               <div className="flex items-center px-1.5 gap-0.5">
                 <input
                   type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
                   value={durationInput}
                   onChange={handleInputChange}
                   onBlur={handleInputBlur}
-                  onFocus={(e) => e.target.select()}
-                  className="w-8 text-center text-xs font-black bg-transparent text-white focus:outline-none focus:ring-1 focus:ring-indigo-500/80 rounded py-0.5 tracking-tight selection:bg-indigo-600 selection:text-white"
-                  title="Escribí los segundos exactos que querés"
-                  placeholder="15"
+                  className="mono text-xs font-black text-[#181226] w-7 text-center bg-transparent border-none p-0 focus:outline-none"
+                  aria-label="Duración en segundos"
                 />
-                <span className="text-[11px] font-extrabold text-indigo-400 select-none">s</span>
+                <span className="text-[10px] font-bold text-[#6B6280]">s</span>
               </div>
               <button
                 type="button"
                 onClick={() => applyDuration(playDuration + 1)}
-                className="w-6 h-6 flex items-center justify-center rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white font-black text-xs cursor-pointer transition-all active:scale-90"
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-[#FAF7F2] hover:bg-[#EAE3D5] text-[#181226] font-black text-xs cursor-pointer transition-all active:scale-90"
                 title="Sumar 1 segundo"
                 aria-label="Sumar 1 segundo"
               >
@@ -608,9 +604,8 @@ const MusicPlayer = forwardRef(function MusicPlayer(
               </button>
             </div>
           </div>
-
           {/* Quick preset chips */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {[2, 3, 4, 5, 10, 15].map((sec) => (
               <button
                 key={sec}
@@ -618,8 +613,8 @@ const MusicPlayer = forwardRef(function MusicPlayer(
                 onClick={() => applyDuration(sec)}
                 className={`mono text-[11px] font-bold px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
                   playDuration === sec
-                    ? 'bg-indigo-600 text-white shadow-xs font-black'
-                    : 'bg-slate-800/90 text-slate-400 hover:text-white hover:bg-slate-700'
+                    ? 'bg-[#FF5722] text-white shadow-xs font-black'
+                    : 'bg-white text-[#6B6280] border border-[#EAE3D5] hover:text-[#181226] hover:bg-[#FAF7F2]'
                 }`}
                 title={`Fijar en ${sec} segundos`}
               >
@@ -633,10 +628,10 @@ const MusicPlayer = forwardRef(function MusicPlayer(
         <div className="flex items-center gap-2">
           <button
             onClick={handleReplay}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="arcade-btn px-3 py-1.5 rounded-xl text-xs font-bold text-[#181226] flex items-center gap-1.5 cursor-pointer"
             title="Volver a reproducir el clip de audio"
           >
-            <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             <span>Repetir Clip</span>
@@ -645,7 +640,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
           {isPlaying ? (
             <button
               onClick={handlePause}
-              className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-[#FFFBEB] text-[#B45309] border border-[#F59E0B]/50 hover:bg-[#FEF3C7] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
               title="Pausar audio"
             >
               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -656,7 +651,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
           ) : (
             <button
               onClick={playAudioOnly}
-              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="arcade-btn-mint px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
               title="Reproducir audio"
             >
               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -667,11 +662,11 @@ const MusicPlayer = forwardRef(function MusicPlayer(
           )}
 
           {hasPlaylist && (
-            <div className="flex items-center gap-1 pl-1 border-l border-slate-800">
+            <div className="flex items-center gap-1 pl-1 border-l border-[#EAE3D5]">
               <button
                 onClick={handlePrevTrack}
                 title="Pista anterior"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+                className="p-1.5 rounded-lg text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] cursor-pointer"
               >
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                   <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
@@ -680,7 +675,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
               <button
                 onClick={handleNextTrack}
                 title="Siguiente pista"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+                className="p-1.5 rounded-lg text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] cursor-pointer"
               >
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                   <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
@@ -692,7 +687,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
       </div>
 
       {/* Spoilers prevention note */}
-      <p className="text-[11px] text-slate-500 text-center mt-3 pt-2 border-t border-slate-900">
+      <p className="text-[11px] text-[#8E869E] text-center mt-3 pt-2 border-t border-[#EAE3D5]">
         El reproductor de video está oculto para que nadie pueda ver el título de la canción.
       </p>
     </div>

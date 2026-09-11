@@ -54,27 +54,27 @@ export default function WinnerDiploma({ winner, isOpen, onClose }) {
             <div className="flex items-center gap-2">
               <button
                 onClick={handlePrint}
-                className="console-btn-primary px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 cursor-pointer shadow-md hover:brightness-110 active:scale-95 transition-all"
+                className="arcade-btn-primary px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 cursor-pointer shadow-md"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
-                Imprimir / Guardar PDF
+                <span>Imprimir / Guardar PDF</span>
               </button>
               <button
                 onClick={handleShare}
-                className="console-btn px-4 py-2 rounded-xl text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer hover:bg-slate-800 transition-colors"
+                className="arcade-btn px-4 py-2.5 rounded-xl text-xs font-bold text-[#FAF8F5] flex items-center gap-1.5 cursor-pointer"
               >
-                <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-4 h-4 text-[#FF5E36]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                 </svg>
-                Compartir
+                <span>Compartir</span>
               </button>
             </div>
 
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-black cursor-pointer transition-colors"
+              className="w-9 h-9 rounded-xl bg-[#1C162E] hover:bg-[#282040] text-[#D4CEE3] flex items-center justify-center font-black cursor-pointer transition-colors"
               aria-label="Cerrar"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -87,56 +87,56 @@ export default function WinnerDiploma({ winner, isOpen, onClose }) {
           <div
             id="diploma-canvas"
             ref={certificateRef}
-            className="w-full bg-[#FAF8F5] text-slate-900 rounded-2xl p-6 sm:p-10 shadow-2xl relative overflow-hidden border-[6px] border-[#D4AF37] select-none"
+            className="w-full bg-[#FAF8F5] text-slate-900 rounded-2xl p-4 sm:p-10 shadow-2xl relative overflow-hidden border-4 sm:border-[6px] border-[#D4AF37] select-none"
             style={{
               boxShadow: '0 25px 60px -12px rgba(0,0,0,0.7), inset 0 0 40px rgba(212,175,55,0.15)',
             }}
           >
             {/* Inner Gold Frame Border */}
-            <div className="absolute inset-2 sm:inset-3 border-2 border-[#C5A059] pointer-events-none rounded-xl" />
-            <div className="absolute inset-3 sm:inset-4 border border-[#E8D3A2] pointer-events-none rounded-lg" />
+            <div className="absolute inset-1.5 sm:inset-3 border sm:border-2 border-[#C5A059] pointer-events-none rounded-xl" />
+            <div className="absolute inset-2.5 sm:inset-4 border border-[#E8D3A2] pointer-events-none rounded-lg" />
 
             {/* Ornamental Corner Flourishes */}
-            <span className="absolute top-4 left-4 text-[#C5A059] font-serif text-lg leading-none select-none pointer-events-none">✦</span>
-            <span className="absolute top-4 right-4 text-[#C5A059] font-serif text-lg leading-none select-none pointer-events-none">✦</span>
-            <span className="absolute bottom-4 left-4 text-[#C5A059] font-serif text-lg leading-none select-none pointer-events-none">✦</span>
-            <span className="absolute bottom-4 right-4 text-[#C5A059] font-serif text-lg leading-none select-none pointer-events-none">✦</span>
+            <span className="absolute top-2.5 left-2.5 sm:top-4 sm:left-4 text-[#C5A059] font-serif text-sm sm:text-lg leading-none select-none pointer-events-none">✦</span>
+            <span className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 text-[#C5A059] font-serif text-sm sm:text-lg leading-none select-none pointer-events-none">✦</span>
+            <span className="absolute bottom-2.5 left-2.5 sm:bottom-4 sm:left-4 text-[#C5A059] font-serif text-sm sm:text-lg leading-none select-none pointer-events-none">✦</span>
+            <span className="absolute bottom-2.5 right-2.5 sm:bottom-4 sm:right-4 text-[#C5A059] font-serif text-sm sm:text-lg leading-none select-none pointer-events-none">✦</span>
 
             {/* Faint Music Watermark Background */}
             <div className="absolute inset-0 opacity-[0.035] flex items-center justify-center pointer-events-none select-none">
-              <svg className="w-96 h-96 text-slate-900" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-64 h-64 sm:w-96 sm:h-96 text-slate-900" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
               </svg>
             </div>
 
             {/* Header / Seal */}
             <div className="text-center relative z-10">
-              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#B8860B] via-[#FFD700] to-[#DAA520] p-0.5 shadow-md mb-2">
+              <div className="inline-flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#B8860B] via-[#FFD700] to-[#DAA520] p-0.5 shadow-md mb-2">
                 <div className="w-full h-full rounded-full bg-[#FAF8F5] border-2 border-[#B8860B] flex items-center justify-center text-[#B8860B]">
-                  <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 sm:w-7 sm:h-7" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
                 </div>
               </div>
 
-              <p className="text-[11px] sm:text-xs font-black uppercase tracking-[0.3em] text-[#996515]">
+              <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] sm:tracking-[0.3em] text-[#996515]">
                 DIPLOMA DE HONOR
               </p>
-              <h2 className="font-heading text-2xl sm:text-4xl font-black text-slate-900 tracking-tight mt-1">
+              <h2 className="font-heading text-xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight mt-1">
                 CERTIFICADO DE CAMPEÓN
               </h2>
-              <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-[#C5A059] to-transparent mx-auto my-2" />
+              <div className="w-20 sm:w-24 h-0.5 bg-gradient-to-r from-transparent via-[#C5A059] to-transparent mx-auto my-2" />
             </div>
 
             {/* Recipient body */}
-            <div className="text-center my-4 sm:my-6 relative z-10">
+            <div className="text-center my-3 sm:my-6 relative z-10">
               <p className="text-xs sm:text-sm font-medium text-slate-600 italic mb-2">
                 Se otorga el presente reconocimiento oficial al equipo:
               </p>
 
-              <div className="inline-block my-1 px-5 py-2 rounded-xl bg-white border border-[#E8D3A2] shadow-xs">
+              <div className="inline-block my-1 px-4 sm:px-5 py-1.5 sm:py-2 rounded-xl bg-white border border-[#E8D3A2] shadow-xs max-w-full">
                 <h3
-                  className="font-heading text-2xl sm:text-4xl font-black tracking-tight"
+                  className="font-heading text-xl sm:text-3xl md:text-4xl font-black tracking-tight break-words"
                   style={{ color: winner.color || '#4F46E5' }}
                 >
                   {winner.name}

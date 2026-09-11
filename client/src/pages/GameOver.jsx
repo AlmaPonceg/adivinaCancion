@@ -17,18 +17,18 @@ export default function GameOver() {
     }
 
     const colors = rankings?.[0]?.color
-      ? [rankings[0].color, '#6366F1', '#EC4899', '#F59E0B', '#10B981']
-      : ['#6366F1', '#EC4899', '#F59E0B'];
+      ? [rankings[0].color, '#FF5E36', '#FF1493', '#FFC837', '#05FFA1']
+      : ['#FF5E36', '#FF1493', '#FFC837', '#05FFA1'];
 
     confetti({
-      particleCount: 120,
-      spread: 90,
+      particleCount: 130,
+      spread: 100,
       origin: { y: 0.55 },
       colors,
-      ticks: 220,
+      ticks: 240,
     });
 
-    const end = Date.now() + 3500;
+    const end = Date.now() + 4000;
     const frame = () => {
       confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.65 }, colors, ticks: 160 });
       confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.65 }, colors, ticks: 160 });
@@ -42,54 +42,58 @@ export default function GameOver() {
   const winner = rankings[0];
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 bg-[var(--color-console-bg)] text-[var(--color-text-on-dark)]">
-      <div className="w-full max-w-md">
+    <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 text-[var(--color-text-primary)] relative overflow-hidden">
+      {/* Ambient victory stage lights */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#F59E0B]/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-80 h-80 bg-[#FF5722]/08 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="w-full max-w-md relative z-10">
         {/* Winner Card */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="console-card p-8 rounded-3xl text-center mb-6 relative overflow-hidden"
+          className="party-card party-card-glow p-5 sm:p-8 rounded-[2rem] text-center mb-6 relative overflow-hidden"
         >
           <div className="flex items-center justify-center gap-2.5 mb-3">
-            <span className="h-px w-8 bg-gradient-to-r from-transparent to-amber-500/60" />
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-amber-400 flex items-center gap-1.5">
-              <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+            <span className="h-px w-8 bg-gradient-to-r from-transparent to-[#F59E0B]/70" />
+            <span className="badge-tag text-[#D97706] flex items-center gap-1.5 font-black text-[10px] sm:text-xs">
+              <svg className="w-4 h-4 text-[#D97706]" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V19H7v2h10v-2h-4v-3.1c1.98-.44 3.53-2.01 3.91-4.06C19.38 11.53 21 9.47 21 7V5c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z" />
               </svg>
-              Gran Campeón
+              GRAN CAMPEÓN · CUMPLE ALMA
             </span>
-            <span className="h-px w-8 bg-gradient-to-l from-transparent to-amber-500/60" />
+            <span className="h-px w-8 bg-gradient-to-l from-transparent to-[#F59E0B]/70" />
           </div>
 
-          <h1 className="font-heading text-3xl sm:text-4xl font-black tracking-tight mb-4 text-slate-100">
+          <h1 className="font-display text-2xl sm:text-4xl font-black tracking-tight mb-4 text-[#181226]">
             Equipo Ganador
           </h1>
 
           <div
-            className="p-6 rounded-2xl border-2 text-center bg-[#0B0F19] shadow-xs"
+            className="p-4 sm:p-6 rounded-2xl border-2 text-center bg-[#FAF7F2] shadow-sm relative overflow-hidden"
             style={{
-              borderColor: winner?.color,
+              borderColor: winner?.color || '#D97706',
             }}
           >
-            <p className="text-2xl font-black mb-1" style={{ color: winner?.color }}>
+            <p className="font-display text-xl sm:text-3xl font-black mb-1 break-words" style={{ color: winner?.color || '#D97706' }}>
               {winner?.name}
             </p>
-            <p className="mono text-4xl font-black text-slate-100">
+            <p className="mono text-3xl sm:text-5xl font-black text-[#181226] my-2">
               {winner?.score}{' '}
-              <span className="text-sm font-bold text-slate-400">
+              <span className="text-sm font-bold text-[#6B6280]">
                 {winner?.score === 1 ? 'punto' : 'puntos'}
               </span>
             </p>
 
             <button
               onClick={() => setShowDiploma(true)}
-              className="w-full mt-4 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 hover:brightness-105 active:scale-98 transition-all"
+              className="w-full mt-4 py-3 sm:py-3.5 px-4 rounded-xl font-tactical font-black text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-[#FFC837] via-[#FFE082] to-[#FFB300] text-[#0E0A16] shadow-lg shadow-amber-500/20 hover:brightness-105 active:scale-98 transition-all"
             >
-              <svg className="w-4 h-4 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-4 h-4 text-[#0E0A16]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              Ver / Descargar Diploma Oficial
+              <span>Ver / Descargar Diploma Oficial</span>
             </button>
           </div>
         </motion.div>
@@ -103,7 +107,7 @@ export default function GameOver() {
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 + index * 0.1 }}
-                className="p-4 rounded-2xl bg-[#111827] border border-slate-800 shadow-xs flex items-center gap-4"
+                className="p-4 rounded-2xl bg-white border border-[#EAE3D5] shadow-sm flex items-center gap-4"
                 style={{
                   borderLeft: `5px solid ${team.color}`,
                 }}
@@ -112,12 +116,12 @@ export default function GameOver() {
                 <div
                   className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
                     index === 0
-                      ? 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
+                      ? 'bg-[#FFFBEB] text-[#D97706] border border-[#F59E0B]/40 shadow-xs'
                       : index === 1
-                      ? 'bg-slate-800 text-slate-200 border border-slate-700'
+                      ? 'bg-[#F1ECE3] text-[#181226] border border-[#DDD5C5]'
                       : index === 2
-                      ? 'bg-orange-950/80 text-orange-300 border border-orange-800/80'
-                      : 'bg-slate-900 text-slate-400 border border-slate-800'
+                      ? 'bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30'
+                      : 'bg-[#FAF7F2] text-[#6B6280] border border-[#EAE3D5]'
                   }`}
                 >
                   {index + 1}º
@@ -127,21 +131,21 @@ export default function GameOver() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <div
-                      className="w-3 h-3 rounded-full shrink-0 shadow-2xs"
+                      className="w-3 h-3 rounded-full shrink-0 shadow-xs"
                       style={{ backgroundColor: team.color }}
                     />
-                    <p className="font-black text-sm truncate text-slate-100">
+                    <p className="font-display font-black text-sm truncate text-[#181226]">
                       {team.name}
                     </p>
                   </div>
-                  <p className="text-slate-400 text-xs truncate">
+                  <p className="text-[#6B6280] text-xs truncate">
                     {team.players.map((p) => p.name || p).join(', ')}
                   </p>
                 </div>
 
                 {/* Score */}
                 <div className="text-right shrink-0">
-                  <p className="mono text-2xl font-black text-[var(--color-neon-indigo)]">
+                  <p className="mono text-2xl font-black text-[#D97706]">
                     {team.score}
                   </p>
                 </div>
@@ -154,7 +158,7 @@ export default function GameOver() {
         <div className="text-center mt-8">
           <button
             onClick={() => navigate('/')}
-            className="console-btn-primary px-8 py-4 rounded-2xl font-black text-sm shadow-md cursor-pointer"
+            className="arcade-btn-primary px-8 py-4 rounded-2xl font-black text-base shadow-lg cursor-pointer"
           >
             Volver al Inicio
           </button>
@@ -162,11 +166,13 @@ export default function GameOver() {
       </div>
 
       {/* Diploma Modal */}
-      <WinnerDiploma
-        winner={winner}
-        isOpen={showDiploma}
-        onClose={() => setShowDiploma(false)}
-      />
+      {showDiploma && (
+        <WinnerDiploma
+          winner={winner}
+          rankings={rankings}
+          onClose={() => setShowDiploma(false)}
+        />
+      )}
     </div>
   );
 }

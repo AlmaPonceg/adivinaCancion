@@ -189,22 +189,22 @@ export default function HostGame() {
   if (!roomCode) return null;
 
   return (
-    <div className="min-h-dvh pb-12 bg-[var(--color-console-bg)] text-[var(--color-text-on-dark)]">
+    <div className="min-h-dvh pb-12 text-[var(--color-text-primary)]">
       {/* Header Bar */}
-      <div className="bg-[#111827] sticky top-0 z-30 px-4 sm:px-8 py-3.5 flex items-center justify-between border-b border-slate-800 shadow-2xs">
+      <div className="bg-white/95 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-8 py-3.5 flex items-center justify-between border-b border-[#EAE3D5] shadow-xs">
         <div>
           <div className="flex items-center gap-2 mb-0.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <h1 className="font-heading text-base sm:text-lg font-black text-slate-100">Trivia Musical</h1>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#059669] shadow-[0_0_8px_#059669]" />
+            <h1 className="font-display text-base sm:text-lg font-black text-[#181226]">ADIVINÁ LA CANCIÓN</h1>
           </div>
-          <p className="mono text-xs text-slate-400">
+          <p className="mono text-xs text-[#6B6280]">
             Sala {roomCode} · Ronda {roundNumber}{playlist.length > 0 ? ` de ${playlist.length}` : ''}
           </p>
         </div>
 
         <button
           onClick={endGame}
-          className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-black text-rose-400 hover:bg-rose-950/40 border border-rose-800/80 transition-colors cursor-pointer"
+          className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-tactical font-black text-[#E11D48] hover:bg-[#FFF0F3] border border-[#E11D48]/30 bg-white transition-colors cursor-pointer shadow-2xs"
         >
           Terminar Partida
         </button>
@@ -234,15 +234,15 @@ export default function HostGame() {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="console-card p-6 sm:p-7 rounded-3xl relative overflow-hidden"
+            className="party-card p-6 sm:p-7 rounded-[2rem] relative overflow-hidden"
           >
             {/* Header / State indicator */}
-            <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-4 mb-5 border-b border-[#EAE3D5]">
               <div>
-                <h2 className="font-heading text-base sm:text-lg font-black text-slate-100">
+                <h2 className="font-display text-base sm:text-lg font-black text-[#181226]">
                   Control de la Partida
                 </h2>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                <p className="text-xs text-[#6B6280] font-medium mt-0.5">
                   {gameState === 'ROUND_ACTIVE' && 'Música sonando en vivo · Pulsadores habilitados'}
                   {gameState === 'BUZZER_LOCKED' && 'Pulsador presionado · Decisión del Jurado'}
                   {gameState === 'ROUND_END' && 'Ronda finalizada · Podés pasar a la siguiente'}
@@ -253,12 +253,12 @@ export default function HostGame() {
               <span
                 className={`mono text-xs font-black px-3 py-1 rounded-xl border ${
                   gameState === 'ROUND_ACTIVE'
-                    ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/70 shadow-[0_0_12px_rgba(16,185,129,0.3)] animate-pulse'
+                    ? 'bg-[#E6F9F0] text-[#059669] border-[#059669]/50 shadow-xs'
                     : gameState === 'BUZZER_LOCKED'
-                    ? 'bg-rose-950/80 text-rose-300 border-rose-500/70 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
+                    ? 'bg-[#FFF0F3] text-[#E11D48] border-[#E11D48]/50 shadow-xs'
                     : gameState === 'ROUND_END'
-                    ? 'bg-amber-950/80 text-amber-300 border-amber-600/70'
-                    : 'bg-indigo-950/80 text-indigo-300 border-indigo-700/70'
+                    ? 'bg-[#FFFBEB] text-[#D97706] border-[#F59E0B]/50 shadow-xs'
+                    : 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5]'
                 }`}
               >
                 {gameState === 'ROUND_ACTIVE' && 'EN VIVO'}
@@ -278,15 +278,15 @@ export default function HostGame() {
                 />
 
                 {buzzQueue.length > 1 && (
-                  <div className="mt-4 pt-4 border-t border-slate-800">
-                    <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">
+                  <div className="mt-4 pt-4 border-t border-[#EAE3D5]">
+                    <p className="badge-tag text-[#6B6280] mb-2">
                       Siguientes en cola si se equivoca:
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {buzzQueue.slice(1).map((b, i) => (
                         <span
                           key={b.playerId}
-                          className="text-xs px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 font-bold text-slate-200 flex items-center gap-1.5 shadow-xs"
+                          className="text-xs px-2.5 py-1 rounded-xl bg-white border border-[#EAE3D5] font-bold text-[#181226] flex items-center gap-1.5 shadow-2xs"
                         >
                           <span
                             className="w-2 h-2 rounded-full"
@@ -301,14 +301,18 @@ export default function HostGame() {
               </div>
             ) : gameState === 'ROUND_ACTIVE' ? (
               <div className="space-y-4">
-                <div className="p-6 rounded-2xl bg-indigo-950/40 border border-indigo-600/50 text-center shadow-inner">
-                  <div className="flex items-center justify-center gap-2 mb-1.5">
-                    <span className="w-3 h-3 rounded-full bg-indigo-400 animate-pulse" />
-                    <span className="text-indigo-200 font-black text-lg">
-                      Música sonando en los parlantes
-                    </span>
+                <div className="p-6 rounded-2xl bg-[#FFF6F3] border border-[#FF5722]/30 text-center shadow-xs">
+                  <div className="flex items-center justify-center gap-1.5 mb-2.5">
+                    <span className="w-1.5 bg-[#FF5722] rounded-full eq-bar-1" />
+                    <span className="w-1.5 bg-[#E11D48] rounded-full eq-bar-2" />
+                    <span className="w-1.5 bg-[#059669] rounded-full eq-bar-3" />
+                    <span className="w-1.5 bg-[#D97706] rounded-full eq-bar-4" />
+                    <span className="w-1.5 bg-[#0284C7] rounded-full eq-bar-2" />
                   </div>
-                  <p className="text-slate-400 text-xs sm:text-sm font-medium">
+                  <h3 className="font-display text-lg font-black text-[#181226] mb-1">
+                    MÚSICA SONANDO EN VIVO
+                  </h3>
+                  <p className="text-[#6B6280] text-xs sm:text-sm font-medium">
                     Los pulsadores están habilitados en los teléfonos esperando respuestas...
                   </p>
                 </div>
@@ -316,24 +320,24 @@ export default function HostGame() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <button
                     onClick={replayAudio}
-                    className="console-btn py-3.5 px-4 rounded-xl text-slate-200 text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 shadow-sm"
+                    className="arcade-btn py-3.5 px-4 rounded-xl text-[#181226] text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 shadow-sm"
                     title="Volver a reproducir el clip de audio"
                   >
-                    <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    Repetir Audio ({musicDuration}s)
+                    <span>Repetir Audio ({musicDuration}s)</span>
                   </button>
 
                   <button
                     onClick={skipCurrentSong}
-                    className="py-3.5 px-4 rounded-xl border border-rose-800/80 bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-98"
+                    className="py-3.5 px-4 rounded-xl border border-[#E11D48]/40 bg-[#FFF0F3] hover:bg-[#FFE4EA] text-[#E11D48] text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs active:scale-98"
                     title="Si nadie sabe la canción, saltar a la siguiente"
                   >
-                    <svg className="w-4 h-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-4 h-4 text-[#E11D48]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
                     </svg>
-                    Nadie Sabe: Saltar Canción
+                    <span>Nadie Sabe: Saltar Canción</span>
                   </button>
                 </div>
               </div>
@@ -343,14 +347,14 @@ export default function HostGame() {
                   <div className="space-y-3">
                     <button
                       onClick={finishGameDirectly}
-                      className="w-full py-4 px-6 rounded-2xl font-black text-base shadow-lg flex items-center justify-center gap-2.5 cursor-pointer bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white transition-all transform active:scale-98"
+                      className="arcade-btn-primary w-full py-4 px-6 rounded-2xl font-black text-base shadow-xl flex items-center justify-center gap-2.5 cursor-pointer"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                       </svg>
                       <span>Ver Podio Final (¡Canciones Completadas!) →</span>
                     </button>
-                    <p className="text-xs text-slate-500 text-center font-medium">
+                    <p className="text-xs text-[#6B6280] text-center font-medium">
                       Se han jugado todas las canciones de la lista. Finalizá para revelar al equipo campeón.
                     </p>
                   </div>
@@ -358,7 +362,7 @@ export default function HostGame() {
                   <div className="space-y-3">
                     <button
                       onClick={startNextRound}
-                      className="console-btn-primary w-full py-4 px-6 rounded-2xl font-black text-base shadow-md flex items-center justify-center gap-2.5 cursor-pointer transition-all active:translate-y-0.5"
+                      className="arcade-btn-primary w-full py-4 px-6 rounded-2xl font-black text-base shadow-xl flex items-center justify-center gap-2.5 cursor-pointer"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -370,7 +374,7 @@ export default function HostGame() {
                           : `Iniciar Siguiente Ronda (${roundNumber + 1}${playlist.length > 0 ? `/${playlist.length}` : ''}) →`}
                       </span>
                     </button>
-                    <p className="text-xs text-slate-500 text-center font-medium">
+                    <p className="text-xs text-[#6B6280] text-center font-medium">
                       Al presionar, la música sonará por el parlante y los pulsadores se activarán automáticamente en los celulares.
                     </p>
                   </div>
@@ -393,49 +397,49 @@ export default function HostGame() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
           >
             <motion.div
               initial={{ scale: 0.85, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.85, opacity: 0 }}
               transition={{ type: 'spring', damping: 22 }}
-              className={`p-8 sm:p-10 text-center max-w-md w-full rounded-3xl shadow-2xl border-2 backdrop-blur-md ${
+              className={`p-8 sm:p-10 text-center max-w-md w-full rounded-[2rem] shadow-2xl border-2 bg-white ${
                 lastResult.type === 'correct'
-                  ? 'bg-slate-900/95 border-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.3)]'
-                  : 'bg-slate-900/95 border-rose-500 shadow-[0_0_50px_rgba(244,63,94,0.3)]'
+                  ? 'border-[#059669] shadow-[0_20px_50px_rgba(5,150,105,0.25)]'
+                  : 'border-[#E11D48] shadow-[0_20px_50px_rgba(225,29,72,0.25)]'
               }`}
             >
               {lastResult.type === 'correct' ? (
                 <>
-                  <div className="w-20 h-20 rounded-2xl bg-emerald-950/80 border-2 border-emerald-400 flex items-center justify-center mx-auto mb-5 shadow-lg text-emerald-400 animate-bounce">
+                  <div className="w-20 h-20 rounded-2xl bg-[#E6F9F0] border-2 border-[#059669] flex items-center justify-center mx-auto mb-5 shadow-lg text-[#059669] animate-bounce">
                     <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <p className="text-xs font-black uppercase tracking-[0.25em] text-emerald-400 mb-1">
+                  <p className="badge-tag text-[#059669] mb-1">
                     ¡PUNTO CONCEDIDO!
                   </p>
-                  <h2 className="text-2xl sm:text-3xl font-black mb-3 text-slate-100 tracking-tight">
+                  <h2 className="font-display text-2xl sm:text-3xl font-black mb-3 text-[#181226] tracking-tight">
                     ¡Respuesta Correcta!
                   </h2>
-                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 mb-2 shadow-inner">
-                    <p className="text-slate-200 text-sm sm:text-base leading-relaxed">
-                      <span className="font-black text-lg" style={{ color: lastResult.teamColor }}>
+                  <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] mb-2 shadow-inner">
+                    <p className="text-[#181226] text-sm sm:text-base leading-relaxed">
+                      <span className="font-display font-black text-lg" style={{ color: lastResult.teamColor }}>
                         {lastResult.playerName}
                       </span>
                       {' '}sumó{' '}
-                      <span className="font-black text-emerald-300 bg-emerald-950 px-2.5 py-1 rounded-lg border border-emerald-800">
+                      <span className="font-black text-[#059669] bg-[#E6F9F0] px-2.5 py-1 rounded-lg border border-[#059669]/40">
                         +{lastResult.pointsAwarded || 1} {lastResult.pointsAwarded === 1 ? 'punto' : 'puntos'}
                       </span>
                     </p>
-                    <p className="text-xs font-bold text-slate-400 mt-2">
+                    <p className="text-xs font-bold text-[#6B6280] mt-2">
                       Equipo:{' '}
                       <span className="font-black" style={{ color: lastResult.teamColor }}>
                         {lastResult.teamName}
                       </span>
                       {lastResult.elapsedSeconds !== undefined && (
-                        <span className="ml-2 mono text-slate-500">
+                        <span className="ml-2 mono text-[#D97706]">
                           ({lastResult.elapsedSeconds}s)
                         </span>
                       )}
@@ -444,19 +448,19 @@ export default function HostGame() {
                 </>
               ) : (
                 <>
-                  <div className="w-20 h-20 rounded-2xl bg-rose-950/80 border-2 border-rose-500 flex items-center justify-center mx-auto mb-5 shadow-lg text-rose-400">
+                  <div className="w-20 h-20 rounded-2xl bg-[#FFF0F3] border-2 border-[#E11D48] flex items-center justify-center mx-auto mb-5 shadow-lg text-[#E11D48]">
                     <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </div>
-                  <p className="text-xs font-black uppercase tracking-[0.25em] text-rose-400 mb-1">
+                  <p className="badge-tag text-[#E11D48] mb-1">
                     RONDA DESIERTA
                   </p>
-                  <h2 className="text-2xl sm:text-3xl font-black mb-3 text-slate-100 tracking-tight">
+                  <h2 className="font-display text-2xl sm:text-3xl font-black mb-3 text-[#181226] tracking-tight">
                     Ronda Terminada
                   </h2>
-                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 shadow-inner">
-                    <p className="text-slate-400 text-xs sm:text-sm font-medium leading-relaxed">
+                  <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] shadow-inner">
+                    <p className="text-[#6B6280] text-xs sm:text-sm font-medium leading-relaxed">
                       Todos los equipos fallaron o se agotó el tiempo. Nadie sumó puntos en esta ronda.
                     </p>
                   </div>

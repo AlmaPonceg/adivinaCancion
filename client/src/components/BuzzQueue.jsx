@@ -7,13 +7,13 @@ export default function BuzzQueue({ queue, currentJudging }) {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="console-card p-5 sm:p-6 rounded-3xl"
+      className="party-card p-5 sm:p-6 rounded-[2rem]"
     >
       <div className="flex items-center justify-between mb-4">
-        <p className="text-xs font-black uppercase tracking-wider text-slate-300">
+        <p className="badge-tag text-[#6B6280]">
           Orden de Pulsadores
         </p>
-        <span className="mono text-xs font-bold text-[var(--color-neon-indigo)] bg-indigo-950/60 border border-indigo-800/80 px-2 py-0.5 rounded-md">
+        <span className="mono text-xs font-black text-[#FF5722] bg-[#FFF0EB] border border-[#FF5722]/30 px-2.5 py-0.5 rounded-lg">
           {queue.length} en cola
         </span>
       </div>
@@ -30,16 +30,16 @@ export default function BuzzQueue({ queue, currentJudging }) {
                 animate={{ opacity: 1, x: 0 }}
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all border ${
                   isJudging
-                    ? 'border-emerald-500 bg-emerald-950/50 shadow-xs'
-                    : 'border-slate-800 bg-[#0B0F19]'
+                    ? 'border-[#059669] bg-[#E6F9F0] shadow-sm ring-1 ring-[#059669]/30'
+                    : 'border-[#EAE3D5] bg-[#FAF7F2]'
                 }`}
               >
                 {/* Position */}
                 <span
                   className={`mono text-xs font-black w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
                     index === 0
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'bg-[#111827] border border-slate-700 text-slate-300'
+                      ? 'bg-[#FF5722] text-white shadow-xs'
+                      : 'bg-white border border-[#EAE3D5] text-[#181226]'
                   }`}
                 >
                   #{index + 1}
@@ -47,7 +47,7 @@ export default function BuzzQueue({ queue, currentJudging }) {
 
                 {/* Player */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-extrabold text-sm truncate text-slate-100">
+                  <p className="font-display font-black text-sm truncate text-[#181226]">
                     {buzz.playerName}
                   </p>
                   <p className="text-xs font-bold truncate" style={{ color: buzz.teamColor }}>
@@ -57,13 +57,13 @@ export default function BuzzQueue({ queue, currentJudging }) {
 
                 {/* Team dot */}
                 <div
-                  className="w-3.5 h-3.5 rounded-full shrink-0 shadow-2xs"
-                  style={{ backgroundColor: buzz.teamColor }}
+                  className="w-3.5 h-3.5 rounded-full shrink-0 shadow-xs"
+                  style={{ backgroundColor: buzz.teamColor, boxShadow: `0 0 8px ${buzz.teamColor}80` }}
                 />
 
                 {/* Active indicator */}
                 {isJudging && (
-                  <span className="text-[10px] font-black text-emerald-300 uppercase tracking-wider shrink-0 bg-emerald-950/80 border border-emerald-500/70 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-[0_0_12px_rgba(16,185,129,0.3)] animate-pulse">
+                  <span className="font-tactical text-[10px] font-black text-[#059669] uppercase tracking-wider shrink-0 bg-[#E6F9F0] border border-[#059669]/60 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-xs">
                     En turno
                   </span>
                 )}
