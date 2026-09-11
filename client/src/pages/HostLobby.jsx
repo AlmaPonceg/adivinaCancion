@@ -33,7 +33,7 @@ export default function HostLobby() {
 
   // ── URL & Sharing State ─────────────────────────────────────
   // Default to Render URL so QR codes and WhatsApp links NEVER contain localhost or local ports
-  const DEFAULT_RENDER_URL = 'https://adivina-cancion.onrender.com';
+  const DEFAULT_RENDER_URL = 'https://advinacancion.onrender.com';
 
   const [baseUrl, setBaseUrl] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -385,13 +385,8 @@ export default function HostLobby() {
                   </div>
 
                   {/* QR Code */}
-                  <div className="p-4 bg-white rounded-2xl shadow-inner mb-4 inline-block">
-                    <QRCodeSVG
-                      value={joinUrl}
-                      size={170}
-                      level="M"
-                      includeMargin={false}
-                    />
+                  <div className="mb-4">
+                    <QRDisplay value={joinUrl} size={170} />
                   </div>
 
                   {/* URL Display with Manual Override button */}
