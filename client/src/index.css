@@ -277,6 +277,24 @@ select:focus {
 .eq-bar-3 { animation: eq-bounce-3 0.85s infinite ease-in-out; }
 .eq-bar-4 { animation: eq-bounce-4 0.65s infinite ease-in-out; }
 
+/* Mini Equalizer Bars for Pills & Badges (Constrained strictly within 12-14px) */
+@keyframes mini-eq-bounce-1 {
+  0%, 100% { height: 3px; }
+  50% { height: 12px; }
+}
+@keyframes mini-eq-bounce-2 {
+  0%, 100% { height: 11px; }
+  50% { height: 4px; }
+}
+@keyframes mini-eq-bounce-3 {
+  0%, 100% { height: 5px; }
+  50% { height: 12px; }
+}
+
+.mini-eq-1 { animation: mini-eq-bounce-1 0.7s infinite ease-in-out; }
+.mini-eq-2 { animation: mini-eq-bounce-2 0.55s infinite ease-in-out; }
+.mini-eq-3 { animation: mini-eq-bounce-3 0.85s infinite ease-in-out; }
+
 /* ── Print Media Optimization (Diploma Export) ─────────────── */
 @media print {
   body {

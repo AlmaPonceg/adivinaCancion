@@ -334,6 +334,7 @@ io.on('connection', (socket) => {
     if (!room) return callback?.({ error: 'Sala no encontrada' });
 
     console.log(`[Game] Host started game in room ${roomCode}`);
+    room.state = 'ROUND_WAITING';
     io.to(roomCode).emit('game-started', {
       roundNumber: room.roundNumber || 0,
       teams: room.teams,

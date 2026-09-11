@@ -159,6 +159,9 @@ export default function BuzzerButton({
               onPointerDown={handlePointerDown}
               onPointerUp={handlePointerUp}
               onPointerLeave={handlePointerUp}
+              onClick={() => {
+                if (!isDisabled) onBuzz?.();
+              }}
               disabled={isDisabled}
               className={`group relative w-44 h-44 sm:w-50 sm:h-50 rounded-full flex items-center justify-center cursor-pointer disabled:cursor-not-allowed focus:outline-none focus-visible:ring-4 focus-visible:ring-white/60 transition-[transform,box-shadow] ${
                 isPressed

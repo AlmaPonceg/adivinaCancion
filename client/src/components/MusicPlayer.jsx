@@ -140,58 +140,6 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     }, 100);
   }, [playDuration, stopProgress]);
 
-  const loadMedia = useCallback((inputUrl) => {
-    const trimmed = (inputUrl || '').trim();
-    if (!trimmed) {
-      setMediaType(null);
-      setMediaId(null);
-      return;
-    }
-
-    if (ytPlayerRef.current) {
-      try {
-        ytPlayerRef.current.destroy();
-      } catch (e) {
-        /* ignore */
-      }
-      ytPlayerRef.current = null;
-    }
-    if (timerRef.current) clearTimeout(timerRef.current);
-    stopProgress();
-    setIsPlaying(false);
-    setPlaybackSeconds(0);
-
-    const ytId = extractYoutubeId(trimmed);
-    if (ytId) {
-      setMediaType('youtube');
-      setMediaId(ytId);
-      setTimeout(() => initYoutubePlayer(ytId), 100);
-      return;
-    }
-
-    const spotifyEmbed = extractSpotifyEmbed(trimmed);
-    if (spotifyEmbed) {
-      setMediaType('spotify');
-      setMediaId(spotifyEmbed);
-      return;
-    }
-
-    setMediaType(null);
-    setMediaId(null);
-  }, [stopProgress]);
-
-  // Initialize and shuffle playlist in random order by default
-  useEffect(() => {
-    if (playlist && playlist.length > 0) {
-      const ordered = isRandomMode ? shuffleArray(playlist) : [...playlist];
-      setShuffledPlaylist(ordered);
-      setCurrentTrackIndex(0);
-      const initialTrack = ordered[0];
-      setUrl(initialTrack);
-      loadMedia(initialTrack);
-    }
-  }, [playlist, isRandomMode, loadMedia]);
-
   const initYoutubePlayer = useCallback(
     (videoId) => {
       const checkAndInit = () => {
@@ -223,6 +171,58 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     },
     [startTime]
   );
+
+  const loadMedia = useCallback((inputUrl) => {
+    const trimmed = (inputUrl || '').trim();
+    if (!trimmed) {
+      setMediaType(null);
+      setMediaId(null);
+      return;
+    }
+
+    if (ytPlayerRef.current) {
+      try {
+        ytPlayerRef.current.destroy();
+      } catch {
+        /* ignore */
+      }
+      ytPlayerRef.current = null;
+    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    stopProgress();
+    setIsPlaying(false);
+    setPlaybackSeconds(0);
+
+    const ytId = extractYoutubeId(trimmed);
+    if (ytId) {
+      setMediaType('youtube');
+      setMediaId(ytId);
+      setTimeout(() => initYoutubePlayer(ytId), 100);
+      return;
+    }
+
+    const spotifyEmbed = extractSpotifyEmbed(trimmed);
+    if (spotifyEmbed) {
+      setMediaType('spotify');
+      setMediaId(spotifyEmbed);
+      return;
+    }
+
+    setMediaType(null);
+    setMediaId(null);
+  }, [stopProgress, initYoutubePlayer]);
+
+  // Initialize and shuffle playlist in random order by default
+  useEffect(() => {
+    if (playlist && playlist.length > 0) {
+      const ordered = isRandomMode ? shuffleArray(playlist) : [...playlist];
+      setShuffledPlaylist(ordered);
+      setCurrentTrackIndex(0);
+      const initialTrack = ordered[0];
+      setUrl(initialTrack);
+      loadMedia(initialTrack);
+    }
+  }, [playlist, isRandomMode, loadMedia]);
 
   const activeQueue = shuffledPlaylist.length > 0 ? shuffledPlaylist : playlist;
 

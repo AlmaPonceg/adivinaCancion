@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
 import { useSocketEvent } from '../hooks/useSocket';
 import BuzzerButton from '../components/BuzzerButton';
+import LobbyAudio from '../components/LobbyAudio';
 
 function computeStatusMessage(st) {
   if (!st) return 'Conectando al juego...';
@@ -59,6 +60,7 @@ export default function PlayerBuzzer() {
   const [buzzPosition, setBuzzPosition] = useState(null);
   const [showTeamsModal, setShowTeamsModal] = useState(false);
   const [roundNotification, setRoundNotification] = useState(null);
+  const [hasGameStarted, setHasGameStarted] = useState(false);
 
   // ── Team Setup & Readiness State (Phone) ───────────────────
   const [isEditingTeamName, setIsEditingTeamName] = useState(false);
@@ -155,6 +157,7 @@ export default function PlayerBuzzer() {
 
   // Round started -> Immediately activate buzzer!
   useSocketEvent('round-started', (data) => {
+    setHasGameStarted(true);
     setShowTeamsModal(false);
     setPlayerState((prev) => ({
       ...prev,
@@ -275,6 +278,7 @@ export default function PlayerBuzzer() {
   });
 
   useSocketEvent('game-started', (data) => {
+    setHasGameStarted(true);
     setShowTeamsModal(false);
     setPlayerState((prev) => ({
       ...prev,
@@ -390,13 +394,17 @@ export default function PlayerBuzzer() {
     });
   }, [playerState.canBuzz, roomCode]);
 
+  const isGameStarted =
+    hasGameStarted ||
+    (playerState.gameState !== 'TEAMS_ASSIGNED' && playerState.gameState !== 'LOBBY');
+
   if (!roomCode) return null;
 
   return (
     <div className="min-h-dvh flex flex-col justify-between p-4 select-none text-[var(--color-text-primary)]">
       {/* ── TOP BAR: Room, Round & Standings HUD ── */}
       <header className="w-full pt-1">
-        <div className="flex items-center justify-between gap-2 mb-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border-2 border-[#DDD5C5] shadow-xs">
               <span className="w-2.5 h-2.5 rounded-full bg-[#059669] shadow-[0_0_8px_#059669]" />
@@ -404,22 +412,25 @@ export default function PlayerBuzzer() {
                 SALA {roomCode}
               </span>
             </div>
-            {playerState.roundNumber > 0 && (
+            {playerState.roundNumber > 0 && isGameStarted && (
               <div className="mono text-xs font-black px-3 py-1.5 rounded-xl bg-[#FFF3EB] text-[#FF5722] border border-[#FF5722]/30 shadow-xs">
                 RONDA {playerState.roundNumber}
               </div>
             )}
           </div>
 
-          <button
-            onClick={() => setShowTeamsModal(true)}
-            className="arcade-btn text-xs font-bold px-3 py-1.5 rounded-xl text-[#181226] flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform"
-          >
-            <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span>Posiciones</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <LobbyAudio isGameStarted={isGameStarted} initialVolume={0.35} />
+            <button
+              onClick={() => setShowTeamsModal(true)}
+              className="arcade-btn text-xs font-bold px-3 py-1.5 rounded-xl text-[#181226] flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform"
+            >
+              <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Posiciones</span>
+            </button>
+          </div>
         </div>
 
         {/* Live Scoreboard ticker */}

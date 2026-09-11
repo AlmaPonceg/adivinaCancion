@@ -5,6 +5,7 @@ import socket from '../socket';
 import { useSocketEvent, useSocketEmit } from '../hooks/useSocket';
 import QRDisplay from '../components/QRDisplay';
 import TeamDisplay from '../components/TeamDisplay';
+import LobbyAudio from '../components/LobbyAudio';
 
 export default function HostLobby() {
   const navigate = useNavigate();
@@ -316,7 +317,8 @@ export default function HostLobby() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+            <LobbyAudio />
             <div className="p-1 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl flex items-center gap-2.5 bg-white border border-[#EAE3D5] shadow-xs">
               <span className={`w-2.5 h-2.5 rounded-full ${roomCode ? 'bg-[#059669] shadow-[0_0_8px_#059669]' : 'bg-[#D97706]'}`} />
               <span className="mono text-xs font-black text-[#181226]">
