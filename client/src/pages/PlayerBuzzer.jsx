@@ -8,14 +8,14 @@ import LobbyAudio from '../components/LobbyAudio';
 
 function computeStatusMessage(st) {
   if (!st) return 'Conectando al juego...';
-  if (st.canBuzz) return '¡MÚSICA SONANDO! TOCÁ EL BOTÓN';
   if (st.isMyTurn) return '¡TU TURNO! CANTÁ O RESPONDÉ';
-  if (st.hasBuzzed) return 'Registrado. Esperando al jurado...';
+  if (st.hasBuzzed) return 'Registrado en la fila. Esperando al jurado...';
+  if (st.canBuzz) return '¡MÚSICA SONANDO! TOCÁ EL BOTÓN';
   if (st.isTeamBlocked) return 'Tu equipo fue bloqueado esta ronda';
   if (st.isPlayerBlocked) return 'Bloqueado en esta ronda';
   if (st.gameState === 'BUZZER_LOCKED') {
     const judging = st.currentJudging;
-    return judging ? `${judging.playerName} (${judging.teamName}) tocó primero` : 'Alguien fue más rápido';
+    return judging ? `${judging.playerName} (${judging.teamName}) respondió` : 'Alguien fue más rápido';
   }
   if (st.gameState === 'ROUND_END') return 'Ronda finalizada. Esperando siguiente canción...';
   if (st.gameState === 'ROUND_ACTIVE') return '¡MÚSICA SONANDO! TOCÁ EL BOTÓN';
@@ -341,7 +341,31 @@ export default function PlayerBuzzer() {
   });
 
   useSocketEvent('round-judgment', (data) => {
-    if (data.allBlocked) {
+    if (data.nextUp) {
+      const isMe = data.nextUp.playerId === playerId || data.nextUp.teamIndex === playerState.teamIndex;
+      setRoundNotification({
+        type: isMe ? 'buzz' : 'warning',
+        message: isMe
+          ? '¡Tu turno! Falló el equipo anterior. ¡CANTÁ O RESPONDÉ!'
+          : `Falló ${data.blocked?.playerName}. Turno de ${data.nextUp.playerName} (${data.nextUp.teamName})`,
+      });
+      setPlayerState((prev) => {
+        const isMyTurnNow = data.nextUp.playerId === playerId;
+        return {
+          ...prev,
+          currentJudging: data.nextUp,
+          isMyTurn: isMyTurnNow,
+          hasBuzzed: isMyTurnNow ? true : prev.hasBuzzed,
+        };
+      });
+      if (isMe) {
+        setStatusMessage('¡TU TURNO! CANTÁ O RESPONDÉ');
+        setBuzzPosition(null);
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate([120, 60, 120]);
+        }
+      }
+    } else if (data.allBlocked) {
       setRoundNotification({
         type: 'incorrect',
         message: 'Todos los equipos fallaron esta ronda',
@@ -352,21 +376,35 @@ export default function PlayerBuzzer() {
         hasBuzzed: false,
         gameState: 'ROUND_END',
       }));
+      setBuzzPosition(null);
       // Mostrar automáticamente la tabla de posiciones si todos fallaron
       setShowTeamsModal(true);
     } else if (data.reopened) {
       setRoundNotification({
         type: 'incorrect',
-        message: `Falló ${data.blocked?.playerName}. Pulsador reabierto`,
+        message: `Falló ${data.blocked?.playerName}. Pulsadores reabiertos`,
       });
       setPlayerState((prev) => ({
         ...prev,
         canBuzz: !prev.isTeamBlocked && !prev.isPlayerBlocked,
         hasBuzzed: false,
       }));
+      setBuzzPosition(null);
       setStatusMessage('¡Buzzer reabierto! Tocá el botón');
     }
     setTimeout(() => setRoundNotification(null), 3500);
+  });
+
+  useSocketEvent('buzz-queue-updated', (data) => {
+    const queue = data?.buzzQueue || [];
+    const myEntry = queue.find(
+      (b) => b.playerId === playerId || (b.teamIndex !== undefined && b.teamIndex === playerState.teamIndex)
+    );
+    if (myEntry) {
+      setBuzzPosition(myEntry.position);
+    } else if (!playerState.isMyTurn) {
+      setBuzzPosition(null);
+    }
   });
 
   useSocketEvent('game-over', (data) => {

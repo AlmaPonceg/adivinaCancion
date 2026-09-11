@@ -92,15 +92,19 @@ export default function HostGame() {
     if (data.nextUp) {
       setCurrentJudging(data.nextUp);
       setGameState('BUZZER_LOCKED');
+      setBuzzQueue(data.buzzQueue || []);
+      playHostBuzzerSound();
     } else if (data.allBlocked) {
       setGameState('ROUND_END');
       setCurrentJudging(null);
+      setBuzzQueue([]);
       setLastResult({ type: 'all-blocked' });
       setShowResult(true);
       setTimeout(() => setShowResult(false), 3000);
     } else if (data.reopened) {
       setGameState('ROUND_ACTIVE');
       setCurrentJudging(null);
+      setBuzzQueue([]);
     }
   });
 
@@ -298,6 +302,19 @@ export default function HostGame() {
                     </div>
                   </div>
                 )}
+
+                <div className="pt-2 text-center">
+                  <button
+                    onClick={skipCurrentSong}
+                    className="py-2.5 px-4 rounded-xl border border-[#E11D48]/30 bg-[#FFF0F3] hover:bg-[#FFE4EA] text-[#E11D48] text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs active:scale-98"
+                    title="Pasar a la siguiente canción sin otorgar puntos"
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#E11D48]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                    </svg>
+                    <span>Nadie sabe: Pasar a la siguiente canción (0 pts)</span>
+                  </button>
+                </div>
               </div>
             ) : gameState === 'ROUND_ACTIVE' ? (
               <div className="space-y-4">

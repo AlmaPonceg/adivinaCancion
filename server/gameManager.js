@@ -423,7 +423,7 @@ class GameManager {
     const room = this.rooms.get(roomCode);
     if (!room) return { error: 'Sala no encontrada' };
 
-    if (room.state !== GAME_STATES.ROUND_ACTIVE) {
+    if (room.state !== GAME_STATES.ROUND_ACTIVE && room.state !== GAME_STATES.BUZZER_LOCKED) {
       return { error: 'Buzzer no activo' };
     }
 
@@ -434,6 +434,11 @@ class GameManager {
     // Check if player already buzzed
     if (room.buzzQueue.some(b => b.playerId === player.id)) {
       return { error: 'Ya tocaste el buzzer' };
+    }
+
+    // Check if another member of the same team already has a spot in the queue
+    if (room.buzzQueue.some(b => b.teamIndex === player.teamIndex)) {
+      return { error: 'Tu equipo ya tiene un lugar en la fila' };
     }
 
     // Check if player's team is blocked
@@ -540,27 +545,36 @@ class GameManager {
     room.blockedTeams.add(blocked.teamIndex);
     room.blockedPlayers.add(blocked.playerId);
 
-    const nextBuzz = room.buzzQueue.find(
+    // Remove blocked player and any other player whose team is now blocked from the queue
+    room.buzzQueue = room.buzzQueue.filter(
       b => b.playerId !== blocked.playerId && !room.blockedTeams.has(b.teamIndex)
     );
 
-    if (nextBuzz) {
+    // Re-index queue positions
+    room.buzzQueue.forEach((b, idx) => {
+      b.position = idx + 1;
+    });
+
+    if (room.buzzQueue.length > 0) {
+      const nextBuzz = room.buzzQueue[0];
       room.currentJudging = nextBuzz;
       room.state = GAME_STATES.BUZZER_LOCKED;
       return {
         blocked: { playerName: blocked.playerName, teamName: blocked.teamName },
         nextUp: nextBuzz,
+        buzzQueue: room.buzzQueue,
         allBlocked: false,
       };
     }
 
-    const allTeamsBlocked = room.teams.every((_, idx) => room.blockedTeams.has(idx));
+    const allTeamsBlocked = room.teams.length > 0 && room.teams.every((_, idx) => room.blockedTeams.has(idx));
     if (allTeamsBlocked) {
       room.state = GAME_STATES.ROUND_END;
       room.currentJudging = null;
       return {
         blocked: { playerName: blocked.playerName, teamName: blocked.teamName },
         nextUp: null,
+        buzzQueue: [],
         allBlocked: true,
       };
     }
@@ -571,6 +585,7 @@ class GameManager {
     return {
       blocked: { playerName: blocked.playerName, teamName: blocked.teamName },
       nextUp: null,
+      buzzQueue: [],
       allBlocked: false,
       reopened: true,
     };
@@ -637,10 +652,12 @@ class GameManager {
     if (!player) return null;
 
     const team = room.teams[player.teamIndex];
-    const hasBuzzed = room.buzzQueue.some(b => b.playerId === player.id);
+    const isTeamInQueue = room.buzzQueue.some(b => b.teamIndex === player.teamIndex);
+    const hasBuzzed = room.buzzQueue.some(b => b.playerId === player.id) || isTeamInQueue;
     const isTeamBlocked = room.blockedTeams.has(player.teamIndex);
     const isPlayerBlocked = room.blockedPlayers.has(player.id);
     const allTeamsReady = room.teams.length > 0 && room.teams.every(t => t.isReady);
+    const myQueueEntry = room.buzzQueue.find(b => b.teamIndex === player.teamIndex);
 
     return {
       id: player.id,
@@ -652,10 +669,15 @@ class GameManager {
       isTeamReady: team ? !!team.isReady : false,
       allTeamsReady,
       gameState: room.state,
-      canBuzz: room.state === GAME_STATES.ROUND_ACTIVE && !hasBuzzed && !isTeamBlocked && !isPlayerBlocked,
+      canBuzz:
+        (room.state === GAME_STATES.ROUND_ACTIVE || room.state === GAME_STATES.BUZZER_LOCKED) &&
+        !hasBuzzed &&
+        !isTeamBlocked &&
+        !isPlayerBlocked,
       hasBuzzed,
       isTeamBlocked,
       isPlayerBlocked,
+      buzzPosition: myQueueEntry?.position || null,
       currentJudging: room.currentJudging,
       isMyTurn: room.currentJudging?.playerId === player.id,
       roundNumber: room.roundNumber,

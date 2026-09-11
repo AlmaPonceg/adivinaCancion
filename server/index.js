@@ -434,9 +434,13 @@ io.on('connection', (socket) => {
       ...result,
     });
 
+    io.to(roomCode).emit('buzz-queue-updated', {
+      buzzQueue: result.buzzQueue || [],
+    });
+
     broadcastPlayerStates(roomCode);
 
-    console.log(`[Incorrect] ${result.blocked.playerName} blocked`);
+    console.log(`[Incorrect] ${result.blocked.playerName} blocked. Next up: ${result.nextUp?.playerName || 'None'}`);
     callback?.({ success: true, result });
   });
 
