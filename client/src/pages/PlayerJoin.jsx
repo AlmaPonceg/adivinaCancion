@@ -114,28 +114,28 @@ export default function PlayerJoin() {
 
   // ── Join Form View ──────────────────────────────────────────
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6">
+    <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 bg-[var(--color-console-bg)] text-[var(--color-text-on-dark)]">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="nm-flat p-8 sm:p-10 w-full max-w-sm rounded-3xl relative"
+        className="console-card p-8 sm:p-10 w-full max-w-sm rounded-3xl relative"
       >
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-extrabold uppercase tracking-wider mb-3">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-950/60 border border-indigo-800/80 text-[var(--color-neon-indigo)] text-[11px] font-extrabold uppercase tracking-wider mb-3">
             Pulsador en tu celular
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 mb-1">
+          <h1 className="font-heading text-2xl sm:text-3xl font-black tracking-tight text-slate-100 mb-1">
             Trivia Musical
           </h1>
-          <p className="text-slate-500 text-xs">
+          <p className="text-slate-400 text-xs">
             Ingresá tus datos para activar tu pulsador
           </p>
         </div>
 
         <form onSubmit={handleJoin} className="space-y-5">
           <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-1.5">
               Tu nombre o apodo
             </label>
             <input
@@ -144,13 +144,13 @@ export default function PlayerJoin() {
               onChange={(e) => setName(e.target.value)}
               placeholder="Ej. Martín"
               maxLength={20}
-              className="w-full px-4 py-3 text-sm font-semibold rounded-xl border border-slate-300"
+              className="w-full px-4 py-3 text-sm font-semibold rounded-xl border border-slate-700 bg-[#0B0F19] text-white"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-1.5">
               Código de sala (4 dígitos)
             </label>
             <input
@@ -159,12 +159,12 @@ export default function PlayerJoin() {
               onChange={(e) => setRoomCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
               placeholder="0000"
               maxLength={4}
-              className="mono w-full px-4 py-3 text-2xl font-black tracking-widest text-center rounded-xl border border-slate-300 text-indigo-600"
+              className="mono w-full px-4 py-3 text-2xl font-black tracking-widest text-center rounded-xl border border-slate-700 bg-[#0B0F19] text-[var(--color-neon-indigo)]"
             />
           </div>
 
           {error && (
-            <p className="text-xs text-rose-600 font-bold text-center bg-rose-50 p-2 rounded-lg border border-rose-200">
+            <p className="text-xs text-rose-400 font-bold text-center bg-rose-950/50 p-2 rounded-lg border border-rose-800/80">
               {error}
             </p>
           )}
@@ -172,7 +172,7 @@ export default function PlayerJoin() {
           <button
             type="submit"
             disabled={isJoining}
-            className="nm-btn-primary w-full py-4 rounded-2xl font-black text-sm disabled:opacity-50 shadow-md flex items-center justify-center gap-2"
+            className="console-btn-primary w-full py-4 rounded-2xl font-black text-sm disabled:opacity-50 shadow-md flex items-center justify-center gap-2 cursor-pointer"
           >
             {isJoining ? (
               <>

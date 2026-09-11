@@ -9,7 +9,7 @@ export default function Scoreboard({ teams }) {
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="nm-flat p-4 sm:p-5 rounded-3xl"
+      className="console-card p-4 sm:p-5 rounded-3xl"
     >
       <div className="flex items-center gap-4 overflow-x-auto pb-1">
         {teams.map((team) => {
@@ -23,13 +23,13 @@ export default function Scoreboard({ teams }) {
                     className="w-3 h-3 rounded-full shrink-0 shadow-2xs"
                     style={{ backgroundColor: team.color }}
                   />
-                  <span className="text-xs font-black text-slate-800 truncate">
+                  <span className="text-xs font-black text-slate-200 truncate">
                     {team.name}
                   </span>
                 </div>
                 {isLeader && (
-                  <span className="text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md flex items-center gap-1">
-                    <svg className="w-3 h-3 text-amber-600" fill="currentColor" viewBox="0 0 24 24">
+                  <span className="text-[10px] font-black text-amber-300 bg-amber-950/70 border border-amber-800/80 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                    <svg className="w-3 h-3 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
                     </svg>
                     1º
@@ -38,7 +38,7 @@ export default function Scoreboard({ teams }) {
               </div>
 
               {/* Progress bar track */}
-              <div className="relative h-9 bg-slate-100 rounded-xl overflow-hidden border border-slate-200/80">
+              <div className="relative h-9 bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
                 <motion.div
                   className="absolute inset-y-0 left-0 rounded-xl shadow-xs"
                   style={{

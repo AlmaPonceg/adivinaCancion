@@ -285,7 +285,7 @@ export default function HostLobby() {
   };
 
   return (
-    <div className="min-h-dvh p-4 sm:p-8">
+    <div className="min-h-dvh p-4 sm:p-8 bg-[var(--color-console-bg)] text-[var(--color-text-on-dark)]">
       <div className="max-w-6xl mx-auto">
         {/* Top Navigation / Header Bar */}
         <motion.div
@@ -297,27 +297,27 @@ export default function HostLobby() {
             <div className="flex items-center gap-2 mb-1">
               <button
                 onClick={() => navigate('/')}
-                className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-1"
+                className="text-xs font-bold text-slate-400 hover:text-[var(--color-neon-indigo)] transition-colors flex items-center gap-1"
               >
                 ← Inicio
               </button>
-              <span className="text-slate-300">/</span>
-              <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+              <span className="text-slate-600">/</span>
+              <span className="text-xs font-semibold text-[var(--color-neon-indigo)] bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-800/80">
                 Panel Anfitrión
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+            <h1 className="font-heading text-2xl sm:text-3xl font-black tracking-tight text-slate-100">
               Sala de Espera y Configuración
             </h1>
-            <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
+            <p className="text-slate-400 text-xs sm:text-sm mt-0.5">
               Compartí el código o QR para que cada invitado se una desde su teléfono.
             </p>
           </div>
 
           <div className="flex items-center gap-2.5 self-start sm:self-auto">
-            <div className="nm-flat-sm px-3.5 py-1.5 rounded-xl flex items-center gap-2 border border-slate-200/80">
+            <div className="console-card-sm px-3.5 py-1.5 rounded-xl flex items-center gap-2 border border-slate-700">
               <span className={`w-2.5 h-2.5 rounded-full ${roomCode ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-              <span className="mono text-xs font-black text-slate-700">
+              <span className="mono text-xs font-black text-slate-200">
                 {roomCode ? `SALA ${roomCode}` : 'CONECTANDO...'}
               </span>
             </div>
@@ -332,9 +332,9 @@ export default function HostLobby() {
             <motion.div
               initial={{ opacity: 0, x: -16 }}
               animate={{ opacity: 1, x: 0 }}
-              className="nm-flat p-6 sm:p-8 rounded-3xl flex flex-col items-center text-center relative overflow-hidden"
+              className="console-card p-6 sm:p-8 rounded-3xl flex flex-col items-center text-center relative overflow-hidden"
             >
-              <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-extrabold uppercase tracking-wider mb-4">
+              <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-200 text-[11px] font-extrabold uppercase tracking-wider mb-4">
                 Código para unirse
               </div>
 
@@ -348,7 +348,7 @@ export default function HostLobby() {
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ delay: i * 0.08 }}
-                        className="mono w-14 h-18 sm:w-16 sm:h-20 bg-slate-50 border-2 border-indigo-100 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl font-black text-indigo-600 shadow-sm"
+                        className="mono w-14 h-18 sm:w-16 sm:h-20 bg-[#0B0F19] border-2 border-indigo-500/50 rounded-2xl flex items-center justify-center text-3xl sm:text-4xl font-black text-[var(--color-neon-indigo)] shadow-sm"
                       >
                         {digit}
                       </motion.span>
@@ -369,94 +369,80 @@ export default function HostLobby() {
 
                     <button
                       onClick={handleCopyLink}
-                      className="nm-btn py-3 px-3 rounded-xl font-bold text-xs text-slate-700 flex items-center justify-center gap-1.5"
+                      className="console-btn py-3 px-3 rounded-xl font-bold text-xs text-slate-200 flex items-center justify-center gap-1.5"
                     >
                       {copied ? (
-                        <span className="text-emerald-600 font-bold">¡Copiado!</span>
+                        <span className="text-emerald-400 font-bold">¡Copiado!</span>
                       ) : (
                         <>
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
-                          Copiar link
+                          Copiar Link
                         </>
                       )}
                     </button>
                   </div>
 
-                  {/* QR Display */}
-                  <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl mb-4 flex flex-col items-center">
-                    <QRDisplay value={joinUrl} size={170} />
-                    <p className="text-[11px] font-semibold text-slate-500 mt-2">
-                      Escaneá con la cámara del celular
-                    </p>
+                  {/* QR Code */}
+                  <div className="p-4 bg-white rounded-2xl shadow-inner mb-4 inline-block">
+                    <QRCodeSVG
+                      value={joinUrl}
+                      size={170}
+                      level="M"
+                      includeMargin={false}
+                    />
                   </div>
 
-                  {/* URL Config */}
-                  <div className="w-full mt-1 pt-3 border-t border-slate-100 text-left">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-                        Destino del QR y WhatsApp:
+                  {/* URL Display with Manual Override button */}
+                  <div className="w-full bg-[#0B0F19] p-3 rounded-2xl border border-slate-800 text-left">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        Enlace de conexión:
                       </span>
                       <button
-                        onClick={() => {
-                          setUrlInput(baseUrl);
-                          setIsEditingUrl(!isEditingUrl);
-                        }}
-                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
+                        onClick={() => setIsEditingUrl(!isEditingUrl)}
+                        className="text-[11px] font-bold text-[var(--color-neon-indigo)] hover:underline flex items-center gap-1 cursor-pointer"
                       >
-                        {isEditingUrl ? 'Cerrar' : 'Editar link'}
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        {isEditingUrl ? 'Cerrar' : 'Cambiar IP/Host'}
                       </button>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 truncate mb-1">
+                    <p className="mono text-xs text-slate-300 font-semibold break-all select-all">
                       {joinUrl}
-                    </div>
-
-                    <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5 text-indigo-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Apunta al enlace oficial de Render para que los celulares se unan desde cualquier red.
                     </p>
 
+                    {/* Editor de IP / Host manual */}
                     {isEditingUrl && (
                       <motion.div
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200 mt-2 space-y-2.5"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="mt-3 pt-3 border-t border-slate-800 space-y-2"
                       >
-                        <p className="text-xs font-bold text-indigo-900">
-                          Personalizar URL de Render:
+                        <p className="text-[11px] text-slate-400">
+                          Si estás en red local y el celular no conecta con localhost, poné la IP de tu PC (ej: <code>192.168.1.50</code> o tu túnel ngrok):
                         </p>
-                        <input
-                          type="text"
-                          value={urlInput}
-                          onChange={(e) => setUrlInput(e.target.value)}
-                          placeholder="https://tu-app.onrender.com"
-                          className="w-full px-3 py-2 text-xs rounded-xl border border-indigo-200 bg-white font-mono"
-                        />
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-1">
-                          <button
-                            onClick={() => {
-                              setBaseUrl(DEFAULT_RENDER_URL);
-                              localStorage.setItem('trivia_base_url', DEFAULT_RENDER_URL);
-                              setIsEditingUrl(false);
-                            }}
-                            className="text-xs text-indigo-700 hover:underline font-bold cursor-pointer"
-                          >
-                            Restablecer Render oficial
-                          </button>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            type="text"
+                            value={customHostInput}
+                            onChange={(e) => setCustomHostInput(e.target.value)}
+                            placeholder="Ej: 192.168.1.15:5173 o mitunel.ngrok.io"
+                            className="flex-1 px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-700 bg-[#111827] text-white"
+                          />
                           <div className="flex gap-2 self-end sm:self-auto">
                             <button
                               onClick={() => setIsEditingUrl(false)}
-                              className="text-xs text-slate-500 hover:text-slate-800 px-2 py-1 font-semibold"
+                              className="text-xs text-slate-400 hover:text-slate-200 px-2 py-1 font-semibold"
                             >
                               Cancelar
                             </button>
                             <button
                               onClick={handleSaveCustomUrl}
-                              className="nm-btn-primary px-3.5 py-1.5 text-xs font-bold"
+                              className="console-btn-primary px-3.5 py-1.5 text-xs font-bold"
                             >
                               Guardar
                             </button>
@@ -469,12 +455,12 @@ export default function HostLobby() {
               ) : (
                 <div className="py-12 flex flex-col items-center justify-center space-y-4">
                   <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm font-semibold text-slate-600">
+                  <p className="text-sm font-semibold text-slate-300">
                     Generando código y código QR...
                   </p>
                   <button
                     onClick={handleManualRetryRoom}
-                    className="nm-btn px-4 py-2 text-xs font-bold text-indigo-600 mt-2"
+                    className="console-btn px-4 py-2 text-xs font-bold text-[var(--color-neon-indigo)] mt-2"
                   >
                     Reintentar conexión
                   </button>
@@ -486,27 +472,27 @@ export default function HostLobby() {
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="nm-flat p-6 rounded-3xl"
+              className="console-card p-6 rounded-3xl"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-300">
                     Playlist de Canciones
                   </span>
-                  <span className="mono text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                  <span className="mono text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-950/60 text-[var(--color-neon-indigo)] border border-indigo-800/80">
                     {playlist.length} {playlist.length === 1 ? 'canción' : 'canciones'}
                   </span>
                 </div>
 
                 <button
                   onClick={() => setShowPlaylistDrawer(!showPlaylistDrawer)}
-                  className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
+                  className="text-xs font-bold text-[var(--color-neon-indigo)] hover:underline cursor-pointer"
                 >
                   {showPlaylistDrawer ? 'Cerrar' : '+ Cargar lista'}
                 </button>
               </div>
 
-              <p className="text-xs text-slate-500 mb-3">
+              <p className="text-xs text-slate-400 mb-3">
                 Pegá los enlaces de YouTube antes de empezar. Sonarán únicamente en esta computadora (Bluetooth).
               </p>
 
@@ -517,20 +503,20 @@ export default function HostLobby() {
                     value={playlistInput}
                     onChange={(e) => setPlaylistInput(e.target.value)}
                     placeholder="Pegá URLs de YouTube (una por línea)"
-                    className="w-full p-3 text-xs rounded-xl border border-slate-300"
+                    className="w-full p-3 text-xs rounded-xl border border-slate-700 bg-[#0B0F19] text-white"
                   />
                   <div className="flex justify-between items-center">
                     {playlist.length > 0 && (
                       <button
                         onClick={handleClearPlaylist}
-                        className="text-xs text-rose-600 hover:underline cursor-pointer font-semibold"
+                        className="text-xs text-rose-400 hover:underline cursor-pointer font-semibold"
                       >
                         Vaciar todo
                       </button>
                     )}
                     <button
                       onClick={handleAddPlaylistUrls}
-                      className="nm-btn-primary px-4 py-2 text-xs font-bold ml-auto"
+                      className="console-btn-primary px-4 py-2 text-xs font-bold ml-auto"
                     >
                       + Guardar Canciones
                     </button>
@@ -540,18 +526,18 @@ export default function HostLobby() {
 
               {/* Playlist items list preview */}
               {playlist.length > 0 && (
-                <div className="nm-inset p-3 rounded-2xl mt-3 max-h-44 overflow-y-auto space-y-1.5 bg-slate-50">
+                <div className="console-inset p-3 rounded-2xl mt-3 max-h-44 overflow-y-auto space-y-1.5 bg-[#0B0F19]">
                   {playlist.map((url, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-white border border-slate-200/60 shadow-xs"
+                      className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-[#111827] border border-slate-800 shadow-xs"
                     >
-                      <span className="mono truncate max-w-[230px] text-slate-700 font-medium">
+                      <span className="mono truncate max-w-[230px] text-slate-300 font-medium">
                         {idx + 1}. {url}
                       </span>
                       <button
                         onClick={() => handleRemovePlaylistItem(idx)}
-                        className="text-slate-400 hover:text-rose-600 ml-2 p-1"
+                        className="text-slate-400 hover:text-rose-400 ml-2 p-1"
                         title="Eliminar canción"
                         aria-label="Eliminar canción"
                       >
@@ -571,56 +557,56 @@ export default function HostLobby() {
             <motion.div
               initial={{ opacity: 0, x: 16 }}
               animate={{ opacity: 1, x: 0 }}
-              className="nm-flat p-6 sm:p-8 rounded-3xl"
+              className="console-card p-6 sm:p-8 rounded-3xl"
             >
               {/* Header: Connected count & Teams rule */}
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
                 <div>
-                  <h2 className="text-xl font-extrabold text-slate-900">
+                  <h2 className="font-heading text-xl font-extrabold text-slate-100">
                     Jugadores y Equipos
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-400 mt-0.5">
                     {players.length} participante{players.length === 1 ? '' : 's'} conectados · Máximo 4 por equipo
                   </p>
                 </div>
 
-                <span className="mono text-xs font-black px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                <span className="mono text-xs font-black px-3 py-1 rounded-full bg-indigo-950/60 text-[var(--color-neon-indigo)] border border-indigo-800/80">
                   LÍMITE: 4 / EQUIPO
                 </span>
               </div>
 
               {/* CARGA MANUAL DE JUGADORES */}
-              <form onSubmit={handleAddManualPlayer} className="p-2 bg-slate-50 border border-slate-200 rounded-2xl mb-6 flex gap-2">
+              <form onSubmit={handleAddManualPlayer} className="p-2 bg-[#0B0F19] border border-slate-800 rounded-2xl mb-6 flex gap-2">
                 <input
                   type="text"
                   value={manualName}
                   onChange={(e) => setManualName(e.target.value)}
                   placeholder="Nombre de invitado sin teléfono..."
-                  className="flex-1 px-3 py-2 text-xs sm:text-sm bg-transparent border-none shadow-none focus:outline-none"
+                  className="flex-1 px-3 py-2 text-xs sm:text-sm bg-transparent border-none shadow-none focus:outline-none text-white"
                 />
                 <button
                   type="submit"
-                  className="nm-btn px-4 py-2 font-bold text-xs text-indigo-600 shrink-0"
+                  className="console-btn px-4 py-2 font-bold text-xs text-[var(--color-neon-indigo)] shrink-0"
                 >
                   + Cargar Manual
                 </button>
               </form>
               {manualError && (
-                <p className="text-xs text-rose-600 font-bold mb-4">{manualError}</p>
+                <p className="text-xs text-rose-400 font-bold mb-4">{manualError}</p>
               )}
 
               {/* Roster or Teams View */}
               {!teams ? (
                 <div>
                   <p className="label mb-3">Lista de espera ({players.length})</p>
-                  <div className="nm-inset p-3 rounded-2xl min-h-[180px] max-h-72 overflow-y-auto space-y-2 mb-6 bg-slate-50">
+                  <div className="console-inset p-3 rounded-2xl min-h-[180px] max-h-72 overflow-y-auto space-y-2 mb-6 bg-[#0B0F19]">
                     <AnimatePresence>
                       {players.length === 0 ? (
                         <div className="text-center py-12">
-                          <p className="text-sm font-semibold text-slate-600 mb-1">
+                          <p className="text-sm font-semibold text-slate-400 mb-1">
                             Aún no hay jugadores conectados
                           </p>
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-slate-500">
                             Escaneen el QR con la cámara del celular para ingresar.
                           </p>
                         </div>
@@ -631,15 +617,15 @@ export default function HostLobby() {
                             initial={{ opacity: 0, y: 6 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white border border-slate-200/70 shadow-xs"
+                            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#111827] border border-slate-800 shadow-xs"
                           >
                             <div className="flex items-center gap-2.5">
                               <span className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center font-black text-xs shadow-xs">
                                 {player.name.charAt(0).toUpperCase()}
                               </span>
-                              <span className="font-bold text-sm text-slate-800">{player.name}</span>
+                              <span className="font-bold text-sm text-slate-200">{player.name}</span>
                               {player.isManual && (
-                                <span className="text-[10px] uppercase font-black bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">
+                                <span className="text-[10px] uppercase font-black bg-amber-950/70 text-amber-300 border border-amber-800/80 px-2 py-0.5 rounded-md">
                                   Manual
                                 </span>
                               )}
@@ -648,7 +634,7 @@ export default function HostLobby() {
                             {player.isManual && (
                               <button
                                 onClick={() => handleRemoveManualPlayer(player.id)}
-                                className="text-slate-400 hover:text-rose-600 p-1.5"
+                                className="text-slate-400 hover:text-rose-400 p-1.5"
                                 title="Eliminar jugador manual"
                                 aria-label="Eliminar jugador"
                               >
@@ -667,7 +653,7 @@ export default function HostLobby() {
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <p className="label">Equipos asignados (balanceados, máx. 4 c/u)</p>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-slate-400">
                       Podés reasignar jugadores usando el selector
                     </span>
                   </div>
@@ -682,7 +668,7 @@ export default function HostLobby() {
                   <button
                     onClick={handleShuffle}
                     disabled={players.length < 2 || isShuffling}
-                    className="nm-btn-primary flex-1 py-4 rounded-2xl text-sm font-black disabled:opacity-40 flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                    className="console-btn-primary flex-1 py-4 rounded-2xl text-sm font-black disabled:opacity-40 flex items-center justify-center gap-2 shadow-md cursor-pointer"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -693,9 +679,9 @@ export default function HostLobby() {
                   <>
                     <button
                       onClick={handleShuffle}
-                      className="nm-btn py-3.5 px-4 rounded-2xl text-xs font-bold text-slate-700 flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                      className="console-btn py-3.5 px-4 rounded-2xl text-xs font-bold text-slate-200 flex items-center justify-center gap-2 cursor-pointer shrink-0"
                     >
-                      <svg className="w-3.5 h-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <svg className="w-3.5 h-3.5 text-[var(--color-neon-indigo)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
                       Volver a sortear
@@ -704,21 +690,21 @@ export default function HostLobby() {
                     {teams && teams.length > 0 && teams.every((t) => t.isReady) ? (
                       <button
                         onClick={handleStartGame}
-                        className="nm-btn-primary flex-1 py-3.5 rounded-2xl text-sm font-black flex items-center justify-center gap-1.5 shadow-md animate-pulse cursor-pointer"
+                        className="console-btn-primary flex-1 py-3.5 rounded-2xl text-sm font-black flex items-center justify-center gap-1.5 shadow-md animate-pulse cursor-pointer"
                       >
                         Iniciar Partida →
                       </button>
                     ) : (
-                      <div className="flex-1 py-2 px-3.5 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-2 text-amber-900">
+                      <div className="flex-1 py-2 px-3.5 rounded-2xl bg-amber-950/40 border border-amber-700/60 flex items-center justify-between gap-2 text-amber-200">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping shrink-0" />
                           <p className="text-xs font-bold leading-tight truncate">
                             Esperando confirmación ({teams ? teams.filter((t) => t.isReady).length : 0} de {teams ? teams.length : 0} listos)
                           </p>
                         </div>
                         <button
                           onClick={handleStartGame}
-                          className="text-[11px] font-black underline text-amber-800 hover:text-amber-950 shrink-0 cursor-pointer"
+                          className="text-[11px] font-black underline text-amber-300 hover:text-amber-100 shrink-0 cursor-pointer"
                           title="Iniciar de todos modos si algún integrante no puede tocar el celular"
                         >
                           Forzar inicio

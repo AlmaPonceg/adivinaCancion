@@ -189,22 +189,22 @@ export default function HostGame() {
   if (!roomCode) return null;
 
   return (
-    <div className="min-h-dvh pb-12">
+    <div className="min-h-dvh pb-12 bg-[var(--color-console-bg)] text-[var(--color-text-on-dark)]">
       {/* Header Bar */}
-      <div className="bg-white sticky top-0 z-30 px-4 sm:px-8 py-3.5 flex items-center justify-between border-b border-slate-200 shadow-2xs">
+      <div className="bg-[#111827] sticky top-0 z-30 px-4 sm:px-8 py-3.5 flex items-center justify-between border-b border-slate-800 shadow-2xs">
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <h1 className="text-base sm:text-lg font-black text-slate-900">Trivia Musical</h1>
+            <h1 className="font-heading text-base sm:text-lg font-black text-slate-100">Trivia Musical</h1>
           </div>
-          <p className="mono text-xs text-slate-500">
+          <p className="mono text-xs text-slate-400">
             Sala {roomCode} · Ronda {roundNumber}{playlist.length > 0 ? ` de ${playlist.length}` : ''}
           </p>
         </div>
 
         <button
           onClick={endGame}
-          className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-black text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer"
+          className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-black text-rose-400 hover:bg-rose-950/40 border border-rose-800/80 transition-colors cursor-pointer"
         >
           Terminar Partida
         </button>
@@ -218,7 +218,7 @@ export default function HostGame() {
       {/* Main Content Grid: Audio Deck on Left, Master Round Console on Right */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-5 sm:py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Dedicated Audio Deck (No video, pure audio & visualizer) */}
-        <div className="lg:col-span-6 xl:col-span-5 space-y-5">
+        <div className="lg:col-span-6 xl:col-span-5 space-y-6">
           <MusicPlayer
             ref={musicPlayerRef}
             roomCode={roomCode}
@@ -234,12 +234,12 @@ export default function HostGame() {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="nm-flat p-6 sm:p-7 rounded-3xl relative overflow-hidden"
+            className="console-card p-6 sm:p-7 rounded-3xl relative overflow-hidden"
           >
             {/* Header / State indicator */}
-            <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-800">
               <div>
-                <h2 className="text-base sm:text-lg font-black text-slate-900">
+                <h2 className="font-heading text-base sm:text-lg font-black text-slate-100">
                   Control de la Partida
                 </h2>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -356,7 +356,7 @@ export default function HostGame() {
                   <div className="space-y-3">
                     <button
                       onClick={startNextRound}
-                      className="nm-btn-primary w-full py-4 px-6 rounded-2xl font-black text-base shadow-md flex items-center justify-center gap-2.5 cursor-pointer transition-all active:translate-y-0.5"
+                      className="console-btn-primary w-full py-4 px-6 rounded-2xl font-black text-base shadow-md flex items-center justify-center gap-2.5 cursor-pointer transition-all active:translate-y-0.5"
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
