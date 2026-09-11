@@ -394,26 +394,29 @@ export default function PlayerBuzzer() {
 
   return (
     <div className="min-h-dvh flex flex-col justify-between p-4 select-none bg-[var(--color-console-bg)] text-[var(--color-text-on-dark)]">
-      {/* ── TOP BAR: Room, Round & Teams Ticker ── */}
-      <div className="w-full pt-1">
-        <div className="flex items-center justify-between gap-2 mb-3">
+      {/* ── TOP BAR: Room, Round & Standings HUD ── */}
+      <header className="w-full pt-1">
+        <div className="flex items-center justify-between gap-2 mb-2.5">
           <div className="flex items-center gap-2">
-            <span className="mono text-xs font-black px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-700 text-slate-200 shadow-2xs">
-              SALA {roomCode}
-            </span>
-            {playerState.roundNumber > 0 && (
-              <span className="mono text-xs font-extrabold text-[var(--color-neon-indigo)] bg-indigo-950/60 px-2.5 py-1 rounded-xl border border-indigo-800/80">
-                Ronda {playerState.roundNumber}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="mono text-xs font-black tracking-wider text-slate-200">
+                SALA {roomCode}
               </span>
+            </div>
+            {playerState.roundNumber > 0 && (
+              <div className="mono text-xs font-black px-3 py-1.5 rounded-xl bg-indigo-950/70 text-indigo-300 border border-indigo-700/60 shadow-xs">
+                RONDA {playerState.roundNumber}
+              </div>
             )}
           </div>
 
           <button
             onClick={() => setShowTeamsModal(true)}
-            className="console-btn text-xs font-bold px-3 py-1.5 rounded-xl text-slate-200 flex items-center gap-1.5 cursor-pointer"
+            className="console-btn text-xs font-bold px-3 py-1.5 rounded-xl text-slate-200 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform"
           >
-            <svg className="w-4 h-4 text-[var(--color-neon-indigo)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             Posiciones
           </button>
@@ -425,13 +428,13 @@ export default function PlayerBuzzer() {
             {playerState.teams.map((t) => (
               <div
                 key={t.name}
-                className="bg-[#111827] border border-slate-800 shadow-2xs flex items-center gap-2 px-3 py-1.5 rounded-xl shrink-0"
-                style={{ borderLeft: `4px solid ${t.color}` }}
+                className="bg-slate-900/90 border border-slate-800 shadow-xs flex items-center gap-2 px-3 py-1.5 rounded-xl shrink-0"
+                style={{ borderLeft: `3.5px solid ${t.color}` }}
               >
-                <span className="text-xs font-bold text-slate-200 truncate max-w-[90px]">
+                <span className="text-xs font-bold text-slate-200 truncate max-w-[95px]">
                   {t.name}
                 </span>
-                <span className="mono text-xs font-black text-[var(--color-neon-indigo)]">
+                <span className="mono text-xs font-black text-indigo-300 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
                   {t.score}
                 </span>
               </div>
@@ -452,7 +455,7 @@ export default function PlayerBuzzer() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </header>
 
       {/* ── MIDDLE: Player info & Circular Arcade Buzzer OR Team Setup Card ── */}
       {playerState.gameState === 'TEAMS_ASSIGNED' && (!playerState.roundNumber || playerState.roundNumber === 0) ? (
@@ -462,23 +465,26 @@ export default function PlayerBuzzer() {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="w-full bg-[#111827] rounded-3xl p-6 shadow-xl border-2 relative overflow-hidden"
+              className="w-full bg-slate-900/90 rounded-3xl p-6 shadow-2xl border-2 relative overflow-hidden backdrop-blur-sm"
               style={{ borderColor: playerState.teamColor || '#4F46E5' }}
             >
-              <div className="text-center mb-4">
-                <span
-                  className="text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full text-white shadow-xs inline-block mb-2"
-                  style={{ backgroundColor: playerState.teamColor || '#4F46E5' }}
-                >
-                  ¡Equipos Sorteados!
-                </span>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                  Te tocó jugar en:
+              {/* Color accent header strip */}
+              <div
+                className="absolute top-0 left-0 right-0 h-1.5 opacity-90"
+                style={{ backgroundColor: playerState.teamColor || '#4F46E5' }}
+              />
+
+              <div className="text-center mb-5 pt-1">
+                <p className="text-[11px] font-black uppercase tracking-widest text-indigo-400 mb-1">
+                  SORTEO DE EQUIPOS
                 </p>
+                <h3 className="text-lg font-black text-slate-100">
+                  Tu equipo asignado
+                </h3>
               </div>
 
               {/* Editable Team Name */}
-              <div className="p-4 rounded-2xl bg-[#0B0F19] border border-slate-800 mb-4 text-center">
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 mb-4 text-center shadow-inner">
                 {isEditingTeamName ? (
                   <div className="space-y-2.5">
                     <p className="text-xs font-bold text-slate-300">Nuevo nombre del equipo:</p>
@@ -489,8 +495,8 @@ export default function PlayerBuzzer() {
                       onKeyDown={(e) => e.key === 'Enter' && handleSaveTeamName()}
                       maxLength={25}
                       autoFocus
-                      placeholder="Ej. Los Cumpleañeros"
-                      className="w-full px-3 py-2 text-sm font-black rounded-xl border-2 border-indigo-500 text-center bg-[#111827] text-white"
+                      placeholder="Ej. Los Campeones"
+                      className="w-full px-3 py-2 text-sm font-black rounded-xl border-2 border-indigo-500 text-center bg-slate-900 text-white"
                     />
                     <div className="flex gap-2">
                       <button
@@ -510,7 +516,7 @@ export default function PlayerBuzzer() {
                 ) : (
                   <div>
                     <h3
-                      className="text-2xl font-black mb-1.5 break-words"
+                      className="text-2xl font-black mb-1.5 break-words tracking-tight"
                       style={{ color: playerState.teamColor || '#4F46E5' }}
                     >
                       {myTeam?.name || playerState.teamName}
@@ -520,7 +526,7 @@ export default function PlayerBuzzer() {
                         setCustomTeamName(myTeam?.name || playerState.teamName);
                         setIsEditingTeamName(true);
                       }}
-                      className="text-xs font-bold text-[var(--color-neon-indigo)] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                      className="text-xs font-bold text-indigo-400 hover:text-indigo-300 inline-flex items-center gap-1.5 cursor-pointer mt-1"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -533,20 +539,20 @@ export default function PlayerBuzzer() {
 
               {/* Teammates */}
               <div className="mb-5">
-                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2 text-center">
+                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2.5 text-center">
                   Integrantes ({myTeam?.players?.length || 1}/4):
                 </p>
-                <div className="flex flex-wrap justify-center gap-1.5">
+                <div className="flex flex-wrap justify-center gap-2">
                   {myTeam?.players?.map((p) => {
                     const pName = p.name || p;
                     const isMe = pName.toLowerCase() === playerName.toLowerCase();
                     return (
                       <span
                         key={p.id || pName}
-                        className={`text-xs px-3 py-1 rounded-full font-bold shadow-2xs ${
+                        className={`text-xs px-3 py-1 rounded-lg font-bold border transition-colors ${
                           isMe
-                            ? 'bg-indigo-600 text-white font-black'
-                            : 'bg-[#0B0F19] border border-slate-800 text-slate-300'
+                            ? 'bg-indigo-600 text-white font-black border-indigo-400 shadow-xs'
+                            : 'bg-slate-950 border-slate-800 text-slate-300'
                         }`}
                       >
                         {pName} {isMe ? '(Vos)' : ''}
@@ -558,15 +564,15 @@ export default function PlayerBuzzer() {
 
               {/* Ready Button */}
               {myTeam?.isReady ? (
-                <div className="p-4 rounded-2xl bg-emerald-950/50 border-2 border-emerald-500 text-center">
+                <div className="p-4 rounded-2xl bg-emerald-950/60 border-2 border-emerald-500 text-center shadow-md">
                   <div className="flex items-center justify-center gap-2 text-emerald-400 font-black text-sm mb-1">
                     <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                     ¡Tu equipo está LISTO!
                   </div>
-                  <p className="text-xs text-emerald-300/90 font-medium">
-                    Esperando que los demás equipos confirmen para que el anfitrión inicie la partida...
+                  <p className="text-xs text-emerald-300/80 font-medium">
+                    Esperando que los demás equipos confirmen para iniciar...
                   </p>
                   <button
                     onClick={handleToggleReady}
@@ -587,7 +593,7 @@ export default function PlayerBuzzer() {
                     ¡Estamos Listos!
                   </button>
                   <p className="text-[11px] text-slate-400 text-center mt-2 font-medium">
-                    Con que 1 integrante toque este botón, tu equipo ya queda confirmado para el host.
+                    Con que 1 integrante toque este botón, tu equipo ya queda confirmado.
                   </p>
                 </div>
               )}
@@ -595,80 +601,118 @@ export default function PlayerBuzzer() {
           </div>
         ) : (
           <div className="text-center my-auto p-6 max-w-sm mx-auto">
-            <div className="w-12 h-12 rounded-full bg-indigo-950/70 border border-indigo-800 flex items-center justify-center mx-auto mb-3 text-[var(--color-neon-indigo)]">
-              <svg className="w-6 h-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
+            <div className="relative w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-2xl bg-indigo-600/10 border border-indigo-500/30 animate-ping" />
+              <div className="relative w-14 h-14 rounded-2xl bg-slate-900 border border-slate-700 flex items-center justify-center shadow-lg text-indigo-400">
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
             </div>
-            <h2 className="text-xl font-black text-slate-100 mb-1">¡Estás conectado!</h2>
-            <p className="text-xs text-slate-400 font-medium">
+            <h2 className="text-xl font-black text-slate-100 mb-1.5 tracking-tight">¡Estás en la partida!</h2>
+            <p className="text-xs text-slate-400 font-medium leading-relaxed">
               Esperando que el anfitrión sortee los equipos en la pantalla principal para asignarte...
             </p>
           </div>
         )
       ) : (
-        <div className="flex flex-col items-center justify-center my-auto py-2">
-          {/* Player Name and Team Pill */}
-          <div className="text-center mb-5">
-            <div
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black mb-1.5 shadow-2xs border bg-[#111827]"
-              style={{
-                borderColor: `${playerState.teamColor}50`,
-                color: playerState.teamColor || '#818CF8',
-              }}
-            >
+        <div className="relative flex flex-col items-center justify-center my-auto py-2 w-full">
+          {/* Ambient reactive back-glow */}
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-3xl pointer-events-none transition-all duration-700 ease-out -z-0"
+            style={{
+              backgroundColor: playerState.isMyTurn
+                ? '#10B981'
+                : playerState.canBuzz
+                ? (playerState.teamColor || '#6366F1')
+                : 'transparent',
+              opacity: playerState.isMyTurn ? 0.35 : playerState.canBuzz ? 0.22 : 0,
+              transform: playerState.canBuzz || playerState.isMyTurn ? 'translate(-50%, -50%) scale(1.15)' : 'translate(-50%, -50%) scale(0.8)',
+            }}
+          />
+
+          {/* Player Gamer Profile Card */}
+          <div className="flex flex-col items-center mb-5 z-10">
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md backdrop-blur-xs">
               <div
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: playerState.teamColor || '#818CF8' }}
-              />
-              {playerState.teamName ? playerState.teamName : 'Sin equipo asignado'}
+                className="w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs text-white shadow-inner"
+                style={{
+                  backgroundColor: playerState.teamColor || '#4F46E5',
+                  boxShadow: `0 0 12px ${playerState.teamColor || '#4F46E5'}60`,
+                }}
+              >
+                {playerName.charAt(0).toUpperCase()}
+              </div>
+              <div className="text-left">
+                <span className="block text-sm font-black text-slate-100 leading-tight">
+                  {playerName}
+                </span>
+                <span
+                  className="block text-[10px] font-extrabold uppercase tracking-wider leading-none mt-0.5"
+                  style={{ color: playerState.teamColor || '#94A3B8' }}
+                >
+                  {playerState.teamName || 'Individual'}
+                </span>
+              </div>
             </div>
-            <h2 className="text-2xl font-black text-slate-100">{playerName}</h2>
           </div>
 
           {/* 3D Arcade Buzzer */}
-          <BuzzerButton
-            onBuzz={handleBuzz}
-            canBuzz={playerState.canBuzz}
-            hasBuzzed={playerState.hasBuzzed}
-            isBlocked={playerState.isTeamBlocked || playerState.isPlayerBlocked}
-            teamColor={playerState.teamColor}
-            isMyTurn={playerState.isMyTurn}
-          />
+          <div className="z-10">
+            <BuzzerButton
+              onBuzz={handleBuzz}
+              canBuzz={playerState.canBuzz}
+              hasBuzzed={playerState.hasBuzzed}
+              isBlocked={playerState.isTeamBlocked || playerState.isPlayerBlocked}
+              teamColor={playerState.teamColor}
+              isMyTurn={playerState.isMyTurn}
+            />
+          </div>
 
-          {/* Status Text & Position */}
+          {/* Tactical Status HUD */}
           <motion.div
             key={statusMessage}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-6 text-center px-4 max-w-xs"
+            initial={{ opacity: 0, y: 6, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            className="mt-6 text-center px-4 w-full max-w-xs z-10"
           >
-            <p
-              className={`text-base font-black leading-snug tracking-tight ${
-                playerState.canBuzz
-                  ? 'text-[var(--color-neon-indigo)] animate-pulse'
-                  : playerState.isMyTurn
-                  ? 'text-[var(--color-neon-emerald)]'
-                  : 'text-slate-300'
+            <div
+              className={`py-3 px-4 rounded-2xl border font-black text-sm tracking-wide shadow-lg transition-all flex items-center justify-center gap-2 ${
+                playerState.isMyTurn
+                  ? 'bg-emerald-950/90 border-emerald-400 text-emerald-200 shadow-emerald-900/40 ring-2 ring-emerald-500/30'
+                  : playerState.canBuzz
+                  ? 'bg-indigo-950/90 border-indigo-400/80 text-indigo-100 animate-pulse shadow-indigo-950/60 ring-2 ring-indigo-500/30'
+                  : playerState.hasBuzzed
+                  ? 'bg-slate-900/90 border-slate-700 text-slate-200'
+                  : playerState.isTeamBlocked || playerState.isPlayerBlocked
+                  ? 'bg-rose-950/80 border-rose-700/80 text-rose-300'
+                  : 'bg-slate-900/70 border-slate-800 text-slate-400'
               }`}
             >
-              {statusMessage}
-            </p>
+              {playerState.isMyTurn ? (
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
+              ) : playerState.canBuzz ? (
+                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping shrink-0" />
+              ) : null}
+              <span>{statusMessage}</span>
+            </div>
+
             {buzzPosition && (
-              <p className="mono text-slate-400 text-xs mt-1 font-bold">
-                Puesto en la cola: #{buzzPosition}
-              </p>
+              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-300 mono text-xs font-black shadow-xs">
+                <span>PUESTO EN LA COLA:</span>
+                <span className="text-indigo-400 font-black">#{buzzPosition}</span>
+              </div>
             )}
           </motion.div>
         </div>
       )}
 
       {/* ── FOOTER ── */}
-      <div className="text-center pb-2">
+      <footer className="text-center pb-2">
         <p className="text-[11px] text-slate-400 font-medium">
-          Mantené tu pantalla desbloqueada para pulsar al instante
+          Mantené tu pantalla activa para pulsar en el milisegundo exacto
         </p>
-      </div>
+      </footer>
 
       {/* ── TEAMS & SCOREBOARD MODAL ── */}
       <AnimatePresence>
@@ -677,27 +721,27 @@ export default function PlayerBuzzer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-xs p-0 sm:p-4"
             onClick={() => setShowTeamsModal(false)}
           >
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="w-full max-w-md bg-[#111827] rounded-t-3xl sm:rounded-3xl p-6 text-slate-100 max-h-[80vh] flex flex-col shadow-2xl border border-slate-800"
+              transition={{ type: 'spring', damping: 26, stiffness: 240 }}
+              className="w-full max-w-md bg-slate-900 rounded-t-3xl sm:rounded-3xl p-6 text-slate-100 max-h-[82vh] flex flex-col shadow-2xl border border-slate-800"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-800 mb-4">
                 <div>
-                  <h3 className="text-base font-black text-slate-100">Tabla de Posiciones</h3>
-                  <p className="text-xs text-slate-400">
+                  <h3 className="text-base font-black text-slate-100 tracking-tight">Tabla de Posiciones</h3>
+                  <p className="text-xs text-slate-400 font-medium">
                     Sala {roomCode} · Ronda {playerState.roundNumber || 1}
                   </p>
                 </div>
                 <button
                   onClick={() => setShowTeamsModal(false)}
-                  className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 font-black cursor-pointer"
+                  className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 font-black cursor-pointer transition-colors"
                   aria-label="Cerrar"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -709,17 +753,22 @@ export default function PlayerBuzzer() {
               {/* Team list */}
               <div className="space-y-3 overflow-y-auto flex-1 pr-1">
                 {playerState.teams && playerState.teams.length > 0 ? (
-                  playerState.teams.map((t) => (
+                  playerState.teams.map((t, idx) => (
                     <div
                       key={t.name}
-                      className="p-3.5 rounded-2xl bg-[#0B0F19] border border-slate-800"
-                      style={{ borderLeft: `5px solid ${t.color}` }}
+                      className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 shadow-sm"
+                      style={{ borderLeft: `4.5px solid ${t.color}` }}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-black text-sm text-slate-100">
-                          {t.name}
-                        </span>
-                        <span className="mono text-sm font-black text-[var(--color-neon-indigo)]">
+                        <div className="flex items-center gap-2">
+                          <span className="mono text-xs font-black text-slate-400">
+                            #{idx + 1}
+                          </span>
+                          <span className="font-black text-sm text-slate-100">
+                            {t.name}
+                          </span>
+                        </div>
+                        <span className="mono text-sm font-black text-indigo-300 bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800">
                           {t.score} {t.score === 1 ? 'pt' : 'pts'}
                         </span>
                       </div>
@@ -727,18 +776,22 @@ export default function PlayerBuzzer() {
                       {/* Members */}
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {t.players && t.players.length > 0 ? (
-                          t.players.map((p) => (
-                            <span
-                              key={p.id || p.name || p}
-                              className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
-                                (p.name || p) === playerName
-                                  ? 'bg-indigo-600 text-white shadow-xs'
-                                  : 'bg-[#111827] border border-slate-700 text-slate-300'
-                              }`}
-                            >
-                              {p.name || p} {(p.name || p) === playerName ? '(Vos)' : ''}
-                            </span>
-                          ))
+                          t.players.map((p) => {
+                            const pName = p.name || p;
+                            const isMe = pName.toLowerCase() === playerName.toLowerCase();
+                            return (
+                              <span
+                                key={p.id || pName}
+                                className={`text-xs px-2.5 py-1 rounded-lg font-bold border ${
+                                  isMe
+                                    ? 'bg-indigo-600 border-indigo-400 text-white shadow-xs font-black'
+                                    : 'bg-slate-900 border-slate-800 text-slate-300'
+                                }`}
+                              >
+                                {pName} {isMe ? '(Vos)' : ''}
+                              </span>
+                            );
+                          })
                         ) : (
                           <span className="text-xs text-slate-500 italic">
                             Sin integrantes
@@ -754,17 +807,17 @@ export default function PlayerBuzzer() {
                 )}
               </div>
 
-              <div className="mt-4 p-2.5 rounded-xl bg-indigo-950/60 border border-indigo-800/60 text-center">
-                <p className="text-[11px] font-bold text-indigo-300">
-                  El pulsador volverá a salir automáticamente en tu pantalla cuando el anfitrión inicie la próxima ronda.
+              <div className="mt-4 p-3 rounded-xl bg-slate-950 border border-slate-800 text-center">
+                <p className="text-[11px] font-semibold text-slate-400">
+                  El pulsador aparecerá automáticamente en tu pantalla cuando el anfitrión inicie la ronda.
                 </p>
               </div>
 
               <button
                 onClick={() => setShowTeamsModal(false)}
-                className="console-btn-primary w-full mt-3 py-3 rounded-2xl text-xs font-black cursor-pointer"
+                className="console-btn-primary w-full mt-3 py-3 rounded-2xl text-xs font-black cursor-pointer shadow-lg active:scale-98 transition-transform"
               >
-                Cerrar y Ver Pulsador
+                Volver al Pulsador
               </button>
             </motion.div>
           </motion.div>

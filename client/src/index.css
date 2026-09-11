@@ -228,3 +228,27 @@ select:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* ── Print Media Optimization (Diploma Export) ─────────────── */
+@media print {
+  body {
+    background: #FAF8F5 !important;
+    color: #0F172A !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print, nav, header, footer, button {
+    display: none !important;
+  }
+
+  #diploma-canvas {
+    box-shadow: none !important;
+    border-width: 4px !important;
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
+    margin: 0 auto !important;
+  }
+}

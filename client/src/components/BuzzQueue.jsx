@@ -63,9 +63,8 @@ export default function BuzzQueue({ queue, currentJudging }) {
 
                 {/* Active indicator */}
                 {isJudging && (
-                  <span className="text-[10px] font-black text-emerald-300 uppercase tracking-wider shrink-0 bg-emerald-950/80 border border-emerald-700/80 px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                    Respondiendo
+                  <span className="text-[10px] font-black text-emerald-300 uppercase tracking-wider shrink-0 bg-emerald-950/80 border border-emerald-500/70 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-[0_0_12px_rgba(16,185,129,0.3)] animate-pulse">
+                    En turno
                   </span>
                 )}
               </motion.div>

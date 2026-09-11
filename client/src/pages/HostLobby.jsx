@@ -334,8 +334,12 @@ export default function HostLobby() {
               animate={{ opacity: 1, x: 0 }}
               className="console-card p-6 sm:p-8 rounded-3xl flex flex-col items-center text-center relative overflow-hidden"
             >
-              <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-200 text-[11px] font-extrabold uppercase tracking-wider mb-4">
-                Código para unirse
+              <div className="flex items-center justify-center gap-2.5 mb-3">
+                <span className="h-px w-5 bg-slate-700" />
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  Código de la Sala
+                </span>
+                <span className="h-px w-5 bg-slate-700" />
               </div>
 
               {roomCode ? (

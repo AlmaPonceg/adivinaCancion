@@ -122,8 +122,12 @@ export default function PlayerJoin() {
         className="console-card p-8 sm:p-10 w-full max-w-sm rounded-3xl relative"
       >
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-950/60 border border-indigo-800/80 text-[var(--color-neon-indigo)] text-[11px] font-extrabold uppercase tracking-wider mb-3">
-            Pulsador en tu celular
+          <div className="flex items-center justify-center gap-2.5 mb-2">
+            <span className="h-px w-6 bg-gradient-to-r from-transparent to-indigo-500/50" />
+            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400">
+              Pulsador Móvil
+            </span>
+            <span className="h-px w-6 bg-gradient-to-l from-transparent to-indigo-500/50" />
           </div>
           <h1 className="font-heading text-2xl sm:text-3xl font-black tracking-tight text-slate-100 mb-1">
             Trivia Musical

@@ -1,12 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import WinnerDiploma from '../components/WinnerDiploma';
 
 export default function GameOver() {
   const location = useLocation();
   const navigate = useNavigate();
   const { rankings } = location.state || {};
+  const [showDiploma, setShowDiploma] = useState(false);
 
   useEffect(() => {
     if (!rankings) {
@@ -49,11 +51,15 @@ export default function GameOver() {
           transition={{ duration: 0.6 }}
           className="console-card p-8 rounded-3xl text-center mb-6 relative overflow-hidden"
         >
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-950/60 text-amber-300 text-[11px] font-black uppercase tracking-wider mb-4 border border-amber-800/80">
-            <svg className="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V19H7v2h10v-2h-4v-3.1c1.98-.44 3.53-2.01 3.91-4.06C19.38 11.53 21 9.47 21 7V5c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z" />
-            </svg>
-            Gran Campeón
+          <div className="flex items-center justify-center gap-2.5 mb-3">
+            <span className="h-px w-8 bg-gradient-to-r from-transparent to-amber-500/60" />
+            <span className="text-xs font-black uppercase tracking-[0.25em] text-amber-400 flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V19H7v2h10v-2h-4v-3.1c1.98-.44 3.53-2.01 3.91-4.06C19.38 11.53 21 9.47 21 7V5c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z" />
+              </svg>
+              Gran Campeón
+            </span>
+            <span className="h-px w-8 bg-gradient-to-l from-transparent to-amber-500/60" />
           </div>
 
           <h1 className="font-heading text-3xl sm:text-4xl font-black tracking-tight mb-4 text-slate-100">
@@ -75,6 +81,16 @@ export default function GameOver() {
                 {winner?.score === 1 ? 'punto' : 'puntos'}
               </span>
             </p>
+
+            <button
+              onClick={() => setShowDiploma(true)}
+              className="w-full mt-4 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 hover:brightness-105 active:scale-98 transition-all"
+            >
+              <svg className="w-4 h-4 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Ver / Descargar Diploma Oficial
+            </button>
           </div>
         </motion.div>
 
@@ -144,6 +160,13 @@ export default function GameOver() {
           </button>
         </div>
       </div>
+
+      {/* Diploma Modal */}
+      <WinnerDiploma
+        winner={winner}
+        isOpen={showDiploma}
+        onClose={() => setShowDiploma(false)}
+      />
     </div>
   );
 }

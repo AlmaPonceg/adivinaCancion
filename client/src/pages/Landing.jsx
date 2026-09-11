@@ -31,12 +31,13 @@ export default function Landing() {
           </motion.div>
         </div>
 
-        {/* Edition Badge */}
-        <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-indigo-950/60 border border-indigo-800/80 mb-4">
-          <span className="w-2 h-2 rounded-full bg-[var(--color-neon-indigo)] animate-ping" />
-          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--color-neon-indigo)]">
+        {/* Edition Subtitle / Eyebrow */}
+        <div className="flex items-center justify-center gap-3 mb-2.5">
+          <span className="h-px w-8 bg-gradient-to-r from-transparent to-indigo-500/60" />
+          <span className="text-xs font-black uppercase tracking-[0.25em] text-indigo-400">
             Edición Cumpleaños
           </span>
+          <span className="h-px w-8 bg-gradient-to-l from-transparent to-indigo-500/60" />
         </div>
 
         {/* Title */}

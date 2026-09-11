@@ -251,15 +251,17 @@ export default function HostGame() {
               </div>
 
               <span
-                className={`mono text-xs font-black px-3 py-1 rounded-full border ${
+                className={`mono text-xs font-black px-3 py-1 rounded-xl border ${
                   gameState === 'ROUND_ACTIVE'
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 animate-pulse'
+                    ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/70 shadow-[0_0_12px_rgba(16,185,129,0.3)] animate-pulse'
                     : gameState === 'BUZZER_LOCKED'
-                    ? 'bg-rose-50 text-rose-800 border-rose-200'
-                    : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                    ? 'bg-rose-950/80 text-rose-300 border-rose-500/70 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
+                    : gameState === 'ROUND_END'
+                    ? 'bg-amber-950/80 text-amber-300 border-amber-600/70'
+                    : 'bg-indigo-950/80 text-indigo-300 border-indigo-700/70'
                 }`}
               >
-                {gameState === 'ROUND_ACTIVE' && 'SONANDO'}
+                {gameState === 'ROUND_ACTIVE' && 'EN VIVO'}
                 {gameState === 'BUZZER_LOCKED' && 'PULSADO'}
                 {gameState === 'ROUND_END' && 'FINALIZADA'}
                 {gameState === 'TEAMS_ASSIGNED' && 'LISTO'}
@@ -276,15 +278,15 @@ export default function HostGame() {
                 />
 
                 {buzzQueue.length > 1 && (
-                  <div className="mt-4 pt-4 border-t border-slate-100">
-                    <p className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">
+                  <div className="mt-4 pt-4 border-t border-slate-800">
+                    <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">
                       Siguientes en cola si se equivoca:
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {buzzQueue.slice(1).map((b, i) => (
                         <span
                           key={b.playerId}
-                          className="text-xs px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-200 font-bold text-slate-700 flex items-center gap-1.5"
+                          className="text-xs px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 font-bold text-slate-200 flex items-center gap-1.5 shadow-xs"
                         >
                           <span
                             className="w-2 h-2 rounded-full"
@@ -299,14 +301,14 @@ export default function HostGame() {
               </div>
             ) : gameState === 'ROUND_ACTIVE' ? (
               <div className="space-y-4">
-                <div className="p-6 rounded-2xl bg-indigo-50/80 border border-indigo-200 text-center">
+                <div className="p-6 rounded-2xl bg-indigo-950/40 border border-indigo-600/50 text-center shadow-inner">
                   <div className="flex items-center justify-center gap-2 mb-1.5">
-                    <span className="w-3 h-3 rounded-full bg-indigo-600 animate-ping" />
-                    <span className="text-indigo-950 font-black text-lg">
+                    <span className="w-3 h-3 rounded-full bg-indigo-400 animate-pulse" />
+                    <span className="text-indigo-200 font-black text-lg">
                       Música sonando en los parlantes
                     </span>
                   </div>
-                  <p className="text-slate-600 text-xs sm:text-sm font-medium">
+                  <p className="text-slate-400 text-xs sm:text-sm font-medium">
                     Los pulsadores están habilitados en los teléfonos esperando respuestas...
                   </p>
                 </div>
@@ -314,10 +316,10 @@ export default function HostGame() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <button
                     onClick={replayAudio}
-                    className="py-3.5 px-4 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                    className="console-btn py-3.5 px-4 rounded-xl text-slate-200 text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 shadow-sm"
                     title="Volver a reproducir el clip de audio"
                   >
-                    <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                     Repetir Audio ({musicDuration}s)
@@ -325,10 +327,10 @@ export default function HostGame() {
 
                   <button
                     onClick={skipCurrentSong}
-                    className="py-3.5 px-4 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-rose-700 hover:text-rose-800 text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                    className="py-3.5 px-4 rounded-xl border border-rose-800/80 bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-98"
                     title="Si nadie sabe la canción, saltar a la siguiente"
                   >
-                    <svg className="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-4 h-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
                     </svg>
                     Nadie Sabe: Saltar Canción
@@ -397,51 +399,67 @@ export default function HostGame() {
               initial={{ scale: 0.85, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.85, opacity: 0 }}
-              transition={{ type: 'spring', damping: 20 }}
-              className="bg-white p-8 sm:p-12 text-center max-w-md w-full rounded-3xl shadow-2xl border border-slate-100"
+              transition={{ type: 'spring', damping: 22 }}
+              className={`p-8 sm:p-10 text-center max-w-md w-full rounded-3xl shadow-2xl border-2 backdrop-blur-md ${
+                lastResult.type === 'correct'
+                  ? 'bg-slate-900/95 border-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.3)]'
+                  : 'bg-slate-900/95 border-rose-500 shadow-[0_0_50px_rgba(244,63,94,0.3)]'
+              }`}
             >
               {lastResult.type === 'correct' ? (
                 <>
-                  <div className="w-18 h-18 rounded-full bg-emerald-100 border-2 border-emerald-500 flex items-center justify-center mx-auto mb-5 shadow-sm">
-                    <svg className="w-10 h-10 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <div className="w-20 h-20 rounded-2xl bg-emerald-950/80 border-2 border-emerald-400 flex items-center justify-center mx-auto mb-5 shadow-lg text-emerald-400 animate-bounce">
+                    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-black mb-2 text-emerald-800">
+                  <p className="text-xs font-black uppercase tracking-[0.25em] text-emerald-400 mb-1">
+                    ¡PUNTO CONCEDIDO!
+                  </p>
+                  <h2 className="text-2xl sm:text-3xl font-black mb-3 text-slate-100 tracking-tight">
                     ¡Respuesta Correcta!
                   </h2>
-                  <p className="text-slate-700 text-sm sm:text-base leading-relaxed">
-                    <span className="font-black" style={{ color: lastResult.teamColor }}>
-                      {lastResult.playerName}
-                    </span>
-                    {' '}sumó{' '}
-                    <span className="font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
-                      +{lastResult.pointsAwarded || 1} {lastResult.pointsAwarded === 1 ? 'punto' : 'puntos'}
-                    </span>
-                    {lastResult.elapsedSeconds !== undefined && (
-                      <span className="text-slate-500 font-bold ml-1 text-xs">
-                        (en {lastResult.elapsedSeconds}s)
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 mb-2 shadow-inner">
+                    <p className="text-slate-200 text-sm sm:text-base leading-relaxed">
+                      <span className="font-black text-lg" style={{ color: lastResult.teamColor }}>
+                        {lastResult.playerName}
                       </span>
-                    )}
-                    {' '}para{' '}
-                    <span className="font-black" style={{ color: lastResult.teamColor }}>
-                      {lastResult.teamName}
-                    </span>
-                  </p>
+                      {' '}sumó{' '}
+                      <span className="font-black text-emerald-300 bg-emerald-950 px-2.5 py-1 rounded-lg border border-emerald-800">
+                        +{lastResult.pointsAwarded || 1} {lastResult.pointsAwarded === 1 ? 'punto' : 'puntos'}
+                      </span>
+                    </p>
+                    <p className="text-xs font-bold text-slate-400 mt-2">
+                      Equipo:{' '}
+                      <span className="font-black" style={{ color: lastResult.teamColor }}>
+                        {lastResult.teamName}
+                      </span>
+                      {lastResult.elapsedSeconds !== undefined && (
+                        <span className="ml-2 mono text-slate-500">
+                          ({lastResult.elapsedSeconds}s)
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </>
               ) : (
                 <>
-                  <div className="w-18 h-18 rounded-full bg-rose-100 border-2 border-rose-500 flex items-center justify-center mx-auto mb-5 shadow-sm">
-                    <svg className="w-10 h-10 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <div className="w-20 h-20 rounded-2xl bg-rose-950/80 border-2 border-rose-500 flex items-center justify-center mx-auto mb-5 shadow-lg text-rose-400">
+                    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-black mb-2 text-rose-800">
+                  <p className="text-xs font-black uppercase tracking-[0.25em] text-rose-400 mb-1">
+                    RONDA DESIERTA
+                  </p>
+                  <h2 className="text-2xl sm:text-3xl font-black mb-3 text-slate-100 tracking-tight">
                     Ronda Terminada
                   </h2>
-                  <p className="text-slate-600 text-sm font-medium">
-                    Todos los equipos fallaron. Nadie sumó puntos en esta ronda.
-                  </p>
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 shadow-inner">
+                    <p className="text-slate-400 text-xs sm:text-sm font-medium leading-relaxed">
+                      Todos los equipos fallaron o se agotó el tiempo. Nadie sumó puntos en esta ronda.
+                    </p>
+                  </div>
                 </>
               )}
             </motion.div>

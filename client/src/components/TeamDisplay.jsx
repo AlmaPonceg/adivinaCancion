@@ -28,13 +28,13 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: teamIdx * 0.08 }}
-            className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden"
+            className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md relative overflow-hidden backdrop-blur-xs"
             style={{
               borderLeft: `5px solid ${team.color}`,
             }}
           >
             {/* Team header with editable name */}
-            <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-800/80">
               <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
                 <div
                   className="w-3.5 h-3.5 rounded-full shadow-xs shrink-0"
@@ -50,7 +50,7 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam }) {
                       onKeyDown={(e) => e.key === 'Enter' && saveEdit(teamIdx)}
                       autoFocus
                       maxLength={24}
-                      className="text-xs font-black px-2.5 py-1 rounded-lg border border-indigo-400 bg-indigo-50/50 text-slate-900 w-full"
+                      className="text-xs font-black px-2.5 py-1 rounded-lg border border-indigo-500/60 bg-slate-950 text-white w-full"
                       placeholder="Nombre del equipo"
                     />
                     <button
@@ -73,11 +73,11 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam }) {
                     className="flex items-center gap-1.5 cursor-pointer group truncate"
                     title="Hacé clic para cambiar el nombre del equipo"
                   >
-                    <span className="font-black text-sm text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
+                    <span className="font-black text-sm text-slate-100 group-hover:text-indigo-400 transition-colors truncate">
                       {team.name}
                     </span>
                     <svg
-                      className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition-colors shrink-0"
+                      className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-400 transition-colors shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -95,24 +95,24 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam }) {
 
               <div className="flex items-center gap-2 shrink-0">
                 {team.isReady ? (
-                  <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 shadow-2xs">
-                    <svg className="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <span className="text-[11px] font-black px-2.5 py-1 rounded-lg bg-emerald-950/70 text-emerald-300 border border-emerald-700/70 flex items-center gap-1 shadow-xs">
+                    <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                     ¡Listo!
                   </span>
                 ) : (
-                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
-                    Esperando listo
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-950/70 text-slate-400 border border-slate-800 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    En espera
                   </span>
                 )}
 
                 <span
-                  className={`mono text-xs font-bold px-2.5 py-0.5 rounded-full border shrink-0 ${
+                  className={`mono text-xs font-bold px-2.5 py-1 rounded-lg border shrink-0 ${
                     team.players.length >= 4
-                      ? 'bg-amber-50 text-amber-800 border-amber-200'
-                      : 'bg-slate-50 text-slate-600 border-slate-200'
+                      ? 'bg-amber-950/60 text-amber-300 border-amber-800/80'
+                      : 'bg-slate-950 border-slate-800 text-slate-400'
                   }`}
                 >
                   {team.players.length}/4
@@ -122,7 +122,7 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam }) {
 
             {/* Players list */}
             {team.players.length === 0 ? (
-              <p className="text-xs text-slate-400 italic py-2">
+              <p className="text-xs text-slate-500 italic py-2">
                 Sin integrantes asignados aún
               </p>
             ) : (
@@ -130,20 +130,20 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam }) {
                 {team.players.map((player) => (
                   <div
                     key={player.id || player.name}
-                    className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/60 flex items-center justify-between gap-2"
+                    className="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800/80 flex items-center justify-between gap-2 shadow-inner"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black text-white shrink-0 shadow-xs"
+                        className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black text-white shrink-0 shadow-xs"
                         style={{ backgroundColor: team.color }}
                       >
                         {player.name.charAt(0).toUpperCase()}
                       </span>
-                      <span className="text-xs font-bold text-slate-800 truncate">
+                      <span className="text-xs font-bold text-slate-200 truncate">
                         {player.name}
                       </span>
                       {player.isManual && (
-                        <span className="text-[10px] uppercase font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] uppercase font-bold text-amber-400 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-800/60">
                           Manual
                         </span>
                       )}
@@ -160,7 +160,7 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam }) {
                               onMovePlayer(player.id, targetIdx);
                             }
                           }}
-                          className="text-[11px] font-bold py-1 px-2.5 rounded-lg bg-white border border-slate-200 text-slate-700 cursor-pointer shadow-2xs hover:border-slate-300"
+                          className="text-[11px] font-bold py-1 px-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 cursor-pointer shadow-xs hover:border-slate-600"
                           title="Mover jugador a otro equipo"
                         >
                           {teams.map((t, idx) => (
