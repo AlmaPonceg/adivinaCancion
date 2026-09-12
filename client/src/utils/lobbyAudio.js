@@ -2,7 +2,10 @@
 // Lobby Audio Singleton Manager
 // Ensures Alma's song can be unlocked during user interaction (e.g. Join)
 // and seamlessly continues playing on mobile without requiring a manual tap.
+// Immediately kills audio and blocks playback once match is underway.
 // ═══════════════════════════════════════════════════════════════
+
+import socket from '../socket';
 
 class LobbyAudioManager {
   constructor() {
@@ -11,7 +14,20 @@ class LobbyAudioManager {
     this.isMuted = false;
     this.volume = 0.35;
     this.isUnlocked = false;
+    this.isGameActive = false;
     this.listeners = new Set();
+
+    // Automatically kill lobby music the instant the game or a round starts
+    if (typeof window !== 'undefined' && socket) {
+      socket.on('game-started', () => {
+        this.isGameActive = true;
+        this.stop();
+      });
+      socket.on('round-started', () => {
+        this.isGameActive = true;
+        this.stop();
+      });
+    }
   }
 
   getAudio() {
@@ -40,6 +56,8 @@ class LobbyAudioManager {
 
   // Pre-unlock and start playing synchronously during a direct user touch/click
   unlockAndPlay(volume = 0.35) {
+    if (this.isGameActive) return;
+
     const a = this.getAudio();
     if (!a) return;
     this.volume = volume;
@@ -58,6 +76,8 @@ class LobbyAudioManager {
   }
 
   play(volume = null) {
+    if (this.isGameActive) return Promise.resolve();
+
     const a = this.getAudio();
     if (!a) return Promise.reject(new Error('No audio context'));
     if (volume !== null) {
@@ -82,7 +102,12 @@ class LobbyAudioManager {
     }
   }
 
+  resetGameActive() {
+    this.isGameActive = false;
+  }
+
   togglePlay(volume = null) {
+    if (this.isGameActive) return;
     const a = this.getAudio();
     if (!a) return;
     if (this.isPlaying) {

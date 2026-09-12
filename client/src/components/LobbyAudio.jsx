@@ -21,6 +21,15 @@ export default function LobbyAudio({
   const [needsUserGesture, setNeedsUserGesture] = useState(false);
 
   useEffect(() => {
+    // If game has started, kill audio immediately and do nothing
+    if (isGameStarted) {
+      lobbyAudioManager.stop();
+      setIsPlaying(false);
+      return;
+    }
+
+    lobbyAudioManager.resetGameActive();
+
     // Sync state with singleton manager
     const unsubscribe = lobbyAudioManager.subscribe((state) => {
       setIsPlaying(state.isPlaying);
@@ -30,7 +39,9 @@ export default function LobbyAudio({
       }
     });
 
-    if (!isGameStarted && autoPlay) {
+    let onFirstInteraction = null;
+
+    if (autoPlay) {
       if (!lobbyAudioManager.isPlaying) {
         const playPromise = lobbyAudioManager.play(initialVolume);
         if (playPromise !== undefined) {
@@ -42,8 +53,8 @@ export default function LobbyAudio({
             .catch(() => {
               setNeedsUserGesture(true);
 
-              // Auto-play on the very first touch/click anywhere on the screen
-              const onFirstInteraction = () => {
+              // Auto-play on the very next touch/click anywhere on the screen (only before match starts)
+              onFirstInteraction = () => {
                 lobbyAudioManager.unlockAndPlay(initialVolume);
                 window.removeEventListener('touchstart', onFirstInteraction);
                 window.removeEventListener('click', onFirstInteraction);
@@ -60,6 +71,10 @@ export default function LobbyAudio({
 
     return () => {
       unsubscribe();
+      if (onFirstInteraction) {
+        window.removeEventListener('touchstart', onFirstInteraction);
+        window.removeEventListener('click', onFirstInteraction);
+      }
     };
   }, [autoPlay, initialVolume, isGameStarted]);
 
@@ -73,6 +88,7 @@ export default function LobbyAudio({
 
   // Toggle play / pause
   const togglePlay = () => {
+    if (isGameStarted) return;
     lobbyAudioManager.togglePlay(initialVolume);
   };
 

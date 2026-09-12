@@ -6,6 +6,7 @@ import { useSocketEvent, useSocketEmit } from '../hooks/useSocket';
 import QRDisplay from '../components/QRDisplay';
 import TeamDisplay from '../components/TeamDisplay';
 import LobbyAudio from '../components/LobbyAudio';
+import { lobbyAudioManager } from '../utils/lobbyAudio';
 import {
   saveAudioFile,
   deleteAudioFile,
@@ -368,6 +369,7 @@ export default function HostLobby() {
     } catch {
       /* ignore */
     }
+    lobbyAudioManager.stop();
     socket.emit('host-start-game', { roomCode });
     navigate('/host/game', { state: { roomCode, teams, playlist } });
   };

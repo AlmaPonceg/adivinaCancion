@@ -5,6 +5,7 @@ import socket from '../socket';
 import { useSocketEvent } from '../hooks/useSocket';
 import BuzzerButton from '../components/BuzzerButton';
 import LobbyAudio from '../components/LobbyAudio';
+import { lobbyAudioManager } from '../utils/lobbyAudio';
 
 function computeStatusMessage(st) {
   if (!st) return 'Conectando al juego...';
@@ -281,6 +282,7 @@ export default function PlayerBuzzer() {
 
   // Round started -> Immediately activate buzzer!
   useSocketEvent('round-started', (data) => {
+    lobbyAudioManager.stop();
     setHasGameStarted(true);
     setShowTeamsModal(false);
     setPlayerState((prev) => ({
@@ -406,6 +408,7 @@ export default function PlayerBuzzer() {
   });
 
   useSocketEvent('game-started', (data) => {
+    lobbyAudioManager.stop();
     setHasGameStarted(true);
     setShowTeamsModal(false);
     setPlayerState((prev) => ({

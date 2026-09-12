@@ -9,6 +9,7 @@ import BuzzQueue from '../components/BuzzQueue';
 import JudgePanel from '../components/JudgePanel';
 import { playHostBuzzerSound } from '../utils/audioEffects';
 import { hydratePlaylistTracks } from '../utils/audioStorage';
+import { lobbyAudioManager } from '../utils/lobbyAudio';
 
 export default function HostGame() {
   const location = useLocation();
@@ -51,6 +52,7 @@ export default function HostGame() {
       }
     }
     hydrate();
+    lobbyAudioManager.stop();
     return () => {
       isMounted = false;
     };
