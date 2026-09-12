@@ -38,6 +38,15 @@ const MusicPlayer = forwardRef(function MusicPlayer(
   const [mediaType, setMediaType] = useState(null); // 'local' | 'youtube' | 'spotify'
   const [mediaId, setMediaId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [antiSpoiler, setAntiSpoiler] = useState(() => {
+    return localStorage.getItem('trivia_anti_spoiler') === 'true';
+  });
+  const [revealedCurrentTrack, setRevealedCurrentTrack] = useState(false);
+
+  useEffect(() => {
+    setRevealedCurrentTrack(false);
+  }, [currentTrack?.id]);
+
   const audioPlayerRef = useRef(null);
   const [playDuration, setPlayDuration] = useState(() => {
     try {
@@ -808,9 +817,43 @@ const MusicPlayer = forwardRef(function MusicPlayer(
               <span>WEB URL</span>
             </span>
           )}
-          <p className="font-display text-xs sm:text-sm font-black text-[#181226] truncate flex-1" title={currentTrack.name}>
-            {currentTrack.name}
-          </p>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <p
+              className={`font-display text-xs sm:text-sm font-black text-[#181226] truncate select-none ${
+                antiSpoiler && !revealedCurrentTrack
+                  ? 'filter blur-[6px] hover:blur-none transition-all cursor-pointer text-[#8E869E]'
+                  : ''
+              }`}
+              title={antiSpoiler && !revealedCurrentTrack ? 'Clic para revelar título de la canción' : currentTrack.name}
+              onClick={() => {
+                if (antiSpoiler) setRevealedCurrentTrack(!revealedCurrentTrack);
+              }}
+            >
+              {antiSpoiler && !revealedCurrentTrack
+                ? '•••••••••••••••••••• (Anti-Spoiler)'
+                : currentTrack.name}
+            </p>
+            {antiSpoiler && (
+              <button
+                type="button"
+                onClick={() => setRevealedCurrentTrack(!revealedCurrentTrack)}
+                className="p-1 rounded-lg hover:bg-black/5 text-[#8E869E] hover:text-[#FF5722] cursor-pointer shrink-0 transition-colors"
+                title={revealedCurrentTrack ? 'Ocultar título' : 'Revelar título de la canción'}
+                aria-label={revealedCurrentTrack ? 'Ocultar título' : 'Revelar título'}
+              >
+                {revealedCurrentTrack ? (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -840,6 +883,23 @@ const MusicPlayer = forwardRef(function MusicPlayer(
               Pista {currentTrackIndex + 1} de {activeQueue.length}
             </span>
           )}
+
+          <button
+            type="button"
+            onClick={() => {
+              const next = !antiSpoiler;
+              setAntiSpoiler(next);
+              localStorage.setItem('trivia_anti_spoiler', next ? 'true' : 'false');
+            }}
+            className={`text-xs font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+              antiSpoiler
+                ? 'bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 shadow-2xs font-black'
+                : 'text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2]'
+            }`}
+            title={antiSpoiler ? 'Modo Anti-Spoiler activo (oculta títulos de pistas)' : 'Activar Modo Anti-Spoiler'}
+          >
+            <span>{antiSpoiler ? '🙈 Anti-Spoiler' : '👁️ Títulos'}</span>
+          </button>
 
           {hasPlaylist && (
             <button

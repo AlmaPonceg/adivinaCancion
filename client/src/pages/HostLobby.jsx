@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import socket from '../socket';
+import socket, { SERVER_URL } from '../socket';
 import { useSocketEvent, useSocketEmit } from '../hooks/useSocket';
 import QRDisplay from '../components/QRDisplay';
 import TeamDisplay from '../components/TeamDisplay';
@@ -39,6 +39,9 @@ export default function HostLobby() {
   const [showPlaylistDrawer, setShowPlaylistDrawer] = useState(false);
   const [playlistTab, setPlaylistTab] = useState('local'); // 'local' | 'urls'
   const [isLoadingPlaylist, setIsLoadingPlaylist] = useState(false);
+  const [antiSpoiler, setAntiSpoiler] = useState(() => {
+    return localStorage.getItem('trivia_anti_spoiler') === 'true';
+  });
 
   // Hydrate local tracks from IndexedDB with active Object URLs on mount
   useEffect(() => {
@@ -262,32 +265,37 @@ export default function HostLobby() {
   };
 
   const handleAddPlaylistUrls = async () => {
-    if (!playlistInput.trim()) return;
-    const lines = playlistInput
+    const rawInput = playlistInput.trim();
+    if (!rawInput) return;
+    const lines = rawInput
       .split(/[\n,]+/)
-      .map((s) => s.trim())
+      .map((s) => s.trim().replace(/^["']|["']$/g, ''))
       .filter((s) => s.length > 3);
 
     if (lines.length === 0) return;
 
-    // Check if it's a playlist URL or a bunch of song names
-    const isSinglePlaylistUrl = lines.length === 1 && (lines[0].includes('list=') || lines[0].includes('playlist?list='));
+    // Check if it's a playlist URL or a list of song names
+    const isSinglePlaylistUrl = lines.length === 1 && (
+      lines[0].includes('list=') ||
+      lines[0].includes('/playlist') ||
+      /^[a-zA-Z0-9_-]{18,}$/.test(lines[0])
+    );
     const isTextList = !isSinglePlaylistUrl && !lines.some(l => l.startsWith('http://') || l.startsWith('https://'));
 
     if (isSinglePlaylistUrl || isTextList) {
       setIsLoadingPlaylist(true);
       try {
-        const serverUrl = socket.io.uri;
+        const serverEndpoint = SERVER_URL || socket.io?.uri || window.location.origin;
         const bodyData = isSinglePlaylistUrl ? { url: lines[0] } : { queries: lines };
         
-        const res = await fetch(`${serverUrl}/api/playlist`, {
+        const res = await fetch(`${serverEndpoint}/api/playlist`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(bodyData)
         });
         const data = await res.json();
         
-        if (data.success && data.videos) {
+        if (data.success && data.videos && data.videos.length > 0) {
           const newTracks = data.videos.map(v => ({
             type: 'youtube',
             id: v.id,
@@ -298,8 +306,14 @@ export default function HostLobby() {
           setPlaylist(updated);
           savePlaylistToStorage(updated);
           setPlaylistInput('');
+
+          // Automatically enable Anti-Spoiler mode so the host doesn't see the song titles
+          if (isSinglePlaylistUrl) {
+            setAntiSpoiler(true);
+            localStorage.setItem('trivia_anti_spoiler', 'true');
+          }
         } else {
-          alert(data.error || 'Error al cargar la playlist');
+          alert(data.error || 'No se pudieron cargar las canciones de la playlist.');
         }
       } catch (e) {
         alert('Error de red al conectar con el servidor para procesar las canciones');
@@ -765,54 +779,100 @@ export default function HostLobby() {
 
               {/* Playlist items list preview */}
               {playlist.length > 0 && (
-                <div className="console-inset p-3 rounded-2xl mt-3 max-h-52 overflow-y-auto space-y-2">
-                  {playlist.map((track, idx) => {
-                    const isLocal = typeof track === 'object' && track.type === 'local';
-                    const title = getTrackTitle(track);
-                    const sizeTxt =
-                      typeof track === 'object' && track.size
-                        ? ` (${(track.size / (1024 * 1024)).toFixed(1)} MB)`
-                        : '';
-
-                    return (
-                      <div
-                        key={track.id || idx}
-                        className="flex items-center justify-between text-xs py-2 px-3 rounded-xl bg-white border border-[#EAE3D5] shadow-2xs gap-2"
-                      >
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <span className="mono text-[10px] font-black text-[#6B6280] shrink-0">
-                            #{idx + 1}
-                          </span>
-
-                          {isLocal ? (
-                            <span className="badge-tag bg-[#E6F9F0] text-[#059669] border border-[#059669]/40 px-1.5 py-0.5 rounded text-[9px] shrink-0">
-                              LOCAL
-                            </span>
-                          ) : (
-                            <span className="badge-tag bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 px-1.5 py-0.5 rounded text-[9px] shrink-0">
-                              URL
-                            </span>
-                          )}
-
-                          <span className="truncate text-[#181226] font-bold text-xs" title={title}>
-                            {title}
-                            {sizeTxt && <span className="mono text-[10px] text-[#6B6280] font-normal">{sizeTxt}</span>}
-                          </span>
-                        </div>
-
-                        <button
-                          onClick={() => handleRemovePlaylistItem(idx)}
-                          className="text-[#8E869E] hover:text-[#E11D48] p-1 shrink-0 cursor-pointer"
-                          title="Eliminar canción"
-                          aria-label="Eliminar canción"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-2 px-1">
+                    <span className="mono text-[11px] font-black text-[#6B6280]">
+                      PISTAS CARGADAS ({playlist.length})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = !antiSpoiler;
+                        setAntiSpoiler(next);
+                        localStorage.setItem('trivia_anti_spoiler', next ? 'true' : 'false');
+                      }}
+                      className={`text-xs font-black px-2.5 py-1 rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
+                        antiSpoiler
+                          ? 'bg-[#FFF0EB] text-[#FF5722] border-[#FF5722]/40 shadow-xs'
+                          : 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5] hover:text-[#181226]'
+                      }`}
+                      title={antiSpoiler ? 'Hacé clic para ver los títulos reales' : 'Ocultar títulos para evitar spoilers (no hacer trampa)'}
+                    >
+                      {antiSpoiler ? (
+                        <>
+                          <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
                           </svg>
-                        </button>
-                      </div>
-                    );
-                  })}
+                          <span>Modo Anti-Spoiler (Activo)</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          <span>Ocultar Títulos</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="console-inset p-3 rounded-2xl max-h-52 overflow-y-auto space-y-2">
+                    {playlist.map((track, idx) => {
+                      const isLocal = typeof track === 'object' && track.type === 'local';
+                      const title = getTrackTitle(track);
+                      const sizeTxt =
+                        typeof track === 'object' && track.size
+                          ? ` (${(track.size / (1024 * 1024)).toFixed(1)} MB)`
+                          : '';
+
+                      return (
+                        <div
+                          key={track.id || idx}
+                          className="flex items-center justify-between text-xs py-2 px-3 rounded-xl bg-white border border-[#EAE3D5] shadow-2xs gap-2"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <span className="mono text-[10px] font-black text-[#6B6280] shrink-0">
+                              #{idx + 1}
+                            </span>
+
+                            {isLocal ? (
+                              <span className="badge-tag bg-[#E6F9F0] text-[#059669] border border-[#059669]/40 px-1.5 py-0.5 rounded text-[9px] shrink-0">
+                                LOCAL
+                              </span>
+                            ) : (
+                              <span className="badge-tag bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 px-1.5 py-0.5 rounded text-[9px] shrink-0">
+                                URL
+                              </span>
+                            )}
+
+                            <span
+                              className={`truncate font-bold text-xs ${
+                                antiSpoiler
+                                  ? 'filter blur-[5px] select-none hover:blur-none transition-all duration-200 cursor-pointer text-[#8E869E]'
+                                  : 'text-[#181226]'
+                              }`}
+                              title={antiSpoiler ? 'Pista protegida contra spoilers. Posá el cursor o hacé clic en el botón para ver.' : title}
+                            >
+                              {antiSpoiler ? `•••••••••••••••••••• (Pista #${idx + 1})` : title}
+                              {!antiSpoiler && sizeTxt && <span className="mono text-[10px] text-[#6B6280] font-normal">{sizeTxt}</span>}
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => handleRemovePlaylistItem(idx)}
+                            className="text-[#8E869E] hover:text-[#E11D48] p-1 shrink-0 cursor-pointer"
+                            title="Eliminar canción"
+                            aria-label="Eliminar canción"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </motion.div>

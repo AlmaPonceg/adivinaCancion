@@ -52,4 +52,5 @@ socket.on('connect_error', (err) => {
   console.error('Connection error:', err.message);
 });
 
+export { SERVER_URL };
 export default socket;

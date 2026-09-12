@@ -12,6 +12,27 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { GameManager, GAME_STATES, TEAM_COLORS } from './gameManager.js';
 import YouTube from 'youtube-sr';
+import { Innertube, Log } from 'youtubei.js';
+
+// Silence verbose attachment warnings from Innertube's text parser
+Log.setLevel(Log.Level.ERROR);
+
+let innertubeInstance = null;
+async function getInnertube() {
+  if (!innertubeInstance) {
+    innertubeInstance = await Innertube.create();
+  }
+  return innertubeInstance;
+}
+
+function extractPlaylistId(input) {
+  if (!input) return null;
+  const str = String(input).trim();
+  const match = str.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+  if (/^[a-zA-Z0-9_-]{10,}$/.test(str) && !str.includes('/') && !str.includes('.')) return str;
+  return null;
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,12 +87,50 @@ app.post('/api/playlist', async (req, res) => {
       console.log(`[API] Buscando ${queries.length} canciones por texto...`);
       rawVideos = queries.map(q => ({ title: q, isQuery: true }));
     } else if (url) {
-      console.log(`[API] Buscando playlist: ${url}`);
-      const playlist = await ytApi.getPlaylist(url, { limit: 50 }).catch(e => null);
-      if (!playlist || !playlist.videos || playlist.videos.length === 0) {
-        return res.status(400).json({ error: 'YouTube bloqueó la lectura de esta playlist. Como alternativa, pegá los NOMBRES de las canciones (texto) uno por línea en la caja.' });
+      console.log(`[API] Procesando playlist/URL: ${url}`);
+      const playlistId = extractPlaylistId(url);
+
+      if (playlistId) {
+        console.log(`[API] ID de playlist detectado: ${playlistId}. Leyendo con Innertube...`);
+        try {
+          const yt = await getInnertube();
+          const playlist = await yt.getPlaylist(playlistId);
+          if (playlist && playlist.videos && playlist.videos.length > 0) {
+            const results = [];
+            for (const v of playlist.videos) {
+              const id = v.content_id || v.id || v.videoId || v.renderer_context?.command_context?.on_tap?.payload?.videoId;
+              const title = v.metadata?.title?.text || v.title?.text || (typeof v.title === 'string' ? v.title : null) || (v.metadata?.title ? String(v.metadata.title) : null) || v.title?.runs?.[0]?.text;
+              const thumbnail = v.content_image?.image?.[0]?.url || v.content_image?.sources?.[0]?.url || v.thumbnails?.[0]?.url || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null);
+
+              if (id && title) {
+                results.push({
+                  title: title.trim(),
+                  originalTitle: title.trim(),
+                  id: String(id).trim(),
+                  url: `https://www.youtube.com/watch?v=${id}`,
+                  thumbnail
+                });
+              }
+            }
+            if (results.length > 0) {
+              console.log(`[API] Playlist cargada exitosamente: ${results.length} canciones obtenidas.`);
+              return res.json({ success: true, videos: results, count: results.length });
+            }
+          }
+        } catch (ytErr) {
+          console.warn('[API] Innertube falló al leer playlist, probando fallback...', ytErr?.message);
+        }
       }
-      rawVideos = playlist.videos.slice(0, 50);
+
+      // Fallback: try youtube-sr getPlaylist
+      const fallbackPlaylist = await ytApi.getPlaylist(url, { limit: 50 }).catch(() => null);
+      if (fallbackPlaylist && fallbackPlaylist.videos && fallbackPlaylist.videos.length > 0) {
+        rawVideos = fallbackPlaylist.videos.slice(0, 50);
+      } else {
+        return res.status(400).json({
+          error: 'No se pudo leer la playlist de YouTube. Verificá que la playlist sea PÚBLICA o NO LISTADA (las playlists privadas no se pueden leer sin iniciar sesión en YouTube).'
+        });
+      }
     } else {
       return res.status(400).json({ error: 'URL o queries requeridas' });
     }
@@ -124,7 +183,7 @@ app.post('/api/playlist', async (req, res) => {
       }
     }
 
-    res.json({ success: true, videos: results });
+    res.json({ success: true, videos: results, count: results.length });
   } catch (error) {
     console.error('[API] Error en endpoint de playlist:', error);
     res.status(500).json({ error: 'Error interno al procesar la lista' });

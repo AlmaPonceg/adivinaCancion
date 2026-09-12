@@ -690,6 +690,22 @@ async function runTests() {
     reconnHost.disconnect();
     pd.disconnect();
 
+    // ── TEST 23: YouTube Playlist Endpoint (Direct URL) ──────
+    console.log('\n── 23. YouTube Playlist Endpoint (Direct URL) ──');
+    try {
+      const plRes = await fetch(`${SERVER}/api/playlist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: 'https://www.youtube.com/playlist?list=PLMC9KNkIncKtPzgY-5rmhvj7fax8fdxoj' }),
+      });
+      const plData = await plRes.json();
+      assert('Playlist endpoint returns success', plData?.success === true, JSON.stringify(plData));
+      assert('Playlist has songs array', Array.isArray(plData?.videos) && plData.videos.length > 0, `videos=${plData?.videos?.length}`);
+      assert('Song items have valid ID and title', !!plData?.videos?.[0]?.id && !!plData?.videos?.[0]?.title, JSON.stringify(plData?.videos?.[0]));
+    } catch (plErr) {
+      assert('Playlist endpoint request completed', false, plErr.message);
+    }
+
   } catch (err) {
     console.error(`\n💥 FATAL ERROR: ${err.message}`);
     console.error(err.stack);
