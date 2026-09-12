@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { lobbyAudioManager } from '../utils/lobbyAudio';
 
 /**
  * LobbyAudio — Plays "almaCancion.mp3" during the pre-game lobby.
@@ -6,93 +7,79 @@ import { useState, useEffect, useRef } from 'react';
  * Rules:
  * - Plays only while players join and BEFORE the match starts.
  * - Shuts down completely when the match begins (isGameStarted === true).
- * - Compact & responsive: Fits on 320px/360px mobile viewports without wrapping issues.
- * - Handles browser autoplay policies on all mobile browsers (iOS Safari, Android Chrome, Samsung Internet).
+ * - Connected to lobbyAudioManager singleton to support seamless playback from mobile join gesture.
+ * - Automatically hooks into any screen touch/click if autoplay was deferred.
  */
 export default function LobbyAudio({
   isGameStarted = false,
   autoPlay = true,
-  initialVolume = 0.6,
+  initialVolume = 0.35,
   className = '',
 }) {
-  const audioRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(() => lobbyAudioManager.isPlaying);
+  const [isMuted, setIsMuted] = useState(() => lobbyAudioManager.isMuted);
   const [needsUserGesture, setNeedsUserGesture] = useState(false);
 
-  // Initialize audio instance
   useEffect(() => {
-    const audio = new Audio('/almaCancion.mp3');
-    audio.loop = true;
-    audio.volume = initialVolume;
-    audioRef.current = audio;
+    // Sync state with singleton manager
+    const unsubscribe = lobbyAudioManager.subscribe((state) => {
+      setIsPlaying(state.isPlaying);
+      setIsMuted(state.isMuted);
+      if (state.isPlaying) {
+        setNeedsUserGesture(false);
+      }
+    });
 
-    audio.onplay = () => {
-      setIsPlaying(true);
-      setNeedsUserGesture(false);
-    };
-    audio.onpause = () => setIsPlaying(false);
+    if (!isGameStarted && autoPlay) {
+      if (!lobbyAudioManager.isPlaying) {
+        const playPromise = lobbyAudioManager.play(initialVolume);
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              setIsPlaying(true);
+              setNeedsUserGesture(false);
+            })
+            .catch(() => {
+              setNeedsUserGesture(true);
 
-    if (autoPlay && !isGameStarted) {
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            setIsPlaying(true);
-            setNeedsUserGesture(false);
-          })
-          .catch(() => {
-            // Autoplay blocked by browser policy until user touches screen
-            setNeedsUserGesture(true);
-            setIsPlaying(false);
-          });
+              // Auto-play on the very first touch/click anywhere on the screen
+              const onFirstInteraction = () => {
+                lobbyAudioManager.unlockAndPlay(initialVolume);
+                window.removeEventListener('touchstart', onFirstInteraction);
+                window.removeEventListener('click', onFirstInteraction);
+              };
+              window.addEventListener('touchstart', onFirstInteraction, { once: true });
+              window.addEventListener('click', onFirstInteraction, { once: true });
+            });
+        }
+      } else {
+        setIsPlaying(true);
+        setNeedsUserGesture(false);
       }
     }
 
     return () => {
-      audio.pause();
-      audio.currentTime = 0;
-      audio.src = '';
+      unsubscribe();
     };
   }, [autoPlay, initialVolume, isGameStarted]);
 
   // Stop completely when game starts
   useEffect(() => {
-    if (isGameStarted && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    if (isGameStarted) {
+      lobbyAudioManager.stop();
       setIsPlaying(false);
     }
   }, [isGameStarted]);
 
   // Toggle play / pause
   const togglePlay = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      audio
-        .play()
-        .then(() => {
-          setIsPlaying(true);
-          setNeedsUserGesture(false);
-        })
-        .catch((err) => {
-          console.warn('Lobby music playback failed:', err);
-        });
-    }
+    lobbyAudioManager.togglePlay(initialVolume);
   };
 
   // Toggle mute
   const toggleMute = (e) => {
     e.stopPropagation();
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    audio.muted = !audio.muted;
-    setIsMuted(audio.muted);
+    lobbyAudioManager.toggleMute();
   };
 
   // If match has already started, do not render anything
@@ -100,7 +87,7 @@ export default function LobbyAudio({
 
   return (
     <div className={`inline-flex items-center gap-1.5 select-none shrink-0 ${className}`}>
-      {needsUserGesture ? (
+      {needsUserGesture && !isPlaying ? (
         <button
           onClick={togglePlay}
           className="arcade-btn-primary px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-black flex items-center gap-1.5 cursor-pointer shadow-md animate-pulse"
@@ -113,7 +100,7 @@ export default function LobbyAudio({
         </button>
       ) : (
         <div className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-white border border-[#E0D9CB] shadow-xs">
-          {/* Animated Equalizer Visualizer (Strictly constrained within container) */}
+          {/* Animated Equalizer Visualizer */}
           <div className="flex items-end gap-0.5 h-3.5 w-3.5 sm:w-4 overflow-hidden shrink-0">
             <span
               className={`w-1 rounded-full bg-[#FF5722] ${

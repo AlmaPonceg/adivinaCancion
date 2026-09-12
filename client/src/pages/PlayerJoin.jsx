@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import socket from '../socket';
+import { lobbyAudioManager } from '../utils/lobbyAudio';
 
 export default function PlayerJoin() {
   const navigate = useNavigate();
@@ -74,6 +75,9 @@ export default function PlayerJoin() {
       return;
     }
 
+    // Pre-unlock and play Alma's lobby song within direct user click gesture
+    lobbyAudioManager.unlockAndPlay(0.35);
+
     let persistentId = localStorage.getItem('trivia_player_id');
     if (!persistentId) {
       persistentId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
@@ -92,6 +96,7 @@ export default function PlayerJoin() {
         setIsJoining(false);
         if (response.error) {
           setError(response.error);
+          lobbyAudioManager.stop();
         } else {
           const sessionData = {
             roomCode: trimmedCode,
