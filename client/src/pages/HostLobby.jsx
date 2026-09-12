@@ -6,6 +6,15 @@ import { useSocketEvent, useSocketEmit } from '../hooks/useSocket';
 import QRDisplay from '../components/QRDisplay';
 import TeamDisplay from '../components/TeamDisplay';
 import LobbyAudio from '../components/LobbyAudio';
+import {
+  saveAudioFile,
+  deleteAudioFile,
+  clearAudioFiles,
+  createTrackObjectUrl,
+  revokeTrackObjectUrl,
+  hydratePlaylistTracks,
+} from '../utils/audioStorage';
+import { normalizeTrack, getTrackTitle } from '../utils/trackHelper';
 
 export default function HostLobby() {
   const navigate = useNavigate();
@@ -27,6 +36,22 @@ export default function HostLobby() {
   });
   const [playlistInput, setPlaylistInput] = useState('');
   const [showPlaylistDrawer, setShowPlaylistDrawer] = useState(false);
+  const [playlistTab, setPlaylistTab] = useState('local'); // 'local' | 'urls'
+
+  // Hydrate local tracks from IndexedDB with active Object URLs on mount
+  useEffect(() => {
+    let isMounted = true;
+    async function hydrate() {
+      if (playlist && playlist.length > 0) {
+        const hydrated = await hydratePlaylistTracks(playlist);
+        if (isMounted) setPlaylist(hydrated);
+      }
+    }
+    hydrate();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // ── Manual Player State ─────────────────────────────────────
   const [manualName, setManualName] = useState('');
@@ -53,6 +78,15 @@ export default function HostLobby() {
   const [isEditingUrl, setIsEditingUrl] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isSpawningBots, setIsSpawningBots] = useState(false);
+
+  const handleSpawnBots = () => {
+    if (!roomCode || isSpawningBots) return;
+    setIsSpawningBots(true);
+    socket.emit('spawn-bots', { roomCode, count: 100 }, () => {
+      setTimeout(() => setIsSpawningBots(false), 2500);
+    });
+  };
 
   // Sync baseUrl with backend config / Render detection
   useEffect(() => {
@@ -207,7 +241,24 @@ export default function HostLobby() {
     socket.emit('remove-manual-player', { roomCode, playerId });
   };
 
-  // ── Playlist Management ─────────────────────────────────────
+  // ── Playlist Management (Offline Local Audio + Web URLs) ────
+  const savePlaylistToStorage = (tracks) => {
+    const persistable = tracks.map((t) => {
+      if (typeof t === 'object') {
+        return {
+          id: t.id,
+          type: t.type,
+          name: t.name,
+          url: t.type === 'local' ? '' : t.url,
+          size: t.size,
+          fileId: t.fileId || t.id,
+        };
+      }
+      return t;
+    });
+    localStorage.setItem('trivia_playlist', JSON.stringify(persistable));
+  };
+
   const handleAddPlaylistUrls = () => {
     if (!playlistInput.trim()) return;
     const lines = playlistInput
@@ -215,19 +266,52 @@ export default function HostLobby() {
       .map((s) => s.trim())
       .filter((s) => s.length > 5);
 
-    const updated = [...playlist, ...lines];
+    const newTracks = lines.map((url) => normalizeTrack(url));
+    const updated = [...playlist, ...newTracks];
     setPlaylist(updated);
-    localStorage.setItem('trivia_playlist', JSON.stringify(updated));
+    savePlaylistToStorage(updated);
     setPlaylistInput('');
   };
 
-  const handleRemovePlaylistItem = (index) => {
-    const updated = playlist.filter((_, idx) => idx !== index);
+  const handleUploadLocalFiles = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files || files.length === 0) return;
+
+    const newTracks = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileId = `local_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`;
+      await saveAudioFile(fileId, file);
+      const url = createTrackObjectUrl(fileId, file);
+      newTracks.push({
+        id: fileId,
+        type: 'local',
+        name: file.name,
+        url,
+        size: file.size,
+        fileId,
+      });
+    }
+
+    const updated = [...playlist, ...newTracks];
     setPlaylist(updated);
-    localStorage.setItem('trivia_playlist', JSON.stringify(updated));
+    savePlaylistToStorage(updated);
+    e.target.value = '';
   };
 
-  const handleClearPlaylist = () => {
+  const handleRemovePlaylistItem = async (index) => {
+    const itemToRemove = playlist[index];
+    if (itemToRemove && typeof itemToRemove === 'object' && itemToRemove.fileId) {
+      await deleteAudioFile(itemToRemove.fileId);
+      revokeTrackObjectUrl(itemToRemove.fileId);
+    }
+    const updated = playlist.filter((_, idx) => idx !== index);
+    setPlaylist(updated);
+    savePlaylistToStorage(updated);
+  };
+
+  const handleClearPlaylist = async () => {
+    await clearAudioFiles();
     setPlaylist([]);
     localStorage.removeItem('trivia_playlist');
   };
@@ -305,19 +389,34 @@ export default function HostLobby() {
                 </svg>
                 <span>Volver al Inicio</span>
               </button>
-              <span className="badge-tag text-[#FF5722] bg-[#FFF0EB] px-2.5 sm:px-3 py-1 rounded-xl border border-[#FF5722]/30 text-[10px] sm:text-xs">
-                PANEL ANFITRIÓN · CUMPLE ALMA
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E8DFD1] text-xs font-semibold text-[#181226] shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-[#FF5722] animate-pulse" />
+                <span className="font-bold text-[#181226]">Pantalla del Host</span>
+                <span className="text-[#D1C9BD]">·</span>
+                <span className="text-[#6B6280] font-medium">Cumple de Alma</span>
               </span>
             </div>
             <h1 className="font-display text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-[#181226]">
-              SALA DE ESPERA · EQUIPOS
+              Lobby de Equipos
             </h1>
             <p className="text-[#6B6280] text-xs sm:text-sm mt-0.5">
-              Compartí el código o QR para que cada invitado se una desde su teléfono.
+              Compartí el código o QR para que los invitados se sumen desde el celular.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+            <button
+              id="spawn-bots-btn"
+              onClick={handleSpawnBots}
+              disabled={isSpawningBots || !roomCode}
+              title="Simular 100 bots de prueba para test de carga y estrés en vivo"
+              className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#FF5722] to-[#FF8A65] hover:from-[#E64A19] hover:to-[#FF7043] text-white text-xs font-black cursor-pointer shadow-sm active:translate-y-0.5 transition-all disabled:opacity-50"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span>{isSpawningBots ? 'Conectando 100 bots...' : 'Simular 100 Bots'}</span>
+            </button>
             <LobbyAudio />
             <div className="p-1 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl flex items-center gap-2.5 bg-white border border-[#EAE3D5] shadow-xs">
               <span className={`w-2.5 h-2.5 rounded-full ${roomCode ? 'bg-[#059669] shadow-[0_0_8px_#059669]' : 'bg-[#D97706]'}`} />
@@ -477,7 +576,7 @@ export default function HostLobby() {
               animate={{ opacity: 1, y: 0 }}
               className="party-card p-6 rounded-3xl"
             >
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-extrabold uppercase tracking-wider text-[#181226]">
                     Playlist de Canciones
@@ -491,65 +590,158 @@ export default function HostLobby() {
                   onClick={() => setShowPlaylistDrawer(!showPlaylistDrawer)}
                   className="text-xs font-bold text-[#FF5722] hover:underline cursor-pointer"
                 >
-                  {showPlaylistDrawer ? 'Cerrar' : '+ Cargar lista'}
+                  {showPlaylistDrawer ? 'Cerrar opciones' : '+ Agregar canciones'}
                 </button>
               </div>
 
               <p className="text-xs text-[#6B6280] mb-3">
-                Pegá los enlaces de YouTube antes de empezar. Sonarán únicamente en esta computadora (Bluetooth).
+                Cargá archivos descargados (.mp3, .wav) para jugar 100% offline sin datos, o pegá enlaces web de YouTube.
               </p>
 
               {showPlaylistDrawer && (
                 <div className="space-y-3 pt-2">
-                  <textarea
-                    rows={3}
-                    value={playlistInput}
-                    onChange={(e) => setPlaylistInput(e.target.value)}
-                    placeholder="Pegá URLs de YouTube (una por línea)"
-                    className="w-full p-3 text-xs rounded-xl border border-[#EAE3D5] bg-[#FAF7F2] text-[#181226] placeholder:text-[#8E869E] focus:outline-none focus:border-[#FF5722]"
-                  />
-                  <div className="flex justify-between items-center">
-                    {playlist.length > 0 && (
-                      <button
-                        onClick={handleClearPlaylist}
-                        className="text-xs text-[#E11D48] hover:underline cursor-pointer font-semibold"
-                      >
-                        Vaciar todo
-                      </button>
-                    )}
+                  {/* Selector de modo: Archivos locales vs URLs */}
+                  <div className="flex items-center p-1 bg-[#FAF7F2] rounded-xl border border-[#EAE3D5]">
                     <button
-                      onClick={handleAddPlaylistUrls}
-                      className="arcade-btn-primary px-4 py-2 text-xs font-bold ml-auto"
+                      onClick={() => setPlaylistTab('local')}
+                      className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        playlistTab === 'local'
+                          ? 'bg-[#059669] text-white shadow-xs'
+                          : 'text-[#6B6280] hover:text-[#181226]'
+                      }`}
                     >
-                      + Guardar Canciones
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                      </svg>
+                      <span>Archivos de Audio (Sin Internet)</span>
+                    </button>
+
+                    <button
+                      onClick={() => setPlaylistTab('urls')}
+                      className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        playlistTab === 'urls'
+                          ? 'bg-[#FF5722] text-white shadow-xs'
+                          : 'text-[#6B6280] hover:text-[#181226]'
+                      }`}
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                      <span>URLs Web (YouTube)</span>
                     </button>
                   </div>
+
+                  {/* Tab 1: Subir archivos de audio locales */}
+                  {playlistTab === 'local' ? (
+                    <div className="space-y-2">
+                      <label className="border-2 border-dashed border-[#DDD5C5] hover:border-[#059669] bg-[#FAF7F2] hover:bg-[#F3EFE6] p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all text-center group">
+                        <div className="w-11 h-11 rounded-xl bg-[#E6F9F0] border border-[#059669]/30 flex items-center justify-center text-[#059669] mb-2 group-hover:scale-105 transition-transform shadow-xs">
+                          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                        </div>
+                        <p className="font-display text-xs sm:text-sm font-black text-[#181226] mb-0.5">
+                          Hacé clic para seleccionar tus canciones (.mp3, .wav, .m4a)
+                        </p>
+                        <p className="text-[11px] text-[#6B6280] max-w-sm leading-tight">
+                          Podés elegir varios archivos juntos desde tu computadora. Sonarán directamente desde tu disco sin consumir datos.
+                        </p>
+                        <input
+                          type="file"
+                          multiple
+                          accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac"
+                          onChange={handleUploadLocalFiles}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    /* Tab 2: Pegar URLs de YouTube / Spotify */
+                    <div className="space-y-2">
+                      <textarea
+                        rows={3}
+                        value={playlistInput}
+                        onChange={(e) => setPlaylistInput(e.target.value)}
+                        placeholder="Pegá URLs de YouTube o Spotify (una por línea)"
+                        className="w-full p-3 text-xs rounded-xl border border-[#EAE3D5] bg-[#FAF7F2] text-[#181226] placeholder:text-[#8E869E] focus:outline-none focus:border-[#FF5722]"
+                      />
+                      <div className="flex justify-end">
+                        <button
+                          onClick={handleAddPlaylistUrls}
+                          className="arcade-btn-primary px-4 py-2 text-xs font-bold"
+                        >
+                          + Guardar Enlaces
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {playlist.length > 0 && (
+                    <div className="flex justify-between items-center pt-1">
+                      <button
+                        onClick={handleClearPlaylist}
+                        className="text-xs text-[#E11D48] hover:underline cursor-pointer font-bold"
+                      >
+                        Vaciar toda la lista
+                      </button>
+                      <span className="text-[11px] text-[#6B6280] font-medium">
+                        {playlist.filter((t) => typeof t === 'object' && t.type === 'local').length} locales · {playlist.filter((t) => (typeof t === 'string' ? true : t.type !== 'local')).length} web
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Playlist items list preview */}
               {playlist.length > 0 && (
-                <div className="console-inset p-3 rounded-2xl mt-3 max-h-44 overflow-y-auto space-y-1.5">
-                  {playlist.map((url, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-white border border-[#EAE3D5] shadow-2xs"
-                    >
-                      <span className="mono truncate max-w-[230px] text-[#181226] font-medium">
-                        {idx + 1}. {url}
-                      </span>
-                      <button
-                        onClick={() => handleRemovePlaylistItem(idx)}
-                        className="text-[#8E869E] hover:text-[#E11D48] ml-2 p-1"
-                        title="Eliminar canción"
-                        aria-label="Eliminar canción"
+                <div className="console-inset p-3 rounded-2xl mt-3 max-h-52 overflow-y-auto space-y-2">
+                  {playlist.map((track, idx) => {
+                    const isLocal = typeof track === 'object' && track.type === 'local';
+                    const title = getTrackTitle(track);
+                    const sizeTxt =
+                      typeof track === 'object' && track.size
+                        ? ` (${(track.size / (1024 * 1024)).toFixed(1)} MB)`
+                        : '';
+
+                    return (
+                      <div
+                        key={track.id || idx}
+                        className="flex items-center justify-between text-xs py-2 px-3 rounded-xl bg-white border border-[#EAE3D5] shadow-2xs gap-2"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="mono text-[10px] font-black text-[#6B6280] shrink-0">
+                            #{idx + 1}
+                          </span>
+
+                          {isLocal ? (
+                            <span className="badge-tag bg-[#E6F9F0] text-[#059669] border border-[#059669]/40 px-1.5 py-0.5 rounded text-[9px] shrink-0">
+                              LOCAL
+                            </span>
+                          ) : (
+                            <span className="badge-tag bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 px-1.5 py-0.5 rounded text-[9px] shrink-0">
+                              URL
+                            </span>
+                          )}
+
+                          <span className="truncate text-[#181226] font-bold text-xs" title={title}>
+                            {title}
+                            {sizeTxt && <span className="mono text-[10px] text-[#6B6280] font-normal">{sizeTxt}</span>}
+                          </span>
+                        </div>
+
+                        <button
+                          onClick={() => handleRemovePlaylistItem(idx)}
+                          className="text-[#8E869E] hover:text-[#E11D48] p-1 shrink-0 cursor-pointer"
+                          title="Eliminar canción"
+                          aria-label="Eliminar canción"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </motion.div>
@@ -603,7 +795,6 @@ export default function HostLobby() {
                 <div>
                   <p className="badge-tag text-[#6B6280] mb-3">Lista de espera ({players.length})</p>
                   <div className="console-inset p-3.5 rounded-2xl min-h-[180px] max-h-72 overflow-y-auto space-y-2 mb-6">
-                    <AnimatePresence>
                       {players.length === 0 ? (
                         <div className="text-center py-12">
                           <p className="text-sm font-semibold text-[#181226] mb-1">
@@ -615,12 +806,9 @@ export default function HostLobby() {
                         </div>
                       ) : (
                         players.map((player) => (
-                          <motion.div
+                          <div
                             key={player.id}
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white border border-[#EAE3D5] shadow-2xs"
+                            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white border border-[#EAE3D5] shadow-2xs animate-fade-in"
                           >
                             <div className="flex items-center gap-2.5">
                               <span className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white flex items-center justify-center font-black text-xs shadow-xs">
@@ -646,10 +834,9 @@ export default function HostLobby() {
                                 </svg>
                               </button>
                             )}
-                          </motion.div>
+                          </div>
                         ))
                       )}
-                    </AnimatePresence>
                   </div>
                 </div>
               ) : (

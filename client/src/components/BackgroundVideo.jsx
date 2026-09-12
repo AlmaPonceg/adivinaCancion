@@ -79,14 +79,10 @@ export default function BackgroundVideo() {
         height: '100dvh',
         minHeight: '-webkit-fill-available',
         transform: 'translate3d(0, 0, 0)',
-        backfaceVisibility: 'hidden',
-        WebkitBackfaceVisibility: 'hidden',
-        perspective: 1000,
-        WebkitPerspective: 1000,
         contain: 'strict',
       }}
     >
-      {/* ── Video Element: Multi-OS Cross-Platform Attributes ── */}
+      {/* ── Video Element: Hardware-accelerated direct overlay plane ── */}
       <video
         ref={videoRef}
         src="/almaBaile.mp4"
@@ -106,20 +102,20 @@ export default function BackgroundVideo() {
           width: '100%',
           height: '100%',
           objectFit: 'cover',
+          transform: 'translateZ(0)',
+          willChange: 'transform',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
         }}
       />
 
-      {/* ── Soft Daytime Scrim ── */}
-      <div className="absolute inset-0 bg-[#F7F4EE]/20 pointer-events-none" />
-
-      {/* ── Subtle Festival Ambient Glows ── */}
+      {/* ── Soft Daytime Scrim & Glow Overlay (Single combined composited layer) ── */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-60"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `
-            radial-gradient(ellipse 90% 60% at 50% -15%, rgba(255, 87, 34, 0.12) 0%, transparent 65%),
-            radial-gradient(ellipse 70% 50% at 85% 90%, rgba(245, 158, 11, 0.08) 0%, transparent 55%),
-            radial-gradient(ellipse 60% 40% at 15% 70%, rgba(225, 29, 72, 0.07) 0%, transparent 55%)
+          background: `
+            radial-gradient(ellipse 90% 60% at 50% -15%, rgba(255, 87, 34, 0.08) 0%, transparent 65%),
+            rgba(247, 244, 238, 0.18)
           `,
         }}
       />

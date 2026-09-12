@@ -46,17 +46,23 @@ export default function Scoreboard({ teams }) {
                     boxShadow: `0 0 12px ${team.color}60`,
                   }}
                   initial={{ width: '0%' }}
-                  animate={{ width: `${Math.max((team.score / maxScore) * 100, 12)}%` }}
+                  animate={{ width: team.score > 0 ? `${Math.max((team.score / maxScore) * 100, 14)}%` : '0%' }}
                   transition={{ type: 'spring', damping: 20, stiffness: 100 }}
                 />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <motion.span
                     key={team.score}
-                    initial={{ scale: 1.3 }}
+                    initial={{ scale: 1.2 }}
                     animate={{ scale: 1 }}
-                    className="mono text-sm font-black text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]"
+                    className={
+                      team.score < 0
+                        ? 'mono text-sm font-black text-[#E11D48]'
+                        : team.score === 0
+                        ? 'mono text-sm font-black text-[#6B6280]'
+                        : 'mono text-sm font-black text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]'
+                    }
                   >
-                    {team.score} {team.score === 1 ? 'pt' : 'pts'}
+                    {team.score} {team.score === 1 || team.score === -1 ? 'pt' : 'pts'}
                   </motion.span>
                 </div>
               </div>

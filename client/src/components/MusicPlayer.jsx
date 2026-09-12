@@ -2,26 +2,18 @@ import { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHand
 import { motion } from 'framer-motion';
 import socket from '../socket';
 import { useSocketEvent } from '../hooks/useSocket';
-
-function extractYoutubeId(url) {
-  if (!url) return null;
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-    /^([a-zA-Z0-9_-]{11})$/,
-  ];
-  for (const p of patterns) {
-    const match = url.match(p);
-    if (match) return match[1];
-  }
-  return null;
-}
-
-function extractSpotifyEmbed(url) {
-  if (!url) return null;
-  const match = url.match(/open\.spotify\.com\/(track|album|playlist)\/([a-zA-Z0-9]+)/);
-  if (match) return `https://open.spotify.com/embed/${match[1]}/${match[2]}?utm_source=generator&theme=0`;
-  return null;
-}
+import {
+  extractYoutubeId,
+  extractSpotifyEmbed,
+  normalizeTrack,
+  getTrackTitle,
+  isLocalTrack,
+} from '../utils/trackHelper';
+import {
+  saveAudioFile,
+  createTrackObjectUrl,
+  hydratePlaylistTracks,
+} from '../utils/audioStorage';
 
 // Fisher-Yates shuffle helper
 function shuffleArray(arr) {
@@ -41,10 +33,12 @@ const MusicPlayer = forwardRef(function MusicPlayer(
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isRandomMode, setIsRandomMode] = useState(true);
 
+  const [currentTrack, setCurrentTrack] = useState(null);
   const [url, setUrl] = useState('');
-  const [mediaType, setMediaType] = useState(null);
+  const [mediaType, setMediaType] = useState(null); // 'local' | 'youtube' | 'spotify'
   const [mediaId, setMediaId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const audioPlayerRef = useRef(null);
   const [playDuration, setPlayDuration] = useState(() => {
     try {
       const saved = localStorage.getItem('trivia_play_duration');
@@ -172,56 +166,110 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     [startTime]
   );
 
-  const loadMedia = useCallback((inputUrl) => {
-    const trimmed = (inputUrl || '').trim();
-    if (!trimmed) {
+  const loadMedia = useCallback(
+    (trackInput) => {
+      if (!trackInput) {
+        setMediaType(null);
+        setMediaId(null);
+        setCurrentTrack(null);
+        return;
+      }
+
+      const track = normalizeTrack(trackInput);
+      setCurrentTrack(track);
+
+      if (ytPlayerRef.current) {
+        try {
+          ytPlayerRef.current.destroy();
+        } catch {
+          /* ignore */
+        }
+        ytPlayerRef.current = null;
+      }
+      if (audioPlayerRef.current) {
+        try {
+          audioPlayerRef.current.pause();
+        } catch {
+          /* ignore */
+        }
+      }
+      if (timerRef.current) clearTimeout(timerRef.current);
+      stopProgress();
+      setIsPlaying(false);
+      setPlaybackSeconds(0);
+
+      // 1. LOCAL OFFLINE AUDIO (MP3, WAV, OGG, M4A or Blob URL)
+      if (track.type === 'local' || isLocalTrack(track.url)) {
+        setMediaType('local');
+        setMediaId(track.url);
+        if (audioPlayerRef.current) {
+          audioPlayerRef.current.src = track.url;
+          audioPlayerRef.current.currentTime = startTime || 0;
+          audioPlayerRef.current.load();
+        }
+        return;
+      }
+
+      // 2. YOUTUBE VIDEO
+      const ytId = extractYoutubeId(track.url);
+      if (ytId) {
+        setMediaType('youtube');
+        setMediaId(ytId);
+        setTimeout(() => initYoutubePlayer(ytId), 100);
+        return;
+      }
+
+      // 3. SPOTIFY EMBED
+      const spotifyEmbed = extractSpotifyEmbed(track.url);
+      if (spotifyEmbed) {
+        setMediaType('spotify');
+        setMediaId(spotifyEmbed);
+        return;
+      }
+
+      // 4. DIRECT AUDIO URL (e.g. .mp3, .wav)
+      if (
+        typeof track.url === 'string' &&
+        (track.url.endsWith('.mp3') || track.url.endsWith('.wav') || track.url.endsWith('.ogg'))
+      ) {
+        setMediaType('local');
+        setMediaId(track.url);
+        if (audioPlayerRef.current) {
+          audioPlayerRef.current.src = track.url;
+          audioPlayerRef.current.currentTime = startTime || 0;
+          audioPlayerRef.current.load();
+        }
+        return;
+      }
+
       setMediaType(null);
       setMediaId(null);
-      return;
-    }
+    },
+    [stopProgress, initYoutubePlayer, startTime]
+  );
 
-    if (ytPlayerRef.current) {
-      try {
-        ytPlayerRef.current.destroy();
-      } catch {
-        /* ignore */
-      }
-      ytPlayerRef.current = null;
-    }
-    if (timerRef.current) clearTimeout(timerRef.current);
-    stopProgress();
-    setIsPlaying(false);
-    setPlaybackSeconds(0);
-
-    const ytId = extractYoutubeId(trimmed);
-    if (ytId) {
-      setMediaType('youtube');
-      setMediaId(ytId);
-      setTimeout(() => initYoutubePlayer(ytId), 100);
-      return;
-    }
-
-    const spotifyEmbed = extractSpotifyEmbed(trimmed);
-    if (spotifyEmbed) {
-      setMediaType('spotify');
-      setMediaId(spotifyEmbed);
-      return;
-    }
-
-    setMediaType(null);
-    setMediaId(null);
-  }, [stopProgress, initYoutubePlayer]);
-
-  // Initialize and shuffle playlist in random order by default
+  // Initialize and shuffle playlist in random order by default with IndexedDB hydration
   useEffect(() => {
-    if (playlist && playlist.length > 0) {
-      const ordered = isRandomMode ? shuffleArray(playlist) : [...playlist];
-      setShuffledPlaylist(ordered);
-      setCurrentTrackIndex(0);
-      const initialTrack = ordered[0];
-      setUrl(initialTrack);
-      loadMedia(initialTrack);
+    let isMounted = true;
+    async function initPlaylistQueue() {
+      if (playlist && playlist.length > 0) {
+        const hydrated = await hydratePlaylistTracks(playlist);
+        if (!isMounted) return;
+        const ordered = isRandomMode ? shuffleArray(hydrated) : [...hydrated];
+        setShuffledPlaylist(ordered);
+        setCurrentTrackIndex(0);
+        const initialTrack = ordered[0];
+        setUrl(initialTrack.url || initialTrack);
+        loadMedia(initialTrack);
+      } else {
+        setShuffledPlaylist([]);
+        setCurrentTrack(null);
+      }
     }
+    initPlaylistQueue();
+    return () => {
+      isMounted = false;
+    };
   }, [playlist, isRandomMode, loadMedia]);
 
   const activeQueue = shuffledPlaylist.length > 0 ? shuffledPlaylist : playlist;
@@ -230,18 +278,18 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     if (!activeQueue || activeQueue.length === 0) return;
     const nextIdx = (currentTrackIndex + 1) % activeQueue.length;
     setCurrentTrackIndex(nextIdx);
-    const nextUrl = activeQueue[nextIdx];
-    setUrl(nextUrl);
-    loadMedia(nextUrl);
+    const nextTrack = activeQueue[nextIdx];
+    setUrl(nextTrack.url || nextTrack);
+    loadMedia(nextTrack);
   };
 
   const handlePrevTrack = () => {
     if (!activeQueue || activeQueue.length === 0) return;
     const prevIdx = currentTrackIndex === 0 ? activeQueue.length - 1 : currentTrackIndex - 1;
     setCurrentTrackIndex(prevIdx);
-    const prevUrl = activeQueue[prevIdx];
-    setUrl(prevUrl);
-    loadMedia(prevUrl);
+    const prevTrack = activeQueue[prevIdx];
+    setUrl(prevTrack.url || prevTrack);
+    loadMedia(prevTrack);
   };
 
   const handleReshuffle = () => {
@@ -249,12 +297,43 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     const randomized = shuffleArray(playlist);
     setShuffledPlaylist(randomized);
     setCurrentTrackIndex(0);
-    const nextUrl = randomized[0];
-    setUrl(nextUrl);
-    loadMedia(nextUrl);
+    const nextTrack = randomized[0];
+    setUrl(nextTrack.url || nextTrack);
+    loadMedia(nextTrack);
   };
 
   const playAudioOnly = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    stopProgress();
+
+    // ── Local Offline Audio Playback ─────────────────────────
+    if (mediaType === 'local' && audioPlayerRef.current) {
+      try {
+        const audio = audioPlayerRef.current;
+        audio.currentTime = startTime || 0;
+        const promise = audio.play();
+        if (promise !== undefined) {
+          promise.catch((err) => console.warn('Local audio play error:', err));
+        }
+        setIsPlaying(true);
+        startProgress();
+
+        timerRef.current = setTimeout(() => {
+          try {
+            audio.pause();
+          } catch (e) {
+            /* ignore */
+          }
+          setIsPlaying(false);
+          stopProgress();
+        }, playDuration * 1000);
+      } catch (e) {
+        console.error('Local audio error:', e);
+      }
+      return;
+    }
+
+    // ── YouTube IFrame Audio Playback ────────────────────────
     if (mediaType === 'youtube' && ytPlayerRef.current) {
       try {
         ytPlayerRef.current.seekTo(startTime, true);
@@ -262,7 +341,6 @@ const MusicPlayer = forwardRef(function MusicPlayer(
         setIsPlaying(true);
         startProgress();
 
-        if (timerRef.current) clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => {
           try {
             ytPlayerRef.current?.pauseVideo();
@@ -282,11 +360,36 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     if (!activeQueue || activeQueue.length === 0) return;
     const nextIdx = (currentTrackIndex + 1) % activeQueue.length;
     setCurrentTrackIndex(nextIdx);
-    const nextUrl = activeQueue[nextIdx];
-    setUrl(nextUrl);
-    loadMedia(nextUrl);
+    const nextTrack = activeQueue[nextIdx];
+    setUrl(nextTrack.url || nextTrack);
+    loadMedia(nextTrack);
+
+    const isLocal = isLocalTrack(nextTrack) || (typeof nextTrack === 'object' && nextTrack.type === 'local');
+
     setTimeout(() => {
-      if (ytPlayerRef.current) {
+      if (isLocal && audioPlayerRef.current) {
+        try {
+          const audio = audioPlayerRef.current;
+          audio.currentTime = startTime || 0;
+          const promise = audio.play();
+          if (promise !== undefined) promise.catch((err) => console.warn(err));
+          setIsPlaying(true);
+          startProgress();
+
+          if (timerRef.current) clearTimeout(timerRef.current);
+          timerRef.current = setTimeout(() => {
+            try {
+              audio.pause();
+            } catch (e) {
+              /* ignore */
+            }
+            setIsPlaying(false);
+            stopProgress();
+          }, playDuration * 1000);
+        } catch (err) {
+          console.error('Local nextAndPlay error:', err);
+        }
+      } else if (ytPlayerRef.current) {
         try {
           ytPlayerRef.current.seekTo(startTime, true);
           ytPlayerRef.current.playVideo();
@@ -307,10 +410,17 @@ const MusicPlayer = forwardRef(function MusicPlayer(
           /* ignore */
         }
       }
-    }, 450);
+    }, isLocal ? 120 : 450);
   }, [activeQueue, currentTrackIndex, loadMedia, startTime, playDuration, startProgress, stopProgress]);
 
   const handlePause = useCallback(() => {
+    if (mediaType === 'local' && audioPlayerRef.current) {
+      try {
+        audioPlayerRef.current.pause();
+      } catch (e) {
+        /* ignore */
+      }
+    }
     if (mediaType === 'youtube' && ytPlayerRef.current) {
       try {
         ytPlayerRef.current.pauseVideo();
@@ -324,6 +434,14 @@ const MusicPlayer = forwardRef(function MusicPlayer(
   }, [mediaType, stopProgress]);
 
   const handleStop = useCallback(() => {
+    if (mediaType === 'local' && audioPlayerRef.current) {
+      try {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current.currentTime = 0;
+      } catch (e) {
+        /* ignore */
+      }
+    }
     if (mediaType === 'youtube' && ytPlayerRef.current) {
       try {
         ytPlayerRef.current.stopVideo();
@@ -340,6 +458,25 @@ const MusicPlayer = forwardRef(function MusicPlayer(
   const handleReplay = useCallback(() => {
     playAudioOnly();
   }, [playAudioOnly]);
+
+  const handleManualLocalUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const fileId = `manual_local_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    await saveAudioFile(fileId, file);
+    const objectUrl = createTrackObjectUrl(fileId, file);
+    const track = {
+      id: fileId,
+      type: 'local',
+      name: file.name,
+      url: objectUrl,
+      size: file.size,
+      fileId,
+    };
+    loadMedia(track);
+    setUrl(file.name);
+  };
 
   useImperativeHandle(ref, () => ({
     play: playAudioOnly,
@@ -364,6 +501,13 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       stopProgress();
+      if (audioPlayerRef.current) {
+        try {
+          audioPlayerRef.current.pause();
+        } catch {
+          /* ignore */
+        }
+      }
       if (ytPlayerRef.current) {
         try {
           ytPlayerRef.current.destroy();
@@ -387,6 +531,18 @@ const MusicPlayer = forwardRef(function MusicPlayer(
       {/* Background ambient lighting glow */}
       <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#FF5E36]/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-[#FF1493]/15 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Native HTML5 Audio Element for Local Offline Tracks */}
+      <audio
+        ref={audioPlayerRef}
+        preload="auto"
+        onEnded={() => {
+          setIsPlaying(false);
+          stopProgress();
+        }}
+        onError={(e) => console.warn('Native audio error:', e)}
+        className="hidden"
+      />
 
       {/* HIDDEN YOUTUBE PLAYER CONTAINER - Plays audio without revealing the video/title */}
       <div
@@ -415,6 +571,34 @@ const MusicPlayer = forwardRef(function MusicPlayer(
             frameBorder="0"
             allow="autoplay; clipboard-write; encrypted-media"
           />
+        </div>
+      )}
+
+      {/* Track info banner (source and title) */}
+      {currentTrack && (
+        <div className="flex items-center gap-2 mb-3 px-1 relative z-10">
+          {currentTrack.type === 'local' ? (
+            <span className="badge-tag bg-[#E6F9F0] text-[#059669] border border-[#059669]/40 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-2xs shrink-0">
+              <svg className="w-3 h-3 text-[#059669]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              <span>OFFLINE (Sin datos)</span>
+            </span>
+          ) : currentTrack.type === 'youtube' ? (
+            <span className="badge-tag bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-2xs shrink-0">
+              <svg className="w-3 h-3 text-[#FF5722]" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+              </svg>
+              <span>YOUTUBE</span>
+            </span>
+          ) : (
+            <span className="badge-tag bg-[#FAF7F2] text-[#6B6280] border border-[#EAE3D5] px-2 py-0.5 rounded-md shrink-0">
+              <span>WEB URL</span>
+            </span>
+          )}
+          <p className="font-display text-xs sm:text-sm font-black text-[#181226] truncate flex-1" title={currentTrack.name}>
+            {currentTrack.name}
+          </p>
         </div>
       )}
 
@@ -544,23 +728,43 @@ const MusicPlayer = forwardRef(function MusicPlayer(
         </div>
       </div>
 
-      {/* Manual URL drawer (if open) */}
+      {/* Manual URL & Local File drawer (if open) */}
       {showManualInput && (
-        <div className="flex gap-2 mb-4 relative z-10">
-          <input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && loadMedia(url)}
-            placeholder="Pegá enlace de YouTube o Spotify"
-            className="flex-1 px-3 py-2 text-xs rounded-xl bg-white border border-[#EAE3D5] text-[#181226] placeholder:text-[#8E869E] focus:outline-none focus:border-[#FF5722]"
-          />
-          <button
-            onClick={() => loadMedia(url)}
-            className="arcade-btn-primary px-4 py-2 text-xs font-bold shrink-0 cursor-pointer rounded-xl"
-          >
-            Cargar
-          </button>
+        <div className="p-3 mb-4 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] space-y-2 relative z-10">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && loadMedia(url)}
+              placeholder="Pegá enlace de YouTube o Spotify"
+              className="flex-1 px-3 py-2 text-xs rounded-xl bg-white border border-[#EAE3D5] text-[#181226] placeholder:text-[#8E869E] focus:outline-none focus:border-[#FF5722]"
+            />
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => loadMedia(url)}
+                className="arcade-btn-primary px-3.5 py-2 text-xs font-bold cursor-pointer rounded-xl"
+              >
+                Cargar URL
+              </button>
+
+              <label className="arcade-btn px-3 py-2 text-xs font-black flex items-center gap-1.5 cursor-pointer rounded-xl bg-white hover:bg-[#F3EFE6] text-[#181226] border border-[#DDD5C5]">
+                <svg className="w-3.5 h-3.5 text-[#059669]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>+ Archivo MP3/WAV</span>
+                <input
+                  type="file"
+                  accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac"
+                  onChange={handleManualLocalUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+          <p className="text-[11px] text-[#6B6280] italic">
+            Podés cargar un enlace web o un archivo de música descargado en tu compu (funciona 100% offline sin internet).
+          </p>
         </div>
       )}
 

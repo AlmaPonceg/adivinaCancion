@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const httpServer = createServer(app);
 
-// Robust heartbeat configuration: 60s timeout prevents mobile disconnects on sleep
+// Robust heartbeat & high-throughput configuration
 const io = new Server(httpServer, {
   cors: {
     origin: '*',
@@ -26,6 +26,9 @@ const io = new Server(httpServer, {
   },
   pingInterval: 10000,
   pingTimeout: 60000,
+  perMessageDeflate: false, // Disables CPU-heavy zlib compression on micro-packets
+  maxHttpBufferSize: 1e6,  // 1MB buffer cap protects memory against payload flood
+  serveClient: false,      // Do not serve socket.io.js over HTTP (client imports its own)
 });
 
 app.use(cors());
@@ -76,16 +79,45 @@ if (fs.existsSync(clientDistPath)) {
   });
 }
 
-// Helper: Broadcast updated player states to all connected sockets in a room
+// Helper: Batched broadcast of player states to prevent event-loop choking during stampedes
+const pendingBroadcasts = new Set();
 function broadcastPlayerStates(roomCode) {
-  const room = gm.getRoom(roomCode);
-  if (!room) return;
-  for (const [, player] of room.players) {
-    if (player.socketId) {
-      const playerState = gm.getPlayerState(roomCode, player.id);
-      io.to(player.socketId).emit('player-state-updated', playerState);
+  if (!roomCode || pendingBroadcasts.has(roomCode)) return;
+  pendingBroadcasts.add(roomCode);
+  setImmediate(() => {
+    pendingBroadcasts.delete(roomCode);
+    const room = gm.getRoom(roomCode);
+    if (!room) return;
+
+    // Precompute shared teams projection once for the whole broadcast (avoids 10,000 array allocations)
+    const cachedTeams = room.teams.map((t) => ({
+      name: t.name,
+      color: t.color,
+      bg: t.bg,
+      score: t.score,
+      isReady: !!t.isReady,
+      players: t.players.map((p) => ({ name: p.name, id: p.id, isManual: !!p.isManual })),
+    }));
+
+    for (const [, player] of room.players) {
+      if (player.socketId) {
+        const playerState = gm.getPlayerState(roomCode, player.id, cachedTeams);
+        io.to(player.socketId).emit('player-state-updated', playerState);
+      }
     }
-  }
+  });
+}
+
+// Helper: Batched broadcast of player list to prevent client UI re-render thrashing during massive joins
+const pendingPlayerListBroadcasts = new Map();
+function broadcastPlayerList(roomCode) {
+  if (!roomCode || pendingPlayerListBroadcasts.has(roomCode)) return;
+  const timeout = setTimeout(() => {
+    pendingPlayerListBroadcasts.delete(roomCode);
+    const playerList = gm.getPlayerList(roomCode);
+    io.to(roomCode).emit('player-list-updated', playerList);
+  }, 40);
+  pendingPlayerListBroadcasts.set(roomCode, timeout);
 }
 
 // ── Socket.io Connection Handler ───────────────────────────────
@@ -115,26 +147,25 @@ io.on('connection', (socket) => {
     const name = String(playerName).trim();
 
     if (!code || !name) {
-      return callback({ error: 'Código y nombre requeridos' });
+      return callback?.({ error: 'Código y nombre requeridos' });
     }
 
     const result = gm.addPlayer(code, socket.id, name, playerId);
     if (result.error) {
-      return callback({ error: result.error });
+      return callback?.({ error: result.error });
     }
 
     currentRoom = code;
     socket.join(code);
 
-    // Notify host and room about player list
-    const playerList = gm.getPlayerList(code);
-    io.to(code).emit('player-list-updated', playerList);
+    // Notify host and room about player list (batched for smooth rendering)
+    broadcastPlayerList(code);
 
     const playerState = gm.getPlayerState(code, result.player.id);
     const roomState = gm.getRoomState(code);
 
     console.log(`[Player] ${name} joined room ${code} (reconnected: ${!!result.reconnected})`);
-    callback({
+    callback?.({
       success: true,
       player: result.player,
       reconnected: result.reconnected,
@@ -179,8 +210,7 @@ io.on('connection', (socket) => {
     const roomState = gm.getRoomState(code);
 
     // Notify others
-    const playerList = gm.getPlayerList(code);
-    io.to(code).emit('player-list-updated', playerList);
+    broadcastPlayerList(code);
 
     console.log(`[Reconnect] ${result.player.name} (${result.player.id}) reconnected to room ${code}`);
     callback?.({ success: true, player: result.player, playerState, roomState });
@@ -200,8 +230,7 @@ io.on('connection', (socket) => {
       return callback?.({ error: result.error });
     }
 
-    const playerList = gm.getPlayerList(code);
-    io.to(code).emit('player-list-updated', playerList);
+    broadcastPlayerList(code);
 
     console.log(`[Manual] Player ${name} added to room ${code}`);
     callback?.({ success: true, player: result.player });
@@ -216,8 +245,7 @@ io.on('connection', (socket) => {
       return callback?.({ error: result.error });
     }
 
-    const playerList = gm.getPlayerList(code);
-    io.to(code).emit('player-list-updated', playerList);
+    broadcastPlayerList(code);
 
     const roomState = gm.getRoomState(code);
     io.to(code).emit('teams-assigned', { teams: roomState.teams });
@@ -302,7 +330,7 @@ io.on('connection', (socket) => {
   socket.on('shuffle-teams', ({ roomCode, numTeams }, callback) => {
     const teams = gm.shuffleTeams(roomCode, numTeams);
     if (!teams) {
-      return callback({ error: 'No se pudo sortear equipos' });
+      return callback?.({ error: 'No se pudo sortear equipos' });
     }
 
     const roomState = gm.getRoomState(roomCode);
@@ -325,7 +353,7 @@ io.on('connection', (socket) => {
     broadcastPlayerStates(roomCode);
 
     console.log(`[Teams] Shuffled in room ${roomCode} (${teams.length} teams, max 4 per team)`);
-    callback({ success: true, teams: roomState.teams });
+    callback?.({ success: true, teams: roomState.teams });
   });
 
   // ── HOST: Start Game (Transition from Lobby to Game) ────────
@@ -386,17 +414,26 @@ io.on('connection', (socket) => {
     const { buzzEntry, isFirst } = result;
 
     if (isFirst) {
-      io.to(roomCode).emit('first-buzz', {
+      io.to(code).emit('first-buzz', {
         buzzEntry,
-        roomState: gm.getRoomState(roomCode),
+        roomState: gm.getRoomState(code),
       });
     }
 
-    io.to(roomCode).emit('buzz-queue-updated', {
-      buzzQueue: gm.getRoomState(roomCode).buzzQueue,
+    // Instant team-wide notification so teammates' buzzers lock immediately
+    io.to(code).emit('team-buzzed', {
+      teamIndex: buzzEntry.teamIndex,
+      teamName: buzzEntry.teamName,
+      playerId: buzzEntry.playerId,
+      playerName: buzzEntry.playerName,
+      position: buzzEntry.position,
     });
 
-    broadcastPlayerStates(roomCode);
+    io.to(code).emit('buzz-queue-updated', {
+      buzzQueue: gm.getRoomState(code).buzzQueue,
+    });
+
+    broadcastPlayerStates(code);
 
     console.log(`[Buzz] ${buzzEntry.playerName} (${buzzEntry.teamName}) - Position: ${buzzEntry.position}`);
     callback?.({ success: true, position: buzzEntry.position });
@@ -423,8 +460,8 @@ io.on('connection', (socket) => {
 
   // ── HOST: Judge Incorrect ──────────────────────────────────
 
-  socket.on('judge-incorrect', ({ roomCode }, callback) => {
-    const result = gm.judgeIncorrect(roomCode);
+  socket.on('judge-incorrect', ({ roomCode, penaltyPoints }, callback) => {
+    const result = gm.judgeIncorrect(roomCode, penaltyPoints);
     if (!result) {
       return callback?.({ error: 'Error al juzgar' });
     }
@@ -440,7 +477,7 @@ io.on('connection', (socket) => {
 
     broadcastPlayerStates(roomCode);
 
-    console.log(`[Incorrect] ${result.blocked.playerName} blocked. Next up: ${result.nextUp?.playerName || 'None'}`);
+    console.log(`[Incorrect] ${result.blocked.playerName} (${result.blocked.teamName}) -${result.pointsDeducted}pt. Next up: ${result.nextUp?.playerName || 'None'}`);
     callback?.({ success: true, result });
   });
 
@@ -476,6 +513,86 @@ io.on('connection', (socket) => {
     callback?.(state || { error: 'Estado no encontrado' });
   });
 
+  // ── DEV / STRESS: Spawn 100 Live Bot Sockets ────────────────
+  socket.on('spawn-bots', async ({ roomCode, count = 100 }, callback) => {
+    const code = roomCode?.toUpperCase();
+    if (!code) return callback?.({ error: 'Falta roomCode' });
+
+    try {
+      const { io: clientIo } = await import('socket.io-client');
+      const serverTarget = `http://localhost:${PORT}`;
+
+      console.log(`[Stress] Spawning ${count} bot sockets into room ${code}...`);
+      for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+          const botSocket = clientIo(serverTarget, {
+            transports: ['websocket'],
+            reconnection: false,
+          });
+
+          const botId = `bot_${i + 1}_${Math.random().toString(36).slice(2, 6)}`;
+          const botName = `Bot_${String(i + 1).padStart(3, '0')}`;
+
+          botSocket.on('connect', () => {
+            botSocket.emit('join-room', { roomCode: code, playerName: botName, playerId: botId }, () => {});
+          });
+
+          let buzzTimer = null;
+
+          botSocket.on('round-started', () => {
+            if (buzzTimer) clearTimeout(buzzTimer);
+
+            // 15% chance this bot doesn't recognize or buzz this song
+            if (Math.random() < 0.15) return;
+
+            // Distribution across speed scoring tiers:
+            // Tier 1: 0.3s - 2.5s (< 3s -> 5 pts) ~25%
+            // Tier 2: 3.2s - 5.5s (< 6s -> 4 pts) ~25%
+            // Tier 3: 6.2s - 8.5s (< 9s -> 3 pts) ~20%
+            // Tier 4: 9.2s - 12.2s (< 13s -> 2 pts) ~15%
+            // Tier 5: 13.5s - 16.5s (>= 13s -> 1 pt) ~15%
+            const roll = Math.random();
+            let delay;
+
+            if (roll < 0.25) {
+              delay = Math.floor(300 + Math.random() * 2200);
+            } else if (roll < 0.50) {
+              delay = Math.floor(3200 + Math.random() * 2300);
+            } else if (roll < 0.70) {
+              delay = Math.floor(6200 + Math.random() * 2300);
+            } else if (roll < 0.85) {
+              delay = Math.floor(9200 + Math.random() * 3000);
+            } else {
+              delay = Math.floor(13500 + Math.random() * 3000);
+            }
+
+            buzzTimer = setTimeout(() => {
+              botSocket.emit('buzz', { roomCode: code }, () => {});
+            }, delay);
+          });
+
+          botSocket.on('round-result', () => {
+            if (buzzTimer) clearTimeout(buzzTimer);
+          });
+
+          botSocket.on('round-ended', () => {
+            if (buzzTimer) clearTimeout(buzzTimer);
+          });
+
+          botSocket.on('game-over', () => {
+            if (buzzTimer) clearTimeout(buzzTimer);
+            botSocket.disconnect();
+          });
+        }, (i / count) * 2000);
+      }
+
+      callback?.({ success: true, count });
+    } catch (err) {
+      console.error('[Stress] Error spawning bots:', err);
+      callback?.({ error: err.message });
+    }
+  });
+
   // ── Disconnect ─────────────────────────────────────────────
 
   socket.on('disconnect', () => {
@@ -486,8 +603,7 @@ io.on('connection', (socket) => {
       if (result.wasHost) {
         console.log(`[Host] Disconnected from room ${result.roomCode} (waiting for reconnect)`);
       } else {
-        const playerList = gm.getPlayerList(result.roomCode);
-        io.to(result.roomCode).emit('player-list-updated', playerList);
+        broadcastPlayerList(result.roomCode);
       }
     }
   });

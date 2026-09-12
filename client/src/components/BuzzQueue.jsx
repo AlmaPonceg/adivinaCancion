@@ -61,6 +61,16 @@ export default function BuzzQueue({ queue, currentJudging }) {
                   style={{ backgroundColor: buzz.teamColor, boxShadow: `0 0 8px ${buzz.teamColor}80` }}
                 />
 
+                {/* Reaction time and points badge */}
+                {buzz.elapsedSeconds !== undefined && (
+                  <span className="mono text-[10px] font-bold text-[#6B6280] bg-white border border-[#EAE3D5] px-2 py-0.5 rounded-lg shrink-0 shadow-2xs">
+                    {buzz.elapsedSeconds}s{' '}
+                    <span className="text-[#059669] font-black">
+                      (+{buzz.suggestedPoints || 1}pt{buzz.suggestedPoints > 1 ? 's' : ''})
+                    </span>
+                  </span>
+                )}
+
                 {/* Active indicator */}
                 {isJudging && (
                   <span className="font-tactical text-[10px] font-black text-[#059669] uppercase tracking-wider shrink-0 bg-[#E6F9F0] border border-[#059669]/60 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-xs">

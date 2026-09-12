@@ -20,14 +20,14 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam }) {
   };
 
   return (
-    <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[460px] overflow-y-auto pr-1">
       <AnimatePresence>
         {teams.map((team, teamIdx) => (
           <motion.div
-            key={team.color || teamIdx}
+            key={team.name || teamIdx}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: teamIdx * 0.08 }}
+            transition={{ delay: Math.min(teamIdx * 0.03, 0.25) }}
             className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] shadow-xs relative overflow-hidden"
             style={{
               borderLeft: `5px solid ${team.color}`,

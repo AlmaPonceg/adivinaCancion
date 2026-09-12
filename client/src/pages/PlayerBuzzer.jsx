@@ -10,6 +10,11 @@ function computeStatusMessage(st) {
   if (!st) return 'Conectando al juego...';
   if (st.isMyTurn) return '¡TU TURNO! CANTÁ O RESPONDÉ';
   if (st.hasBuzzed) return 'Registrado en la fila. Esperando al jurado...';
+  if (st.hasTeamBuzzed) {
+    return st.teamBuzzedPlayerName
+      ? `${st.teamBuzzedPlayerName} ya pulsó por tu equipo`
+      : 'Un compañero de tu equipo ya pulsó el botón';
+  }
   if (st.canBuzz) return '¡MÚSICA SONANDO! TOCÁ EL BOTÓN';
   if (st.isTeamBlocked) return 'Tu equipo fue bloqueado esta ronda';
   if (st.isPlayerBlocked) return 'Bloqueado en esta ronda';
@@ -48,6 +53,8 @@ export default function PlayerBuzzer() {
     teamBg: '#F8FAFC',
     canBuzz: false,
     hasBuzzed: false,
+    hasTeamBuzzed: false,
+    teamBuzzedPlayerName: null,
     isTeamBlocked: false,
     isPlayerBlocked: false,
     isMyTurn: false,
@@ -163,6 +170,8 @@ export default function PlayerBuzzer() {
       ...prev,
       canBuzz: true,
       hasBuzzed: false,
+      hasTeamBuzzed: false,
+      teamBuzzedPlayerName: null,
       isTeamBlocked: false,
       isPlayerBlocked: false,
       isMyTurn: false,
@@ -184,6 +193,8 @@ export default function PlayerBuzzer() {
       ...prev,
       canBuzz: true,
       hasBuzzed: false,
+      hasTeamBuzzed: false,
+      teamBuzzedPlayerName: null,
       isTeamBlocked: false,
       isPlayerBlocked: false,
       gameState: 'ROUND_ACTIVE',
@@ -300,6 +311,31 @@ export default function PlayerBuzzer() {
     }
   });
 
+  useSocketEvent('team-buzzed', (data) => {
+    if (data && data.teamIndex !== undefined && data.teamIndex === playerState.teamIndex) {
+      const isMe = data.playerId === playerId;
+      setPlayerState((prev) => {
+        const updated = {
+          ...prev,
+          canBuzz: false,
+          hasBuzzed: isMe ? true : prev.hasBuzzed,
+          hasTeamBuzzed: true,
+          teamBuzzedPlayerName: data.playerName,
+        };
+        setStatusMessage(computeStatusMessage(updated));
+        return updated;
+      });
+
+      if (!isMe) {
+        setRoundNotification({
+          type: 'buzz',
+          message: `${data.playerName} pulsó por tu equipo`,
+        });
+        setTimeout(() => setRoundNotification(null), 3500);
+      }
+    }
+  });
+
   useSocketEvent('round-result', (data) => {
     setStatusMessage('Ronda finalizada. Esperando siguiente canción...');
     if (data.type === 'correct') {
@@ -322,6 +358,8 @@ export default function PlayerBuzzer() {
           teams: updatedTeams,
           canBuzz: false,
           hasBuzzed: false,
+          hasTeamBuzzed: false,
+          teamBuzzedPlayerName: null,
           gameState: 'ROUND_END',
         };
       });
@@ -330,13 +368,13 @@ export default function PlayerBuzzer() {
         ...prev,
         canBuzz: false,
         hasBuzzed: false,
+        hasTeamBuzzed: false,
+        teamBuzzedPlayerName: null,
         gameState: 'ROUND_END',
       }));
     }
 
-    // Mostrar automáticamente la tabla de posiciones en los celulares al terminar la ronda
-    setShowTeamsModal(true);
-    setTimeout(() => setShowTeamsModal(false), 5000);
+    // El resultado se notifica limpiamente con el banner superior
     setTimeout(() => setRoundNotification(null), 4000);
   });
 
@@ -374,23 +412,27 @@ export default function PlayerBuzzer() {
         ...prev,
         canBuzz: false,
         hasBuzzed: false,
+        hasTeamBuzzed: false,
+        teamBuzzedPlayerName: null,
         gameState: 'ROUND_END',
       }));
       setBuzzPosition(null);
-      // Mostrar automáticamente la tabla de posiciones si todos fallaron
-      setShowTeamsModal(true);
     } else if (data.reopened) {
       setRoundNotification({
         type: 'incorrect',
         message: `Falló ${data.blocked?.playerName}. Pulsadores reabiertos`,
       });
-      setPlayerState((prev) => ({
-        ...prev,
-        canBuzz: !prev.isTeamBlocked && !prev.isPlayerBlocked,
-        hasBuzzed: false,
-      }));
+      setPlayerState((prev) => {
+        const canBuzzNow = !prev.isTeamBlocked && !prev.isPlayerBlocked && !prev.hasTeamBuzzed;
+        const updated = {
+          ...prev,
+          canBuzz: canBuzzNow,
+          hasBuzzed: false,
+        };
+        setStatusMessage(computeStatusMessage(updated));
+        return updated;
+      });
       setBuzzPosition(null);
-      setStatusMessage('¡Buzzer reabierto! Tocá el botón');
     }
     setTimeout(() => setRoundNotification(null), 3500);
   });
@@ -420,7 +462,7 @@ export default function PlayerBuzzer() {
 
   // ── Buzz Action ────────────────────────────────────────────
   const handleBuzz = useCallback(() => {
-    if (!playerState.canBuzz) return;
+    if (!playerState.canBuzz || playerState.hasBuzzed || playerState.hasTeamBuzzed) return;
 
     socket.emit('buzz', { roomCode }, (response) => {
       if (response?.success) {
@@ -428,9 +470,11 @@ export default function PlayerBuzzer() {
         setStatusMessage(
           response.position === 1 ? '¡Tocaste primero! Tu turno' : `#${response.position} en la cola`
         );
+      } else if (response?.error) {
+        setStatusMessage(response.error);
       }
     });
-  }, [playerState.canBuzz, roomCode]);
+  }, [playerState.canBuzz, playerState.hasBuzzed, playerState.hasTeamBuzzed, roomCode]);
 
   const isGameStarted =
     hasGameStarted ||
@@ -710,6 +754,7 @@ export default function PlayerBuzzer() {
               onBuzz={handleBuzz}
               canBuzz={playerState.canBuzz}
               hasBuzzed={playerState.hasBuzzed}
+              hasTeamBuzzed={playerState.hasTeamBuzzed}
               isBlocked={playerState.isTeamBlocked || playerState.isPlayerBlocked}
               teamColor={playerState.teamColor || '#FF5722'}
               isMyTurn={playerState.isMyTurn}
@@ -740,7 +785,7 @@ export default function PlayerBuzzer() {
                   ? 'bg-[#E6F9F0] border-[#059669] text-[#047857] shadow-md'
                   : playerState.canBuzz
                   ? 'bg-[#FFF0EB] border-[#FF5722] text-[#C23B11] shadow-lg shadow-[#FF5722]/20 animate-pulse'
-                  : playerState.hasBuzzed
+                  : playerState.hasBuzzed || playerState.hasTeamBuzzed
                   ? 'bg-white border-[#D6CEBF] text-[#181226]'
                   : playerState.isTeamBlocked || playerState.isPlayerBlocked
                   ? 'bg-[#FFE4E9] border-[#E11D48] text-[#BE123C]'
@@ -774,7 +819,7 @@ export default function PlayerBuzzer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 p-0 sm:p-4"
             onClick={() => setShowTeamsModal(false)}
           >
             <motion.div

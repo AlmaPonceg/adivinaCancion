@@ -37,18 +37,20 @@ export default function BuzzerButton({
   onBuzz,
   canBuzz,
   hasBuzzed,
+  hasTeamBuzzed,
   isBlocked,
   teamColor = '#4F46E5',
   isMyTurn,
 }) {
   const [isPressed, setIsPressed] = useState(false);
-  const isDisabled = !canBuzz || hasBuzzed || isBlocked;
+  const isDisabled = !canBuzz || hasBuzzed || hasTeamBuzzed || isBlocked;
   const isLive = canBuzz && !isDisabled;
 
   const getLabel = () => {
     if (isBlocked) return 'BLOQUEADO';
     if (isMyTurn) return '¡TU TURNO!';
     if (hasBuzzed) return '¡REGISTRADO!';
+    if (hasTeamBuzzed) return 'TU EQUIPO YA TOCÓ';
     if (canBuzz) return '¡PULSÁ YA!';
     return 'LISTO';
   };

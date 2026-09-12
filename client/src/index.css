@@ -59,7 +59,6 @@ body {
     radial-gradient(ellipse 90% 60% at 50% -15%, rgba(255, 87, 34, 0.12) 0%, transparent 60%),
     radial-gradient(ellipse 70% 50% at 85% 90%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
     radial-gradient(ellipse 60% 40% at 15% 70%, rgba(225, 29, 72, 0.08) 0%, transparent 50%);
-  background-attachment: fixed;
   color: #181226;
   min-height: 100dvh;
   overflow-x: hidden;
@@ -295,26 +294,62 @@ select:focus {
 .mini-eq-2 { animation: mini-eq-bounce-2 0.55s infinite ease-in-out; }
 .mini-eq-3 { animation: mini-eq-bounce-3 0.85s infinite ease-in-out; }
 
+/* GPU-composited fade-in utility */
+@keyframes fadeInRow {
+  from { opacity: 0; transform: translate3d(0, 4px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+.animate-fade-in {
+  animation: fadeInRow 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
 /* ── Print Media Optimization (Diploma Export) ─────────────── */
 @media print {
-  body {
+  @page {
+    size: landscape;
+    margin: 0;
+  }
+
+  html, body {
     background: #FAF8F5 !important;
     color: #0F172A !important;
     padding: 0 !important;
     margin: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  .no-print, nav, header, footer, button {
-    display: none !important;
+  /* Hide all elements on the page completely */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Exclusively render the physical diploma certificate */
+  #diploma-canvas,
+  #diploma-canvas * {
+    visibility: visible !important;
   }
 
   #diploma-canvas {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border-width: 6px !important;
     box-shadow: none !important;
-    border-width: 4px !important;
-    max-width: 100% !important;
     page-break-inside: avoid !important;
-    margin: 0 auto !important;
+    page-break-after: avoid !important;
+  }
+
+  .no-print {
+    display: none !important;
   }
 }

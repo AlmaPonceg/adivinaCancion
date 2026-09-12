@@ -11,7 +11,32 @@ const TEAM_COLORS = [
   { name: 'Naranja', color: '#f97316', bg: '#7c2d12' },
   { name: 'Rosa', color: '#ec4899', bg: '#831843' },
   { name: 'Cian', color: '#06b6d4', bg: '#164e63' },
+  { name: 'Lima', color: '#84cc16', bg: '#3f6212' },
+  { name: 'Fucsia', color: '#d946ef', bg: '#701a75' },
+  { name: 'Índigo', color: '#6366f1', bg: '#312e81' },
+  { name: 'Esmeralda', color: '#059669', bg: '#064e3b' },
+  { name: 'Ámbar', color: '#d97706', bg: '#78350f' },
+  { name: 'Turquesa', color: '#14b8a6', bg: '#134e4a' },
+  { name: 'Coral', color: '#f43f5e', bg: '#881337' },
+  { name: 'Púrpura', color: '#a855f7', bg: '#581c87' },
 ];
+
+function getTeamMeta(index) {
+  if (index < TEAM_COLORS.length) {
+    return {
+      name: `Equipo ${TEAM_COLORS[index].name}`,
+      color: TEAM_COLORS[index].color,
+      bg: TEAM_COLORS[index].bg,
+    };
+  }
+  // Dynamic color generation using golden ratio hue progression for > 16 teams
+  const hue = Math.round((index * 137.508) % 360);
+  return {
+    name: `Equipo ${index + 1}`,
+    color: `hsl(${hue}, 75%, 48%)`,
+    bg: `hsl(${hue}, 80%, 25%)`,
+  };
+}
 
 const GAME_STATES = {
   LOBBY: 'LOBBY',
@@ -47,6 +72,7 @@ class GameManager {
       socketToPlayerId: new Map(),// socketId -> playerId
       teams: [],                  // [{ name, color, bg, score, players: [] }]
       buzzQueue: [],              // [{ playerId, socketId, playerName, teamIndex, timestamp }]
+      buzzedTeams: new Set(),    // teamIndex of teams that buzzed this round (max 1 buzz per team)
       blockedTeams: new Set(),    // teamIndex of teams blocked this round
       blockedPlayers: new Set(),  // playerId of players blocked this round
       currentJudging: null,       // The buzz entry currently being judged
@@ -277,15 +303,16 @@ class GameManager {
     // Minimum number of teams = ceil(players / 4), minimum 2 teams if at least 2 players
     const minTeamsRequired = Math.max(players.length > 1 ? 2 : 1, Math.ceil(players.length / 4));
     let numTeams = requestedNumTeams ? Math.max(requestedNumTeams, minTeamsRequired) : minTeamsRequired;
-    numTeams = Math.min(numTeams, TEAM_COLORS.length, players.length);
+    numTeams = Math.min(numTeams, players.length);
 
-    // Initialize teams
+    // Initialize teams dynamically
     room.teams = [];
     for (let t = 0; t < numTeams; t++) {
+      const meta = getTeamMeta(t);
       room.teams.push({
-        name: `Equipo ${TEAM_COLORS[t].name}`,
-        color: TEAM_COLORS[t].color,
-        bg: TEAM_COLORS[t].bg,
+        name: meta.name,
+        color: meta.color,
+        bg: meta.bg,
         score: 0,
         players: [],
         isReady: false,
@@ -400,6 +427,7 @@ class GameManager {
 
     room.state = GAME_STATES.ROUND_ACTIVE;
     room.buzzQueue = [];
+    room.buzzedTeams = new Set();
     room.blockedTeams.clear();
     room.blockedPlayers.clear();
     room.currentJudging = null;
@@ -431,6 +459,11 @@ class GameManager {
     const player = playerId ? room.players.get(playerId) : null;
     if (!player) return { error: 'Jugador no encontrado' };
 
+    // Strict rule: Only one player per team can buzz in the round!
+    if (room.buzzedTeams && room.buzzedTeams.has(player.teamIndex)) {
+      return { error: 'Un compañero de tu equipo ya tocó el botón en esta ronda' };
+    }
+
     // Check if player already buzzed
     if (room.buzzQueue.some(b => b.playerId === player.id)) {
       return { error: 'Ya tocaste el buzzer' };
@@ -457,13 +490,11 @@ class GameManager {
       Number(((buzzTime - (room.roundStartTime || buzzTime)) / 1000).toFixed(1))
     );
 
-    // Dynamic speed points
-    let suggestedPoints = 1;
-    if (elapsedSeconds < 3.0) suggestedPoints = 5;
-    else if (elapsedSeconds < 6.0) suggestedPoints = 4;
-    else if (elapsedSeconds < 9.0) suggestedPoints = 3;
-    else if (elapsedSeconds < 13.0) suggestedPoints = 2;
-    else suggestedPoints = 1;
+    // Continuous decimal speed scoring:
+    // Starts at 5.0 pts for instant reaction (0.1s) and scales down smoothly by ~0.33 pts/sec to 1.0 pt at 12s.
+    // Minimum 1.0 pt after 12s.
+    const rawPoints = Math.max(1.0, 5.0 - (elapsedSeconds / 12.0) * 4.0);
+    const suggestedPoints = Number(rawPoints.toFixed(1));
 
     const buzzEntry = {
       playerId: player.id,
@@ -479,6 +510,8 @@ class GameManager {
     };
 
     room.buzzQueue.push(buzzEntry);
+    if (!room.buzzedTeams) room.buzzedTeams = new Set();
+    room.buzzedTeams.add(player.teamIndex);
 
     // First buzz: lock buzzer and move to judging
     if (room.buzzQueue.length === 1) {
@@ -500,10 +533,10 @@ class GameManager {
     if (!room.currentJudging) return null;
 
     const { teamIndex, playerName, teamName, elapsedSeconds, suggestedPoints } = room.currentJudging;
-    const finalPoints = points !== null && points !== undefined ? points : (suggestedPoints || 1);
+    const finalPoints = Number(Number(points !== null && points !== undefined ? points : (suggestedPoints || 1)).toFixed(1));
 
     if (room.teams[teamIndex]) {
-      room.teams[teamIndex].score += finalPoints;
+      room.teams[teamIndex].score = Number(((room.teams[teamIndex].score || 0) + finalPoints).toFixed(1));
     }
 
     room.state = GAME_STATES.ROUND_END;
@@ -532,7 +565,7 @@ class GameManager {
     return { success: true, teams: room.teams };
   }
 
-  judgeIncorrect(roomCode) {
+  judgeIncorrect(roomCode, penaltyPoints = 1) {
     const room = this.rooms.get(roomCode);
     if (!room) return null;
     if (!room.currentJudging && room.buzzQueue.length > 0) {
@@ -541,6 +574,14 @@ class GameManager {
     if (!room.currentJudging) return null;
 
     const blocked = room.currentJudging;
+    const penalty = Number(Number(penaltyPoints !== undefined && penaltyPoints !== null ? penaltyPoints : 1).toFixed(1));
+
+    // Deduct points from team — can go negative if they don't have enough points
+    if (room.teams[blocked.teamIndex]) {
+      room.teams[blocked.teamIndex].score = Number(
+        ((room.teams[blocked.teamIndex].score || 0) - penalty).toFixed(1)
+      );
+    }
 
     room.blockedTeams.add(blocked.teamIndex);
     room.blockedPlayers.add(blocked.playerId);
@@ -555,12 +596,16 @@ class GameManager {
       b.position = idx + 1;
     });
 
+    const sharedScores = room.teams.map(t => ({ name: t.name, color: t.color, score: t.score }));
+
     if (room.buzzQueue.length > 0) {
       const nextBuzz = room.buzzQueue[0];
       room.currentJudging = nextBuzz;
       room.state = GAME_STATES.BUZZER_LOCKED;
       return {
-        blocked: { playerName: blocked.playerName, teamName: blocked.teamName },
+        blocked: { playerName: blocked.playerName, teamName: blocked.teamName, teamIndex: blocked.teamIndex },
+        pointsDeducted: penalty,
+        scores: sharedScores,
         nextUp: nextBuzz,
         buzzQueue: room.buzzQueue,
         allBlocked: false,
@@ -572,7 +617,9 @@ class GameManager {
       room.state = GAME_STATES.ROUND_END;
       room.currentJudging = null;
       return {
-        blocked: { playerName: blocked.playerName, teamName: blocked.teamName },
+        blocked: { playerName: blocked.playerName, teamName: blocked.teamName, teamIndex: blocked.teamIndex },
+        pointsDeducted: penalty,
+        scores: sharedScores,
         nextUp: null,
         buzzQueue: [],
         allBlocked: true,
@@ -583,7 +630,9 @@ class GameManager {
     room.currentJudging = null;
 
     return {
-      blocked: { playerName: blocked.playerName, teamName: blocked.teamName },
+      blocked: { playerName: blocked.playerName, teamName: blocked.teamName, teamIndex: blocked.teamIndex },
+      pointsDeducted: penalty,
+      scores: sharedScores,
       nextUp: null,
       buzzQueue: [],
       allBlocked: false,
@@ -639,7 +688,7 @@ class GameManager {
     };
   }
 
-  getPlayerState(roomCode, socketIdOrPlayerId) {
+  getPlayerState(roomCode, socketIdOrPlayerId, cachedTeams = null) {
     const room = this.rooms.get(roomCode);
     if (!room) return null;
 
@@ -653,7 +702,8 @@ class GameManager {
 
     const team = room.teams[player.teamIndex];
     const isTeamInQueue = room.buzzQueue.some(b => b.teamIndex === player.teamIndex);
-    const hasBuzzed = room.buzzQueue.some(b => b.playerId === player.id) || isTeamInQueue;
+    const hasTeamBuzzed = (room.buzzedTeams ? room.buzzedTeams.has(player.teamIndex) : false) || isTeamInQueue;
+    const hasBuzzed = room.buzzQueue.some(b => b.playerId === player.id);
     const isTeamBlocked = room.blockedTeams.has(player.teamIndex);
     const isPlayerBlocked = room.blockedPlayers.has(player.id);
     const allTeamsReady = room.teams.length > 0 && room.teams.every(t => t.isReady);
@@ -671,17 +721,20 @@ class GameManager {
       gameState: room.state,
       canBuzz:
         (room.state === GAME_STATES.ROUND_ACTIVE || room.state === GAME_STATES.BUZZER_LOCKED) &&
+        !hasTeamBuzzed &&
         !hasBuzzed &&
         !isTeamBlocked &&
         !isPlayerBlocked,
       hasBuzzed,
+      hasTeamBuzzed,
+      teamBuzzedPlayerName: myQueueEntry?.playerName || null,
       isTeamBlocked,
       isPlayerBlocked,
       buzzPosition: myQueueEntry?.position || null,
       currentJudging: room.currentJudging,
       isMyTurn: room.currentJudging?.playerId === player.id,
       roundNumber: room.roundNumber,
-      teams: room.teams.map(t => ({
+      teams: cachedTeams || room.teams.map(t => ({
         name: t.name,
         color: t.color,
         bg: t.bg,

@@ -79,7 +79,7 @@ export default function JudgePanel({ currentBuzz, onCorrect, onIncorrect }) {
               <path d="M6 18L18 6M6 6l12 12" />
             </svg>
           </span>
-          <span className="relative truncate">Incorrecto</span>
+          <span className="relative truncate">Incorrecto (-1 pt)</span>
         </button>
       </div>
     </div>

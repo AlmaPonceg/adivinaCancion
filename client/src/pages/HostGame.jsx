@@ -8,6 +8,7 @@ import MusicPlayer from '../components/MusicPlayer';
 import BuzzQueue from '../components/BuzzQueue';
 import JudgePanel from '../components/JudgePanel';
 import { playHostBuzzerSound } from '../utils/audioEffects';
+import { hydratePlaylistTracks } from '../utils/audioStorage';
 
 export default function HostGame() {
   const location = useLocation();
@@ -17,7 +18,7 @@ export default function HostGame() {
   const { roomCode, teams: initialTeams, playlist: initialPlaylist } = location.state || {};
 
   const [teams, setTeams] = useState(initialTeams || []);
-  const [playlist] = useState(() => {
+  const [playlist, setPlaylist] = useState(() => {
     if (initialPlaylist && initialPlaylist.length > 0) return initialPlaylist;
     try {
       const saved = localStorage.getItem('trivia_playlist');
@@ -27,12 +28,28 @@ export default function HostGame() {
     }
   });
 
+  // Hydrate local tracks from IndexedDB with active Object URLs
+  useEffect(() => {
+    let isMounted = true;
+    async function hydrate() {
+      if (playlist && playlist.length > 0) {
+        const hydrated = await hydratePlaylistTracks(playlist);
+        if (isMounted) setPlaylist(hydrated);
+      }
+    }
+    hydrate();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const [gameState, setGameState] = useState('TEAMS_ASSIGNED');
   const [roundNumber, setRoundNumber] = useState(0);
   const [buzzQueue, setBuzzQueue] = useState([]);
   const [currentJudging, setCurrentJudging] = useState(null);
   const [lastResult, setLastResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
+  const [showEndGameConfirm, setShowEndGameConfirm] = useState(false);
   const [musicDuration, setMusicDuration] = useState(() => {
     try {
       const saved = localStorage.getItem('trivia_play_duration');
@@ -89,6 +106,16 @@ export default function HostGame() {
   });
 
   useSocketEvent('round-judgment', (data) => {
+    if (data.scores) {
+      setTeams((prev) => {
+        const updated = [...prev];
+        data.scores.forEach((s, i) => {
+          if (updated[i]) updated[i] = { ...updated[i], score: s.score };
+        });
+        return updated;
+      });
+    }
+
     if (data.nextUp) {
       setCurrentJudging(data.nextUp);
       setGameState('BUZZER_LOCKED');
@@ -170,13 +197,16 @@ export default function HostGame() {
     }
   }, [emit, roomCode]);
 
-  const endGame = useCallback(async () => {
-    if (window.confirm('¿Estás seguro de que querés terminar la partida y ver los resultados finales?')) {
-      try {
-        await emit('end-game', { roomCode });
-      } catch (err) {
-        console.error('End game error:', err);
-      }
+  const openEndGameModal = useCallback(() => {
+    setShowEndGameConfirm(true);
+  }, []);
+
+  const confirmEndGame = useCallback(async () => {
+    setShowEndGameConfirm(false);
+    try {
+      await emit('end-game', { roomCode });
+    } catch (err) {
+      console.error('End game error:', err);
     }
   }, [emit, roomCode]);
 
@@ -195,7 +225,7 @@ export default function HostGame() {
   return (
     <div className="min-h-dvh pb-12 text-[var(--color-text-primary)]">
       {/* Header Bar */}
-      <div className="bg-white/95 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-8 py-3.5 flex items-center justify-between border-b border-[#EAE3D5] shadow-xs">
+      <div className="bg-white sticky top-0 z-30 px-4 sm:px-8 py-3.5 flex items-center justify-between border-b border-[#EAE3D5] shadow-xs">
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <span className="w-2.5 h-2.5 rounded-full bg-[#059669] shadow-[0_0_8px_#059669]" />
@@ -207,7 +237,7 @@ export default function HostGame() {
         </div>
 
         <button
-          onClick={endGame}
+          onClick={openEndGameModal}
           className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-tactical font-black text-[#E11D48] hover:bg-[#FFF0F3] border border-[#E11D48]/30 bg-white transition-colors cursor-pointer shadow-2xs"
         >
           Terminar Partida
@@ -407,86 +437,123 @@ export default function HostGame() {
         </div>
       </div>
 
-      {/* Result Overlay Banner */}
-      <AnimatePresence>
-        {showResult && lastResult && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+      {/* Result Overlay Banner (Hardware isolated, pure GPU composited CSS for zero latency) */}
+      {showResult && lastResult && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0E0A16]/80 animate-fade-in select-none"
+          style={{ contain: 'strict', isolation: 'isolate' }}
+        >
+          <div
+            style={{ transform: 'translate3d(0, 0, 0)', willChange: 'transform' }}
+            className={`p-7 sm:p-9 text-center max-w-md w-full rounded-[2rem] shadow-2xl border-2 bg-white animate-fade-in ${
+              lastResult.type === 'correct'
+                ? 'border-[#059669]'
+                : 'border-[#E11D48]'
+            }`}
           >
-            <motion.div
-              initial={{ scale: 0.85, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.85, opacity: 0 }}
-              transition={{ type: 'spring', damping: 22 }}
-              className={`p-8 sm:p-10 text-center max-w-md w-full rounded-[2rem] shadow-2xl border-2 bg-white ${
-                lastResult.type === 'correct'
-                  ? 'border-[#059669] shadow-[0_20px_50px_rgba(5,150,105,0.25)]'
-                  : 'border-[#E11D48] shadow-[0_20px_50px_rgba(225,29,72,0.25)]'
-              }`}
-            >
-              {lastResult.type === 'correct' ? (
-                <>
-                  <div className="w-20 h-20 rounded-2xl bg-[#E6F9F0] border-2 border-[#059669] flex items-center justify-center mx-auto mb-5 shadow-lg text-[#059669] animate-bounce">
-                    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <p className="badge-tag text-[#059669] mb-1">
-                    ¡PUNTO CONCEDIDO!
+            {lastResult.type === 'correct' ? (
+              <>
+                <div className="w-16 h-16 rounded-2xl bg-[#E6F9F0] border-2 border-[#059669] flex items-center justify-center mx-auto mb-4 shadow-xs text-[#059669]">
+                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="badge-tag text-[#059669] mb-1">
+                  ¡PUNTO CONCEDIDO!
+                </p>
+                <h2 className="font-display text-2xl sm:text-3xl font-black mb-3 text-[#181226] tracking-tight">
+                  ¡Respuesta Correcta!
+                </h2>
+                <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] mb-2 shadow-inner">
+                  <p className="text-[#181226] text-sm sm:text-base leading-relaxed">
+                    <span className="font-display font-black text-lg" style={{ color: lastResult.teamColor }}>
+                      {lastResult.playerName}
+                    </span>
+                    {' '}sumó{' '}
+                    <span className="font-black text-[#059669] bg-[#E6F9F0] px-2.5 py-1 rounded-lg border border-[#059669]/40">
+                      +{lastResult.pointsAwarded || 1} {lastResult.pointsAwarded === 1 ? 'punto' : 'puntos'}
+                    </span>
                   </p>
-                  <h2 className="font-display text-2xl sm:text-3xl font-black mb-3 text-[#181226] tracking-tight">
-                    ¡Respuesta Correcta!
-                  </h2>
-                  <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] mb-2 shadow-inner">
-                    <p className="text-[#181226] text-sm sm:text-base leading-relaxed">
-                      <span className="font-display font-black text-lg" style={{ color: lastResult.teamColor }}>
-                        {lastResult.playerName}
+                  <p className="text-xs font-bold text-[#6B6280] mt-2">
+                    Equipo:{' '}
+                    <span className="font-black" style={{ color: lastResult.teamColor }}>
+                      {lastResult.teamName}
+                    </span>
+                    {lastResult.elapsedSeconds !== undefined && (
+                      <span className="ml-2 mono text-[#D97706]">
+                        ({lastResult.elapsedSeconds}s)
                       </span>
-                      {' '}sumó{' '}
-                      <span className="font-black text-[#059669] bg-[#E6F9F0] px-2.5 py-1 rounded-lg border border-[#059669]/40">
-                        +{lastResult.pointsAwarded || 1} {lastResult.pointsAwarded === 1 ? 'punto' : 'puntos'}
-                      </span>
-                    </p>
-                    <p className="text-xs font-bold text-[#6B6280] mt-2">
-                      Equipo:{' '}
-                      <span className="font-black" style={{ color: lastResult.teamColor }}>
-                        {lastResult.teamName}
-                      </span>
-                      {lastResult.elapsedSeconds !== undefined && (
-                        <span className="ml-2 mono text-[#D97706]">
-                          ({lastResult.elapsedSeconds}s)
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="w-20 h-20 rounded-2xl bg-[#FFF0F3] border-2 border-[#E11D48] flex items-center justify-center mx-auto mb-5 shadow-lg text-[#E11D48]">
-                    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </div>
-                  <p className="badge-tag text-[#E11D48] mb-1">
-                    RONDA DESIERTA
+                    )}
                   </p>
-                  <h2 className="font-display text-2xl sm:text-3xl font-black mb-3 text-[#181226] tracking-tight">
-                    Ronda Terminada
-                  </h2>
-                  <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] shadow-inner">
-                    <p className="text-[#6B6280] text-xs sm:text-sm font-medium leading-relaxed">
-                      Todos los equipos fallaron o se agotó el tiempo. Nadie sumó puntos en esta ronda.
-                    </p>
-                  </div>
-                </>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-2xl bg-[#FFF0F3] border-2 border-[#E11D48] flex items-center justify-center mx-auto mb-4 shadow-sm text-[#E11D48]">
+                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <p className="badge-tag text-[#E11D48] mb-1">
+                  RONDA DESIERTA
+                </p>
+                <h2 className="font-display text-2xl sm:text-3xl font-black mb-3 text-[#181226] tracking-tight">
+                  Ronda Terminada
+                </h2>
+                <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] shadow-inner">
+                  <p className="text-[#6B6280] text-xs sm:text-sm font-medium leading-relaxed">
+                    Todos los equipos fallaron o se agotó el tiempo. Nadie sumó puntos en esta ronda.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Styled Custom Modal: Terminar Partida (Replaces native window.confirm) */}
+      {showEndGameConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0E0A16]/80 animate-fade-in select-none"
+          style={{ contain: 'strict', isolation: 'isolate' }}
+          onClick={() => setShowEndGameConfirm(false)}
+        >
+          <div
+            className="party-card p-6 sm:p-8 max-w-md w-full rounded-[2rem] bg-white border-2 border-[#EAE3D5] text-center shadow-2xl animate-fade-in text-[#181226]"
+            style={{ transform: 'translate3d(0, 0, 0)', willChange: 'transform' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-14 h-14 rounded-2xl bg-[#FFF0F3] border-2 border-[#E11D48]/30 flex items-center justify-center mx-auto mb-4 text-[#E11D48] shadow-xs">
+              <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+
+            <p className="badge-tag text-[#E11D48] mb-1">FINALIZAR JUEGO</p>
+            <h3 className="font-display text-xl sm:text-2xl font-black text-[#181226] tracking-tight mb-2">
+              ¿Terminar la partida ahora?
+            </h3>
+            <p className="text-xs sm:text-sm text-[#6B6280] font-medium leading-relaxed mb-6">
+              Se calcularán los puntajes finales de todos los equipos y se revelará el podio de campeones en pantalla.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowEndGameConfirm(false)}
+                className="arcade-btn py-3 px-4 rounded-xl text-xs font-black cursor-pointer shadow-xs"
+              >
+                Continuar Jugando
+              </button>
+              <button
+                onClick={confirmEndGame}
+                className="py-3 px-4 rounded-xl text-xs font-black text-white bg-gradient-to-r from-[#E11D48] to-[#BE123C] hover:brightness-110 cursor-pointer shadow-md active:scale-98 transition-all"
+              >
+                Sí, Terminar Partida
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

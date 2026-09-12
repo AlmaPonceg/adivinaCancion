@@ -112,7 +112,7 @@ export default function LobbyAudio({
           <span>Música Alma</span>
         </button>
       ) : (
-        <div className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-white/95 border border-[#E0D9CB] shadow-xs backdrop-blur-xs">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-white border border-[#E0D9CB] shadow-xs">
           {/* Animated Equalizer Visualizer (Strictly constrained within container) */}
           <div className="flex items-end gap-0.5 h-3.5 w-3.5 sm:w-4 overflow-hidden shrink-0">
             <span

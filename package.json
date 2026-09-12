@@ -2,6 +2,7 @@
   "name": "trivia-musical-cumple",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Birthday Music Trivia Game - Real-time multiplayer",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
@@ -9,9 +10,11 @@
     "client": "cd client && npm run dev",
     "build": "cd client && npm install && npm run build && cd ../server && npm install",
     "start": "node server/index.js",
-    "install:all": "cd server && npm install && cd ../client && npm install"
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "test:stress": "node stress-test.js"
   },
   "devDependencies": {
-    "concurrently": "^9.0.1"
+    "concurrently": "^9.0.1",
+    "socket.io-client": "^4.8.3"
   }
 }
