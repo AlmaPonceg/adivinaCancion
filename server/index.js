@@ -25,8 +25,8 @@ const io = new Server(httpServer, {
     origin: '*',
     methods: ['GET', 'POST'],
   },
-  pingInterval: 10000,
-  pingTimeout: 60000,
+  pingInterval: 5000,
+  pingTimeout: 7000,
   perMessageDeflate: false, // Disables CPU-heavy zlib compression on micro-packets
   maxHttpBufferSize: 1e6,  // 1MB buffer cap protects memory against payload flood
   serveClient: false,      // Do not serve socket.io.js over HTTP (client imports its own)

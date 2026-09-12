@@ -34,9 +34,10 @@ const socket = io(SERVER_URL, {
   autoConnect: true,
   reconnection: true,
   reconnectionAttempts: Infinity,
-  reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
-  timeout: 30000,
+  reconnectionDelay: 500,
+  reconnectionDelayMax: 2000,
+  timeout: 10000,
+  transports: ['websocket', 'polling'],
 });
 
 socket.on('connect', () => {

@@ -122,78 +122,88 @@ export default function PlayerBuzzer() {
         setIsReconnecting(true);
       }
 
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-
-      // Safety timeout: Never leave player trapped in reconnecting overlay
-      reconnectTimeoutRef.current = setTimeout(() => {
-        setIsReconnecting(false);
-        setIsConnected(socket.connected);
-      }, 3500);
-
-      socket.emit('reconnect-player', { roomCode, playerId, playerName }, (res) => {
+      const doSync = () => {
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
-        setIsReconnecting(false);
-        setIsConnected(true);
 
-        if (wasDisconnectedRef.current) {
-          wasDisconnectedRef.current = false;
-          setRoundNotification({
-            type: 'connected',
-            message: 'Conexión restablecida. Sincronizado con la partida.',
-          });
-          setTimeout(() => setRoundNotification(null), 3500);
-        }
+        // Safety timeout: in case the ACK callback is dropped
+        reconnectTimeoutRef.current = setTimeout(() => {
+          setIsReconnecting(false);
+          setIsConnected(socket.connected);
+        }, 5000);
 
-        if (res?.success && res.playerState) {
-          setPlayerState(res.playerState);
-          if (
-            res.playerState.gameState !== 'TEAMS_ASSIGNED' &&
-            res.playerState.gameState !== 'LOBBY'
-          ) {
-            setHasGameStarted(true);
+        socket.emit('reconnect-player', { roomCode, playerId, playerName }, (res) => {
+          if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
           }
-          setStatusMessage(computeStatusMessage(res.playerState));
-        } else {
-          // Fallback if reconnect didn't find player (e.g. server restart)
-          socket.emit('join-room', { roomCode, playerName, playerId }, (joinRes) => {
-            if (joinRes?.playerState) {
-              setPlayerState(joinRes.playerState);
-              if (
-                joinRes.playerState.gameState !== 'TEAMS_ASSIGNED' &&
-                joinRes.playerState.gameState !== 'LOBBY'
-              ) {
-                setHasGameStarted(true);
-              }
-              setStatusMessage(computeStatusMessage(joinRes.playerState));
-            } else {
-              socket.emit('get-player-state', { roomCode, playerId }, (st) => {
-                if (st && !st.error) {
-                  setPlayerState(st);
-                  if (
-                    st.gameState !== 'TEAMS_ASSIGNED' &&
-                    st.gameState !== 'LOBBY'
-                  ) {
-                    setHasGameStarted(true);
-                  }
-                  setStatusMessage(computeStatusMessage(st));
-                }
-              });
+          setIsReconnecting(false);
+          setIsConnected(true);
+
+          if (wasDisconnectedRef.current) {
+            wasDisconnectedRef.current = false;
+            setRoundNotification({
+              type: 'connected',
+              message: 'Conexión restablecida. Sincronizado con la partida.',
+            });
+            setTimeout(() => setRoundNotification(null), 3000);
+          }
+
+          if (res?.success && res.playerState) {
+            setPlayerState(res.playerState);
+            if (
+              res.playerState.gameState !== 'TEAMS_ASSIGNED' &&
+              res.playerState.gameState !== 'LOBBY'
+            ) {
+              setHasGameStarted(true);
             }
-          });
-        }
-      });
+            setStatusMessage(computeStatusMessage(res.playerState));
+          } else {
+            // Fallback if reconnect didn't find player (e.g. server restart)
+            socket.emit('join-room', { roomCode, playerName, playerId }, (joinRes) => {
+              if (joinRes?.playerState) {
+                setPlayerState(joinRes.playerState);
+                if (
+                  joinRes.playerState.gameState !== 'TEAMS_ASSIGNED' &&
+                  joinRes.playerState.gameState !== 'LOBBY'
+                ) {
+                  setHasGameStarted(true);
+                }
+                setStatusMessage(computeStatusMessage(joinRes.playerState));
+              } else {
+                socket.emit('get-player-state', { roomCode, playerId }, (st) => {
+                  if (st && !st.error) {
+                    setPlayerState(st);
+                    if (
+                      st.gameState !== 'TEAMS_ASSIGNED' &&
+                      st.gameState !== 'LOBBY'
+                    ) {
+                      setHasGameStarted(true);
+                    }
+                    setStatusMessage(computeStatusMessage(st));
+                  }
+                });
+              }
+            });
+          }
+        });
+      };
+
+      if (socket.connected) {
+        doSync();
+      } else {
+        socket.once('connect', doSync);
+        socket.connect();
+      }
     },
     [roomCode, playerId, playerName]
   );
 
   const handleManualReconnect = useCallback(() => {
-    if (!socket.connected) {
-      socket.connect();
-    }
+    setIsReconnecting(true);
+    // Recycle socket immediately to kill any half-open TCP socket
+    socket.disconnect();
+    socket.connect();
     syncSession(false);
   }, [syncSession]);
 
@@ -221,9 +231,11 @@ export default function PlayerBuzzer() {
     };
 
     const handleOnline = () => {
-      if (!socket.connected) {
-        socket.connect();
-      }
+      wasDisconnectedRef.current = true;
+      setIsReconnecting(true);
+      // Immediately recycle socket upon network recovery
+      socket.disconnect();
+      socket.connect();
       syncSession(false);
     };
 
@@ -231,16 +243,20 @@ export default function PlayerBuzzer() {
       wasDisconnectedRef.current = true;
       setIsConnected(false);
       setIsReconnecting(false);
+      // Cut stale TCP connection so it doesn't linger half-open
+      socket.disconnect();
     };
 
     const onConnect = () => {
       syncSession(false);
     };
 
-    const onDisconnect = () => {
+    const onDisconnect = (reason) => {
       wasDisconnectedRef.current = true;
       setIsConnected(false);
-      setIsReconnecting(false);
+      if (reason !== 'io client disconnect') {
+        setIsReconnecting(false);
+      }
     };
 
     window.addEventListener('online', handleOnline);
@@ -596,10 +612,24 @@ export default function PlayerBuzzer() {
           >
             <div
               className="party-card text-center p-7 max-w-sm w-full relative overflow-hidden rounded-[2.2rem] border-2 shadow-2xl bg-white"
-              style={{ borderColor: !isConnected ? '#FF5722' : '#059669' }}
+              style={{ borderColor: isReconnecting ? '#059669' : '#FF5722' }}
             >
               <div className="flex justify-center mb-4">
-                {!isConnected ? (
+                {isReconnecting ? (
+                  <div className="w-20 h-20 rounded-full bg-[#E6F9F0] border-2 border-[#059669]/30 flex items-center justify-center shadow-inner">
+                    <svg
+                      className="w-10 h-10 text-[#059669] animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                  </div>
+                ) : (
                   <div className="w-20 h-20 rounded-full bg-[#FFF0EB] border-2 border-[#FF5722]/30 flex items-center justify-center shadow-inner">
                     <svg
                       className="w-10 h-10 text-[#FF5722]"
@@ -619,43 +649,37 @@ export default function PlayerBuzzer() {
                       <path d="M22 8.82a15 15 0 0 0-11.288-3.764" />
                     </svg>
                   </div>
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-[#E6F9F0] border-2 border-[#059669]/30 flex items-center justify-center shadow-inner">
-                    <svg
-                      className="w-10 h-10 text-[#059669] animate-spin"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                    </svg>
-                  </div>
                 )}
               </div>
               <h2 className="font-display text-2xl font-black text-[#181226] mb-2">
-                {!isConnected ? 'Sin Conexión' : 'Reconectando...'}
+                {isReconnecting ? 'Reconectando...' : 'Sin Conexión'}
               </h2>
               <p className="text-[#574F6B] font-bold text-sm leading-relaxed mb-5">
-                {!isConnected
-                  ? 'Revisá tu conexión a internet o el WiFi del salón.'
-                  : 'Sincronizando con la partida, preparate para jugar.'}
+                {isReconnecting
+                  ? 'Sincronizando con la partida, preparate para jugar.'
+                  : 'Revisá tu conexión a internet o el WiFi del salón.'}
               </p>
 
               <button
                 type="button"
                 onClick={handleManualReconnect}
-                className="arcade-btn-primary w-full py-3.5 px-4 rounded-xl text-xs font-black tracking-wide uppercase shadow-md active:scale-95 transition-transform cursor-pointer"
+                disabled={isReconnecting}
+                className={`w-full py-3.5 px-4 rounded-xl text-xs font-black tracking-wide uppercase shadow-md transition-all cursor-pointer ${
+                  isReconnecting
+                    ? 'bg-[#E6F9F0] text-[#059669] border border-[#059669]/40 cursor-wait'
+                    : 'arcade-btn-primary active:scale-95'
+                }`}
               >
-                {!isConnected ? 'Reintentar conexión' : 'Forzar sincronización'}
+                {isReconnecting ? 'Sincronizando...' : 'Reintentar conexión'}
               </button>
 
               {isReconnecting && (
                 <button
                   type="button"
                   onClick={() => {
+                    if (reconnectTimeoutRef.current) {
+                      clearTimeout(reconnectTimeoutRef.current);
+                    }
                     setIsReconnecting(false);
                     setIsConnected(true);
                   }}
