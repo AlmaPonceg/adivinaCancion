@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import socket from '../socket';
@@ -70,6 +70,8 @@ export default function PlayerBuzzer() {
   const [hasGameStarted, setHasGameStarted] = useState(false);
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const wasDisconnectedRef = useRef(!socket.connected);
+  const reconnectTimeoutRef = useRef(null);
 
   // ── Team Setup & Readiness State (Phone) ───────────────────
   const [isEditingTeamName, setIsEditingTeamName] = useState(false);
@@ -113,31 +115,70 @@ export default function PlayerBuzzer() {
     });
   };
 
-  // ── Sync & Reconnection on Unlock / Visibility Change ──────
-  useEffect(() => {
-    if (!roomCode || !playerId) {
-      navigate('/play');
-      return;
-    }
+  // ── Sync & Reconnection Logic ──────────────────────────────
+  const syncSession = useCallback(
+    (isSilent = false) => {
+      if (!isSilent) {
+        setIsReconnecting(true);
+      }
 
-    const syncSession = () => {
-      setIsConnected(true);
-      setIsReconnecting(true);
-      socket.emit('reconnect-player', { roomCode, playerId, playerName }, (res) => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+
+      // Safety timeout: Never leave player trapped in reconnecting overlay
+      reconnectTimeoutRef.current = setTimeout(() => {
         setIsReconnecting(false);
+        setIsConnected(socket.connected);
+      }, 3500);
+
+      socket.emit('reconnect-player', { roomCode, playerId, playerName }, (res) => {
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+        }
+        setIsReconnecting(false);
+        setIsConnected(true);
+
+        if (wasDisconnectedRef.current) {
+          wasDisconnectedRef.current = false;
+          setRoundNotification({
+            type: 'connected',
+            message: 'Conexión restablecida. Sincronizado con la partida.',
+          });
+          setTimeout(() => setRoundNotification(null), 3500);
+        }
+
         if (res?.success && res.playerState) {
           setPlayerState(res.playerState);
+          if (
+            res.playerState.gameState !== 'TEAMS_ASSIGNED' &&
+            res.playerState.gameState !== 'LOBBY'
+          ) {
+            setHasGameStarted(true);
+          }
           setStatusMessage(computeStatusMessage(res.playerState));
         } else {
           // Fallback if reconnect didn't find player (e.g. server restart)
           socket.emit('join-room', { roomCode, playerName, playerId }, (joinRes) => {
             if (joinRes?.playerState) {
               setPlayerState(joinRes.playerState);
+              if (
+                joinRes.playerState.gameState !== 'TEAMS_ASSIGNED' &&
+                joinRes.playerState.gameState !== 'LOBBY'
+              ) {
+                setHasGameStarted(true);
+              }
               setStatusMessage(computeStatusMessage(joinRes.playerState));
             } else {
               socket.emit('get-player-state', { roomCode, playerId }, (st) => {
                 if (st && !st.error) {
                   setPlayerState(st);
+                  if (
+                    st.gameState !== 'TEAMS_ASSIGNED' &&
+                    st.gameState !== 'LOBBY'
+                  ) {
+                    setHasGameStarted(true);
+                  }
                   setStatusMessage(computeStatusMessage(st));
                 }
               });
@@ -145,34 +186,80 @@ export default function PlayerBuzzer() {
           });
         }
       });
-    };
+    },
+    [roomCode, playerId, playerName]
+  );
+
+  const handleManualReconnect = useCallback(() => {
+    if (!socket.connected) {
+      socket.connect();
+    }
+    syncSession(false);
+  }, [syncSession]);
+
+  // ── Sync & Reconnection on Unlock / Visibility Change ──────
+  useEffect(() => {
+    if (!roomCode || !playerId) {
+      navigate('/play');
+      return;
+    }
 
     // Run immediately if already connected
     if (socket.connected) {
-      syncSession();
+      syncSession(true);
     }
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && socket.connected) {
-        syncSession();
+      if (document.visibilityState === 'visible') {
+        if (socket.connected) {
+          syncSession(true);
+        } else {
+          socket.connect();
+          syncSession(false);
+        }
       }
     };
-    
-    const onDisconnect = () => {
+
+    const handleOnline = () => {
+      if (!socket.connected) {
+        socket.connect();
+      }
+      syncSession(false);
+    };
+
+    const handleOffline = () => {
+      wasDisconnectedRef.current = true;
       setIsConnected(false);
       setIsReconnecting(false);
     };
 
+    const onConnect = () => {
+      syncSession(false);
+    };
+
+    const onDisconnect = () => {
+      wasDisconnectedRef.current = true;
+      setIsConnected(false);
+      setIsReconnecting(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    socket.on('connect', syncSession);
+    socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
 
     return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      socket.off('connect', syncSession);
+      socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
     };
-  }, [roomCode, playerId, playerName, navigate]);
+  }, [roomCode, playerId, navigate, syncSession]);
 
   // ── Sockets Listeners ──────────────────────────────────────
 
@@ -505,29 +592,78 @@ export default function PlayerBuzzer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[#181226]/80 backdrop-blur-md p-6"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#181226]/85 backdrop-blur-md p-6"
           >
-            <div className="party-card text-center p-8 max-w-sm w-full relative overflow-hidden rounded-[2.2rem] border-2 shadow-2xl"
-                 style={{ borderColor: !isConnected ? '#FF5722' : '#059669' }}>
+            <div
+              className="party-card text-center p-7 max-w-sm w-full relative overflow-hidden rounded-[2.2rem] border-2 shadow-2xl bg-white"
+              style={{ borderColor: !isConnected ? '#FF5722' : '#059669' }}
+            >
               <div className="flex justify-center mb-4">
                 {!isConnected ? (
-                  <svg className="w-16 h-16 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.168a2 2 0 11-2.829-2.83m0 0l-7.071-7.071" />
-                  </svg>
+                  <div className="w-20 h-20 rounded-full bg-[#FFF0EB] border-2 border-[#FF5722]/30 flex items-center justify-center shadow-inner">
+                    <svg
+                      className="w-10 h-10 text-[#FF5722]"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="2" y1="2" x2="22" y2="22" />
+                      <path d="M12 20h.01" />
+                      <path d="M8.5 16.429a5 5 0 0 1 7 0" />
+                      <path d="M5 12.859a10 10 0 0 1 5.17-2.69" />
+                      <path d="M19 12.859a10 10 0 0 0-2.007-1.523" />
+                      <path d="M2 8.82a15 15 0 0 1 4.177-2.643" />
+                      <path d="M22 8.82a15 15 0 0 0-11.288-3.764" />
+                    </svg>
+                  </div>
                 ) : (
-                  <svg className="w-16 h-16 text-[#059669] animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
+                  <div className="w-20 h-20 rounded-full bg-[#E6F9F0] border-2 border-[#059669]/30 flex items-center justify-center shadow-inner">
+                    <svg
+                      className="w-10 h-10 text-[#059669] animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                  </div>
                 )}
               </div>
               <h2 className="font-display text-2xl font-black text-[#181226] mb-2">
                 {!isConnected ? 'Sin Conexión' : 'Reconectando...'}
               </h2>
-              <p className="text-[#574F6B] font-bold text-sm">
-                {!isConnected 
-                  ? 'Revisá tu conexión a internet o el WiFi del salón.' 
+              <p className="text-[#574F6B] font-bold text-sm leading-relaxed mb-5">
+                {!isConnected
+                  ? 'Revisá tu conexión a internet o el WiFi del salón.'
                   : 'Sincronizando con la partida, preparate para jugar.'}
               </p>
+
+              <button
+                type="button"
+                onClick={handleManualReconnect}
+                className="arcade-btn-primary w-full py-3.5 px-4 rounded-xl text-xs font-black tracking-wide uppercase shadow-md active:scale-95 transition-transform cursor-pointer"
+              >
+                {!isConnected ? 'Reintentar conexión' : 'Forzar sincronización'}
+              </button>
+
+              {isReconnecting && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsReconnecting(false);
+                    setIsConnected(true);
+                  }}
+                  className="w-full py-2 px-4 rounded-xl text-xs font-bold text-[#746B8A] hover:text-[#181226] cursor-pointer mt-2 transition-colors"
+                >
+                  Continuar a la sala
+                </button>
+              )}
             </div>
           </motion.div>
         )}
@@ -591,7 +727,11 @@ export default function PlayerBuzzer() {
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              className="mt-2.5 py-2 px-3.5 rounded-xl text-center text-xs font-extrabold bg-[#181226] text-white shadow-lg border border-[#FF5722]/50"
+              className={`mt-2.5 py-2 px-3.5 rounded-xl text-center text-xs font-extrabold shadow-lg ${
+                roundNotification.type === 'connected'
+                  ? 'bg-[#059669] text-white border border-[#047857]'
+                  : 'bg-[#181226] text-white border border-[#FF5722]/50'
+              }`}
             >
               {roundNotification.message}
             </motion.div>
