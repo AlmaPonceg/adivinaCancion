@@ -15,11 +15,24 @@ export default function HostGame() {
   const navigate = useNavigate();
   const emit = useSocketEmit();
 
-  const { roomCode, teams: initialTeams, playlist: initialPlaylist } = location.state || {};
+  const stateData = location.state || {};
 
-  const [teams, setTeams] = useState(initialTeams || []);
+  const [roomCode] = useState(() => {
+    return stateData.roomCode || localStorage.getItem('trivia_host_room') || '';
+  });
+
+  const [teams, setTeams] = useState(() => {
+    if (stateData.teams && stateData.teams.length > 0) return stateData.teams;
+    try {
+      const saved = localStorage.getItem('trivia_teams');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [playlist, setPlaylist] = useState(() => {
-    if (initialPlaylist && initialPlaylist.length > 0) return initialPlaylist;
+    if (stateData.playlist && stateData.playlist.length > 0) return stateData.playlist;
     try {
       const saved = localStorage.getItem('trivia_playlist');
       return saved ? JSON.parse(saved) : [];
@@ -61,7 +74,16 @@ export default function HostGame() {
   const musicPlayerRef = useRef(null);
 
   useEffect(() => {
-    if (!roomCode) navigate('/');
+    if (!roomCode) {
+      navigate('/');
+      return;
+    }
+    // Re-join socket room as host
+    socket.emit('host-join', { roomCode }, (res) => {
+      if (res?.error) {
+        console.warn('Host join warning:', res.error);
+      }
+    });
   }, [roomCode, navigate]);
 
   // ── Socket Events ──────────────────────────────────────────

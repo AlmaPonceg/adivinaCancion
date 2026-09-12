@@ -56,7 +56,12 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     }
   });
   const [startTime, setStartTime] = useState(0);
-  const [playbackSeconds, setPlaybackSeconds] = useState(0);
+  const startTimeRef = useRef(0);
+  const [currentTrackTime, setCurrentTrackTime] = useState(0);
+  const [trackDuration, setTrackDuration] = useState(0);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubTime, setScrubTime] = useState(0);
+  const progressBarRef = useRef(null);
   const [showManualInput, setShowManualInput] = useState(false);
 
   const applyDuration = useCallback((val) => {
@@ -104,16 +109,6 @@ const MusicPlayer = forwardRef(function MusicPlayer(
   const progressIntervalRef = useRef(null);
   const ytPlayerRef = useRef(null);
 
-  // Load YouTube IFrame API once
-  useEffect(() => {
-    if (!window.YT) {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScript = document.getElementsByTagName('script')[0];
-      firstScript.parentNode.insertBefore(tag, firstScript);
-    }
-  }, []);
-
   const stopProgress = useCallback(() => {
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
@@ -123,48 +118,34 @@ const MusicPlayer = forwardRef(function MusicPlayer(
 
   const startProgress = useCallback(() => {
     stopProgress();
-    const startMs = Date.now();
-    setPlaybackSeconds(0);
     progressIntervalRef.current = setInterval(() => {
-      const elapsed = Math.min(playDuration, (Date.now() - startMs) / 1000);
-      setPlaybackSeconds(elapsed);
-      if (elapsed >= playDuration) {
-        stopProgress();
-      }
-    }, 100);
-  }, [playDuration, stopProgress]);
+      let liveTime = null;
+      let liveDur = null;
 
-  const initYoutubePlayer = useCallback(
-    (videoId) => {
-      const checkAndInit = () => {
-        if (window.YT && window.YT.Player) {
-          const container = document.getElementById('yt-player');
-          if (container) container.innerHTML = '';
-
-          ytPlayerRef.current = new window.YT.Player('yt-player', {
-            height: '100%',
-            width: '100%',
-            videoId,
-            playerVars: {
-              autoplay: 0,
-              controls: 0,
-              disablekb: 1,
-              modestbranding: 1,
-              rel: 0,
-              showinfo: 0,
-              fs: 0,
-              start: startTime,
-            },
-            events: { onReady: () => {} },
-          });
-        } else {
-          setTimeout(checkAndInit, 200);
+      if (mediaType === 'youtube' && ytPlayerRef.current) {
+        try {
+          if (typeof ytPlayerRef.current.getCurrentTime === 'function') {
+            liveTime = ytPlayerRef.current.getCurrentTime();
+          }
+          if (typeof ytPlayerRef.current.getDuration === 'function') {
+            liveDur = ytPlayerRef.current.getDuration();
+          }
+        } catch {
+          /* ignore */
         }
-      };
-      checkAndInit();
-    },
-    [startTime]
-  );
+      } else if (mediaType === 'local' && audioPlayerRef.current) {
+        liveTime = audioPlayerRef.current.currentTime;
+        liveDur = audioPlayerRef.current.duration;
+      }
+
+      if (typeof liveTime === 'number' && !isNaN(liveTime) && liveTime >= 0) {
+        setCurrentTrackTime(liveTime);
+      }
+      if (typeof liveDur === 'number' && !isNaN(liveDur) && liveDur > 0) {
+        setTrackDuration(liveDur);
+      }
+    }, 150);
+  }, [mediaType, stopProgress]);
 
   const loadMedia = useCallback(
     (trackInput) => {
@@ -180,11 +161,11 @@ const MusicPlayer = forwardRef(function MusicPlayer(
 
       if (ytPlayerRef.current) {
         try {
-          ytPlayerRef.current.destroy();
+          ytPlayerRef.current.pauseVideo?.();
+          ytPlayerRef.current.seekTo?.(0, true);
         } catch {
           /* ignore */
         }
-        ytPlayerRef.current = null;
       }
       if (audioPlayerRef.current) {
         try {
@@ -196,15 +177,23 @@ const MusicPlayer = forwardRef(function MusicPlayer(
       if (timerRef.current) clearTimeout(timerRef.current);
       stopProgress();
       setIsPlaying(false);
-      setPlaybackSeconds(0);
+      setCurrentTrackTime(0);
+      setTrackDuration(0);
 
       // 1. LOCAL OFFLINE AUDIO (MP3, WAV, OGG, M4A or Blob URL)
       if (track.type === 'local' || isLocalTrack(track.url)) {
         setMediaType('local');
         setMediaId(track.url);
+        startTimeRef.current = 0;
+        setStartTime(0);
         if (audioPlayerRef.current) {
           audioPlayerRef.current.src = track.url;
-          audioPlayerRef.current.currentTime = startTime || 0;
+          audioPlayerRef.current.currentTime = 0;
+          audioPlayerRef.current.onloadedmetadata = () => {
+            if (audioPlayerRef.current?.duration) {
+              setTrackDuration(audioPlayerRef.current.duration);
+            }
+          };
           audioPlayerRef.current.load();
         }
         return;
@@ -215,7 +204,8 @@ const MusicPlayer = forwardRef(function MusicPlayer(
       if (ytId) {
         setMediaType('youtube');
         setMediaId(ytId);
-        setTimeout(() => initYoutubePlayer(ytId), 100);
+        startTimeRef.current = 0;
+        setStartTime(0);
         return;
       }
 
@@ -234,9 +224,16 @@ const MusicPlayer = forwardRef(function MusicPlayer(
       ) {
         setMediaType('local');
         setMediaId(track.url);
+        startTimeRef.current = 0;
+        setStartTime(0);
         if (audioPlayerRef.current) {
           audioPlayerRef.current.src = track.url;
-          audioPlayerRef.current.currentTime = startTime || 0;
+          audioPlayerRef.current.currentTime = 0;
+          audioPlayerRef.current.onloadedmetadata = () => {
+            if (audioPlayerRef.current?.duration) {
+              setTrackDuration(audioPlayerRef.current.duration);
+            }
+          };
           audioPlayerRef.current.load();
         }
         return;
@@ -245,8 +242,103 @@ const MusicPlayer = forwardRef(function MusicPlayer(
       setMediaType(null);
       setMediaId(null);
     },
-    [stopProgress, initYoutubePlayer, startTime]
+    [stopProgress]
   );
+
+  // ── Native YouTube IFrame API Management ────────────────────
+  useEffect(() => {
+    if (mediaType !== 'youtube' || !mediaId) return;
+
+    let isMounted = true;
+
+    const setupPlayer = () => {
+      if (!isMounted) return;
+
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.cueVideoById === 'function') {
+        try {
+          ytPlayerRef.current.cueVideoById({
+            videoId: mediaId,
+            startSeconds: startTimeRef.current || 0,
+          });
+          const d = ytPlayerRef.current.getDuration?.();
+          if (typeof d === 'number' && d > 0) setTrackDuration(d);
+          return;
+        } catch (e) {
+          console.warn('Re-instantiating YT.Player:', e);
+        }
+      }
+
+      const slot = document.getElementById('youtube-player-slot');
+      if (!slot) return;
+
+      try {
+        ytPlayerRef.current = new window.YT.Player('youtube-player-slot', {
+          width: '100%',
+          height: '100%',
+          videoId: mediaId,
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            disablekb: 1,
+            modestbranding: 1,
+            rel: 0,
+            showinfo: 0,
+            fs: 0,
+            origin: typeof window !== 'undefined' ? window.location.origin : undefined,
+          },
+          events: {
+            onReady: (e) => {
+              try {
+                e.target.unMute?.();
+                e.target.setVolume?.(100);
+                const d = e.target.getDuration?.();
+                if (typeof d === 'number' && d > 0) setTrackDuration(d);
+              } catch {
+                /* ignore */
+              }
+            },
+            onStateChange: (e) => {
+              const d = e.target.getDuration?.();
+              if (typeof d === 'number' && d > 0) setTrackDuration(d);
+              // 1: PLAYING, 2: PAUSED, 0: ENDED
+              if (e.data === 1) {
+                setIsPlaying(true);
+                startProgress();
+              } else if (e.data === 2 || e.data === 0) {
+                setIsPlaying(false);
+                stopProgress();
+              }
+            },
+            onError: (e) => {
+              console.warn('YouTube playback error code:', e.data);
+            },
+          },
+        });
+      } catch (err) {
+        console.error('Error instantiating YT.Player:', err);
+      }
+    };
+
+    if (window.YT && window.YT.Player) {
+      setupPlayer();
+    } else {
+      if (!document.getElementById('yt-iframe-api-script')) {
+        const tag = document.createElement('script');
+        tag.id = 'yt-iframe-api-script';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+      }
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (typeof prev === 'function') prev();
+        setupPlayer();
+      };
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [mediaType, mediaId]);
 
   // Initialize and shuffle playlist in random order by default with IndexedDB hydration
   useEffect(() => {
@@ -302,15 +394,157 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     loadMedia(nextTrack);
   };
 
-  const playAudioOnly = useCallback(() => {
+  const handlePause = useCallback(() => {
+    if (mediaType === 'local' && audioPlayerRef.current) {
+      try {
+        audioPlayerRef.current.pause();
+        if (typeof audioPlayerRef.current.currentTime === 'number') {
+          setCurrentTrackTime(audioPlayerRef.current.currentTime);
+          startTimeRef.current = audioPlayerRef.current.currentTime;
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    if (mediaType === 'youtube' && ytPlayerRef.current) {
+      try {
+        ytPlayerRef.current.pauseVideo?.();
+        const t = ytPlayerRef.current.getCurrentTime?.();
+        if (typeof t === 'number' && !isNaN(t)) {
+          setCurrentTrackTime(t);
+          startTimeRef.current = t;
+        }
+      } catch {
+        /* ignore */
+      }
+    }
     if (timerRef.current) clearTimeout(timerRef.current);
     stopProgress();
+    setIsPlaying(false);
+  }, [mediaType, stopProgress]);
+
+  const handleSkip = (seconds) => {
+    let current = currentTrackTime;
+    if (mediaType === 'youtube' && ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === 'function') {
+      try {
+        const t = ytPlayerRef.current.getCurrentTime();
+        if (typeof t === 'number' && !isNaN(t)) current = t;
+      } catch {
+        current = startTimeRef.current;
+      }
+    } else if (mediaType === 'local' && audioPlayerRef.current) {
+      if (typeof audioPlayerRef.current.currentTime === 'number') {
+        current = audioPlayerRef.current.currentTime;
+      }
+    } else {
+      current = startTimeRef.current;
+    }
+
+    const maxDur = trackDuration > 0 ? trackDuration : 9999;
+    const newTarget = Math.max(0, Math.min(maxDur, Math.round(current + seconds)));
+    startTimeRef.current = newTarget;
+    setCurrentTrackTime(newTarget);
+    setStartTime(newTarget);
+
+    if (mediaType === 'youtube' && ytPlayerRef.current) {
+      try {
+        ytPlayerRef.current.seekTo?.(newTarget, true);
+      } catch {
+        /* ignore */
+      }
+    } else if (mediaType === 'local' && audioPlayerRef.current) {
+      audioPlayerRef.current.currentTime = newTarget;
+    }
+
+    if (isPlaying) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      startProgress();
+      timerRef.current = setTimeout(() => {
+        handlePause();
+      }, playDuration * 1000);
+    }
+  };
+
+  const calculateTimeFromPointer = useCallback(
+    (e) => {
+      if (!progressBarRef.current) return 0;
+      const rect = progressBarRef.current.getBoundingClientRect();
+      const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX) ?? 0;
+      const offsetX = Math.max(0, Math.min(rect.width, clientX - rect.left));
+      const ratio = rect.width > 0 ? offsetX / rect.width : 0;
+      const maxDur = trackDuration > 0 ? trackDuration : 180;
+      return Math.max(0, Math.min(maxDur, ratio * maxDur));
+    },
+    [trackDuration]
+  );
+
+  const commitSeek = useCallback(
+    (targetSecs) => {
+      const rounded = Math.round(targetSecs * 10) / 10;
+      startTimeRef.current = rounded;
+      setCurrentTrackTime(rounded);
+      setStartTime(rounded);
+
+      if (mediaType === 'youtube' && ytPlayerRef.current) {
+        try {
+          ytPlayerRef.current.seekTo?.(rounded, true);
+        } catch {
+          /* ignore */
+        }
+      } else if (mediaType === 'local' && audioPlayerRef.current) {
+        audioPlayerRef.current.currentTime = rounded;
+      }
+
+      if (isPlaying) {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        startProgress();
+        timerRef.current = setTimeout(() => {
+          handlePause();
+        }, playDuration * 1000);
+      }
+    },
+    [mediaType, isPlaying, playDuration, startProgress, handlePause]
+  );
+
+  const handlePointerDown = (e) => {
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    setIsScrubbing(true);
+    const target = calculateTimeFromPointer(e);
+    setScrubTime(target);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isScrubbing) return;
+    const target = calculateTimeFromPointer(e);
+    setScrubTime(target);
+  };
+
+  const handlePointerUp = (e) => {
+    if (!isScrubbing) return;
+    const target = calculateTimeFromPointer(e);
+    setIsScrubbing(false);
+    commitSeek(target);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const playAudioOnly = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
 
     // ── Local Offline Audio Playback ─────────────────────────
     if (mediaType === 'local' && audioPlayerRef.current) {
       try {
         const audio = audioPlayerRef.current;
-        audio.currentTime = startTime || 0;
+        const target = startTimeRef.current || 0;
+        audio.currentTime = target;
+        setCurrentTrackTime(target);
         const promise = audio.play();
         if (promise !== undefined) {
           promise.catch((err) => console.warn('Local audio play error:', err));
@@ -319,13 +553,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
         startProgress();
 
         timerRef.current = setTimeout(() => {
-          try {
-            audio.pause();
-          } catch (e) {
-            /* ignore */
-          }
-          setIsPlaying(false);
-          stopProgress();
+          handlePause();
         }, playDuration * 1000);
       } catch (e) {
         console.error('Local audio error:', e);
@@ -334,27 +562,29 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     }
 
     // ── YouTube IFrame Audio Playback ────────────────────────
-    if (mediaType === 'youtube' && ytPlayerRef.current) {
+    if (mediaType === 'youtube') {
       try {
-        ytPlayerRef.current.seekTo(startTime, true);
-        ytPlayerRef.current.playVideo();
+        const target = startTimeRef.current || 0;
+        if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
+          ytPlayerRef.current.seekTo?.(target, true);
+          ytPlayerRef.current.unMute?.();
+          ytPlayerRef.current.setVolume?.(100);
+          ytPlayerRef.current.playVideo();
+          setCurrentTrackTime(target);
+        }
+        
         setIsPlaying(true);
         startProgress();
 
         timerRef.current = setTimeout(() => {
-          try {
-            ytPlayerRef.current?.pauseVideo();
-          } catch (e) {
-            /* ignore */
-          }
-          setIsPlaying(false);
-          stopProgress();
+          handlePause();
         }, playDuration * 1000);
       } catch (e) {
-        console.error('Play error:', e);
+        console.error('YouTube play error:', e);
       }
+      return;
     }
-  }, [mediaType, playDuration, startTime, startProgress, stopProgress]);
+  }, [mediaType, playDuration, startProgress, handlePause]);
 
   const handleNextAndPlay = useCallback(() => {
     if (!activeQueue || activeQueue.length === 0) return;
@@ -370,7 +600,8 @@ const MusicPlayer = forwardRef(function MusicPlayer(
       if (isLocal && audioPlayerRef.current) {
         try {
           const audio = audioPlayerRef.current;
-          audio.currentTime = startTime || 0;
+          audio.currentTime = 0;
+          setCurrentTrackTime(0);
           const promise = audio.play();
           if (promise !== undefined) promise.catch((err) => console.warn(err));
           setIsPlaying(true);
@@ -378,60 +609,34 @@ const MusicPlayer = forwardRef(function MusicPlayer(
 
           if (timerRef.current) clearTimeout(timerRef.current);
           timerRef.current = setTimeout(() => {
-            try {
-              audio.pause();
-            } catch (e) {
-              /* ignore */
-            }
-            setIsPlaying(false);
-            stopProgress();
+            handlePause();
           }, playDuration * 1000);
         } catch (err) {
           console.error('Local nextAndPlay error:', err);
         }
-      } else if (ytPlayerRef.current) {
+      } else {
         try {
-          ytPlayerRef.current.seekTo(startTime, true);
-          ytPlayerRef.current.playVideo();
+          if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
+            ytPlayerRef.current.seekTo?.(0, true);
+            ytPlayerRef.current.unMute?.();
+            ytPlayerRef.current.setVolume?.(100);
+            ytPlayerRef.current.playVideo();
+            setCurrentTrackTime(0);
+          }
+          
           setIsPlaying(true);
           startProgress();
 
           if (timerRef.current) clearTimeout(timerRef.current);
           timerRef.current = setTimeout(() => {
-            try {
-              ytPlayerRef.current?.pauseVideo();
-            } catch (e) {
-              /* ignore */
-            }
-            setIsPlaying(false);
-            stopProgress();
+            handlePause();
           }, playDuration * 1000);
-        } catch (e) {
-          /* ignore */
+        } catch (err) {
+          console.error('YT nextAndPlay error:', err);
         }
       }
     }, isLocal ? 120 : 450);
-  }, [activeQueue, currentTrackIndex, loadMedia, startTime, playDuration, startProgress, stopProgress]);
-
-  const handlePause = useCallback(() => {
-    if (mediaType === 'local' && audioPlayerRef.current) {
-      try {
-        audioPlayerRef.current.pause();
-      } catch (e) {
-        /* ignore */
-      }
-    }
-    if (mediaType === 'youtube' && ytPlayerRef.current) {
-      try {
-        ytPlayerRef.current.pauseVideo();
-      } catch (e) {
-        /* ignore */
-      }
-    }
-    if (timerRef.current) clearTimeout(timerRef.current);
-    stopProgress();
-    setIsPlaying(false);
-  }, [mediaType, stopProgress]);
+  }, [activeQueue, currentTrackIndex, loadMedia, playDuration, startProgress, handlePause]);
 
   const handleStop = useCallback(() => {
     if (mediaType === 'local' && audioPlayerRef.current) {
@@ -444,15 +649,18 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     }
     if (mediaType === 'youtube' && ytPlayerRef.current) {
       try {
-        ytPlayerRef.current.stopVideo();
-      } catch (e) {
+        ytPlayerRef.current.pauseVideo?.();
+        ytPlayerRef.current.seekTo?.(0, true);
+      } catch {
         /* ignore */
       }
     }
     if (timerRef.current) clearTimeout(timerRef.current);
     stopProgress();
     setIsPlaying(false);
-    setPlaybackSeconds(0);
+    setCurrentTrackTime(0);
+    startTimeRef.current = 0;
+    setStartTime(0);
   }, [mediaType, stopProgress]);
 
   const handleReplay = useCallback(() => {
@@ -508,18 +716,20 @@ const MusicPlayer = forwardRef(function MusicPlayer(
           /* ignore */
         }
       }
-      if (ytPlayerRef.current) {
-        try {
-          ytPlayerRef.current.destroy();
-        } catch (e) {
-          /* ignore */
-        }
-      }
     };
   }, [stopProgress]);
 
   const hasPlaylist = activeQueue && activeQueue.length > 0;
-  const progressPercent = Math.min(100, (playbackSeconds / playDuration) * 100);
+  const displayedTime = isScrubbing ? scrubTime : currentTrackTime;
+  const maxDuration = trackDuration > 0 ? trackDuration : (displayedTime > 0 ? displayedTime + 10 : 180);
+  const progressPercent = maxDuration > 0 ? Math.min(100, Math.max(0, (displayedTime / maxDuration) * 100)) : 0;
+
+  const formatTime = (secs) => {
+    if (typeof secs !== 'number' || isNaN(secs) || secs < 0) return '00:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
 
   // Frequency wave bars heights configuration
   const equalizerBars = [
@@ -544,21 +754,23 @@ const MusicPlayer = forwardRef(function MusicPlayer(
         className="hidden"
       />
 
-      {/* HIDDEN YOUTUBE PLAYER CONTAINER - Plays audio without revealing the video/title */}
+      {/* YOUTUBE PLAYER CONTAINER - Real size, placed behind page so video isn't visible, preventing Chrome/YouTube throttling */}
       <div
+        id="youtube-container"
         style={{
-          position: 'absolute',
-          top: '-9999px',
-          left: '-9999px',
-          width: '1px',
-          height: '1px',
-          opacity: 0,
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          width: '320px',
+          height: '180px',
+          zIndex: -20,
           pointerEvents: 'none',
-          overflow: 'hidden',
         }}
         aria-hidden="true"
       >
-        <div id="yt-player" ref={playerRef} />
+        {mediaType === 'youtube' && mediaId && (
+          <div id="youtube-player-slot" />
+        )}
       </div>
 
       {/* Spotify fallback iframe (if ever used) */}
@@ -707,21 +919,43 @@ const MusicPlayer = forwardRef(function MusicPlayer(
             ))}
           </div>
 
-          {/* Digital Timer & Progress Bar */}
-          <div>
-            <div className="flex items-center justify-between text-xs font-mono font-black text-[#6B6280] mb-1.5">
-              <span className="text-[#181226]">
-                00:{String(Math.floor(playbackSeconds)).padStart(2, '0')}
+          {/* Digital Timer & Interactive Scrubber Bar */}
+          <div className="space-y-1.5 select-none">
+            <div className="flex items-center justify-between text-xs font-mono font-black text-[#6B6280]">
+              <span className="text-[#181226] bg-[#FAF7F2] px-2 py-0.5 rounded-md border border-[#EAE3D5] shadow-2xs">
+                {formatTime(displayedTime)}
               </span>
-              <span className="text-[#FF5722]">
-                00:{String(playDuration).padStart(2, '0')}
+              <span className="text-[#FF5722] bg-[#FAF7F2] px-2 py-0.5 rounded-md border border-[#EAE3D5] shadow-2xs">
+                {trackDuration > 0 ? formatTime(trackDuration) : '--:--'}
               </span>
             </div>
 
-            <div className="w-full h-2.5 bg-[#EAE3D5] rounded-full overflow-hidden border border-[#DDD5C5]">
+            {/* Interactive Progress / Scrubber Bar */}
+            <div
+              ref={progressBarRef}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              className="relative w-full h-6 flex items-center cursor-pointer group touch-none"
+              role="slider"
+              aria-valuemin={0}
+              aria-valuemax={trackDuration || 180}
+              aria-valuenow={Math.round(displayedTime)}
+              title="Arrastrá o hacé clic para avanzar o atrasar la canción"
+            >
+              {/* Background Track */}
+              <div className="w-full h-2.5 bg-[#EAE3D5] rounded-full overflow-hidden border border-[#DDD5C5] relative">
+                <div
+                  className="h-full bg-gradient-to-r from-[#FF5722] via-[#E11D48] to-[#F59E0B] rounded-full shadow-[0_0_8px_#FF5722]"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+
+              {/* Scrubber Knob / Handle */}
               <div
-                className="h-full bg-gradient-to-r from-[#FF5722] via-[#E11D48] to-[#F59E0B] transition-all duration-100 ease-linear rounded-full shadow-[0_0_8px_#FF5722]"
-                style={{ width: `${progressPercent}%` }}
+                className="absolute w-4 h-4 bg-white border-2 border-[#FF5722] rounded-full shadow-md -translate-x-1/2 transition-transform duration-75 scale-90 group-hover:scale-125 group-active:scale-125 pointer-events-none"
+                style={{ left: `${progressPercent}%` }}
               />
             </div>
           </div>
@@ -838,32 +1072,59 @@ const MusicPlayer = forwardRef(function MusicPlayer(
             <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            <span>Repetir Clip</span>
+            <span className="hidden sm:inline">Repetir Clip</span>
           </button>
+          
+          <div className="flex items-center gap-1 bg-[#FAF7F2] p-1 rounded-xl border border-[#EAE3D5]">
+            <button
+              onClick={() => handleSkip(-10)}
+              className="px-2 py-1.5 rounded-lg text-xs font-bold text-[#6B6280] hover:text-[#181226] hover:bg-[#EAE3D5] transition-colors cursor-pointer"
+              title="Atrasar 10s"
+            >
+              -10s
+            </button>
 
-          {isPlaying ? (
+            {isPlaying ? (
+              <button
+                onClick={handlePause}
+                className="px-3 py-1.5 rounded-xl bg-[#FFFBEB] text-[#B45309] border border-[#F59E0B]/50 hover:bg-[#FEF3C7] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                title="Pausar audio"
+              >
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                </svg>
+                <span className="hidden sm:inline">Pausar</span>
+              </button>
+            ) : (
+              <button
+                onClick={playAudioOnly}
+                className="arcade-btn-mint px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                title="Reproducir audio"
+              >
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                <span className="hidden sm:inline">Reproducir</span>
+              </button>
+            )}
+
             <button
-              onClick={handlePause}
-              className="px-3 py-1.5 rounded-xl bg-[#FFFBEB] text-[#B45309] border border-[#F59E0B]/50 hover:bg-[#FEF3C7] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-              title="Pausar audio"
+              onClick={() => handleSkip(10)}
+              className="px-2 py-1.5 rounded-lg text-xs font-bold text-[#6B6280] hover:text-[#181226] hover:bg-[#EAE3D5] transition-colors cursor-pointer"
+              title="Adelantar 10s (saltear intro)"
             >
-              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-              </svg>
-              <span>Pausar</span>
+              +10s
             </button>
-          ) : (
-            <button
-              onClick={playAudioOnly}
-              className="arcade-btn-mint px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-              title="Reproducir audio"
-            >
-              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-              <span>Reproducir</span>
-            </button>
-          )}
+
+            {startTime > 0 && (
+              <span
+                className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#FF5722]/10 text-[#FF5722] border border-[#FF5722]/20"
+                title={`Punto de inicio del clip: ${formatTime(startTime)}`}
+              >
+                @{formatTime(startTime)}
+              </span>
+            )}
+          </div>
 
           {hasPlaylist && (
             <div className="flex items-center gap-1 pl-1 border-l border-[#EAE3D5]">

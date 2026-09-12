@@ -68,6 +68,8 @@ export default function PlayerBuzzer() {
   const [showTeamsModal, setShowTeamsModal] = useState(false);
   const [roundNotification, setRoundNotification] = useState(null);
   const [hasGameStarted, setHasGameStarted] = useState(false);
+  const [isConnected, setIsConnected] = useState(socket.connected);
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   // ── Team Setup & Readiness State (Phone) ───────────────────
   const [isEditingTeamName, setIsEditingTeamName] = useState(false);
@@ -119,7 +121,10 @@ export default function PlayerBuzzer() {
     }
 
     const syncSession = () => {
+      setIsConnected(true);
+      setIsReconnecting(true);
       socket.emit('reconnect-player', { roomCode, playerId, playerName }, (res) => {
+        setIsReconnecting(false);
         if (res?.success && res.playerState) {
           setPlayerState(res.playerState);
           setStatusMessage(computeStatusMessage(res.playerState));
@@ -142,21 +147,30 @@ export default function PlayerBuzzer() {
       });
     };
 
-    // Run immediately
-    syncSession();
+    // Run immediately if already connected
+    if (socket.connected) {
+      syncSession();
+    }
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && socket.connected) {
         syncSession();
       }
+    };
+    
+    const onDisconnect = () => {
+      setIsConnected(false);
+      setIsReconnecting(false);
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     socket.on('connect', syncSession);
+    socket.on('disconnect', onDisconnect);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       socket.off('connect', syncSession);
+      socket.off('disconnect', onDisconnect);
     };
   }, [roomCode, playerId, playerName, navigate]);
 
@@ -483,7 +497,42 @@ export default function PlayerBuzzer() {
   if (!roomCode) return null;
 
   return (
-    <div className="min-h-dvh flex flex-col justify-between p-4 select-none text-[var(--color-text-primary)]">
+    <div className="min-h-dvh flex flex-col justify-between p-4 select-none text-[var(--color-text-primary)] relative">
+      {/* ── CONNECTION OVERLAYS ── */}
+      <AnimatePresence>
+        {(!isConnected || isReconnecting) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#181226]/80 backdrop-blur-md p-6"
+          >
+            <div className="party-card text-center p-8 max-w-sm w-full relative overflow-hidden rounded-[2.2rem] border-2 shadow-2xl"
+                 style={{ borderColor: !isConnected ? '#FF5722' : '#059669' }}>
+              <div className="flex justify-center mb-4">
+                {!isConnected ? (
+                  <svg className="w-16 h-16 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.168a2 2 0 11-2.829-2.83m0 0l-7.071-7.071" />
+                  </svg>
+                ) : (
+                  <svg className="w-16 h-16 text-[#059669] animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                )}
+              </div>
+              <h2 className="font-display text-2xl font-black text-[#181226] mb-2">
+                {!isConnected ? 'Sin Conexión' : 'Reconectando...'}
+              </h2>
+              <p className="text-[#574F6B] font-bold text-sm">
+                {!isConnected 
+                  ? 'Revisá tu conexión a internet o el WiFi del salón.' 
+                  : 'Sincronizando con la partida, preparate para jugar.'}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── TOP BAR: Room, Round & Standings HUD ── */}
       <header className="w-full pt-1">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">

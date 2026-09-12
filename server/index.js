@@ -11,6 +11,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { GameManager, GAME_STATES, TEAM_COLORS } from './gameManager.js';
+import YouTube from 'youtube-sr';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,6 +53,82 @@ function getLocalIp() {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
+});
+
+// YouTube Auto-Karaoke endpoint (Supports Playlist URL or Array of Song Names)
+app.post('/api/playlist', async (req, res) => {
+  try {
+    const { url, queries } = req.body;
+    let rawVideos = [];
+    let ytApi = YouTube.search ? YouTube : YouTube.default;
+
+    if (queries && Array.isArray(queries)) {
+      console.log(`[API] Buscando ${queries.length} canciones por texto...`);
+      rawVideos = queries.map(q => ({ title: q, isQuery: true }));
+    } else if (url) {
+      console.log(`[API] Buscando playlist: ${url}`);
+      const playlist = await ytApi.getPlaylist(url, { limit: 50 }).catch(e => null);
+      if (!playlist || !playlist.videos || playlist.videos.length === 0) {
+        return res.status(400).json({ error: 'YouTube bloqueó la lectura de esta playlist. Como alternativa, pegá los NOMBRES de las canciones (texto) uno por línea en la caja.' });
+      }
+      rawVideos = playlist.videos.slice(0, 50);
+    } else {
+      return res.status(400).json({ error: 'URL o queries requeridas' });
+    }
+
+    const results = [];
+    
+    // Fetch original studio versions
+    for (const v of rawVideos) {
+      try {
+        if (!v.title) continue;
+
+        if (v.isQuery) {
+          const cleanTitle = v.title.replace(/\[.*?\]|\(.*?\)/gi, '').trim();
+          let searchResults = await ytApi.search(`${cleanTitle} audio`, { limit: 1, type: 'video' }).catch(() => null);
+          if (!searchResults || searchResults.length === 0) {
+            searchResults = await ytApi.search(cleanTitle, { limit: 1, type: 'video' }).catch(() => null);
+          }
+          await new Promise(r => setTimeout(r, 600));
+          
+          if (searchResults && searchResults.length > 0) {
+            const k = searchResults[0];
+            results.push({
+              title: v.title,
+              originalTitle: v.title,
+              id: k.id,
+              url: `https://www.youtube.com/watch?v=${k.id}`,
+              thumbnail: k.thumbnail?.url || v.thumbnail?.url
+            });
+          }
+        } else {
+          // Direct from playlist, use original video directly
+          results.push({
+            title: v.title,
+            originalTitle: v.title,
+            id: v.id,
+            url: `https://www.youtube.com/watch?v=${v.id}`,
+            thumbnail: v.thumbnail?.url
+          });
+        }
+      } catch (err) {
+        if (!v.isQuery && v.id) {
+          results.push({
+            title: v.title,
+            originalTitle: v.title,
+            id: v.id,
+            url: `https://www.youtube.com/watch?v=${v.id}`,
+            thumbnail: v.thumbnail?.url
+          });
+        }
+      }
+    }
+
+    res.json({ success: true, videos: results });
+  } catch (error) {
+    console.error('[API] Error en endpoint de playlist:', error);
+    res.status(500).json({ error: 'Error interno al procesar la lista' });
+  }
 });
 
 // Config & network info endpoint
@@ -138,6 +215,20 @@ io.on('connection', (socket) => {
     if (typeof callback === 'function') {
       callback({ code: room.code });
     }
+  });
+
+  socket.on('host-join', ({ roomCode }, callback) => {
+    const code = String(roomCode || '').trim().toUpperCase();
+    const room = gm.getRoom(code);
+    if (!room) {
+      return callback?.({ error: 'Sala no encontrada' });
+    }
+    room.hostSocketId = socket.id;
+    room.hostConnected = true;
+    socket.join(code);
+    currentRoom = code;
+    console.log(`[Host] Joined room: ${code} by ${socket.id}`);
+    callback?.({ success: true, roomState: gm.getRoomState(code) });
   });
 
   // ── PLAYER: Join Room ──────────────────────────────────────

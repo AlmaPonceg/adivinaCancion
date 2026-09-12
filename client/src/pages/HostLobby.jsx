@@ -37,6 +37,7 @@ export default function HostLobby() {
   const [playlistInput, setPlaylistInput] = useState('');
   const [showPlaylistDrawer, setShowPlaylistDrawer] = useState(false);
   const [playlistTab, setPlaylistTab] = useState('local'); // 'local' | 'urls'
+  const [isLoadingPlaylist, setIsLoadingPlaylist] = useState(false);
 
   // Hydrate local tracks from IndexedDB with active Object URLs on mount
   useEffect(() => {
@@ -259,13 +260,55 @@ export default function HostLobby() {
     localStorage.setItem('trivia_playlist', JSON.stringify(persistable));
   };
 
-  const handleAddPlaylistUrls = () => {
+  const handleAddPlaylistUrls = async () => {
     if (!playlistInput.trim()) return;
     const lines = playlistInput
       .split(/[\n,]+/)
       .map((s) => s.trim())
-      .filter((s) => s.length > 5);
+      .filter((s) => s.length > 3);
 
+    if (lines.length === 0) return;
+
+    // Check if it's a playlist URL or a bunch of song names
+    const isSinglePlaylistUrl = lines.length === 1 && (lines[0].includes('list=') || lines[0].includes('playlist?list='));
+    const isTextList = !isSinglePlaylistUrl && !lines.some(l => l.startsWith('http://') || l.startsWith('https://'));
+
+    if (isSinglePlaylistUrl || isTextList) {
+      setIsLoadingPlaylist(true);
+      try {
+        const serverUrl = socket.io.uri;
+        const bodyData = isSinglePlaylistUrl ? { url: lines[0] } : { queries: lines };
+        
+        const res = await fetch(`${serverUrl}/api/playlist`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyData)
+        });
+        const data = await res.json();
+        
+        if (data.success && data.videos) {
+          const newTracks = data.videos.map(v => ({
+            type: 'youtube',
+            id: v.id,
+            name: v.title,
+            url: v.url
+          }));
+          const updated = [...playlist, ...newTracks];
+          setPlaylist(updated);
+          savePlaylistToStorage(updated);
+          setPlaylistInput('');
+        } else {
+          alert(data.error || 'Error al cargar la playlist');
+        }
+      } catch (e) {
+        alert('Error de red al conectar con el servidor para procesar las canciones');
+      } finally {
+        setIsLoadingPlaylist(false);
+      }
+      return;
+    }
+
+    // Default behavior for normal YouTube links
     const newTracks = lines.map((url) => normalizeTrack(url));
     const updated = [...playlist, ...newTracks];
     setPlaylist(updated);
@@ -318,6 +361,13 @@ export default function HostLobby() {
 
   // ── Start Game Navigation ───────────────────────────────────
   const handleStartGame = () => {
+    try {
+      localStorage.setItem('trivia_host_room', roomCode);
+      localStorage.setItem('trivia_teams', JSON.stringify(teams || []));
+      savePlaylistToStorage(playlist || []);
+    } catch {
+      /* ignore */
+    }
     socket.emit('host-start-game', { roomCode });
     navigate('/host/game', { state: { roomCode, teams, playlist } });
   };
@@ -659,20 +709,39 @@ export default function HostLobby() {
                     /* Tab 2: Pegar URLs de YouTube / Spotify */
                     <div className="space-y-2">
                       <textarea
-                        rows={3}
                         value={playlistInput}
                         onChange={(e) => setPlaylistInput(e.target.value)}
-                        placeholder="Pegá URLs de YouTube o Spotify (una por línea)"
-                        className="w-full p-3 text-xs rounded-xl border border-[#EAE3D5] bg-[#FAF7F2] text-[#181226] placeholder:text-[#8E869E] focus:outline-none focus:border-[#FF5722]"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleAddPlaylistUrls();
+                          }
+                        }}
+                        placeholder="Pegá un link de YouTube acá (ej. una canción o una playlist entera)"
+                        className="w-full bg-white border border-[#E0D9CB] rounded-xl px-4 py-3 text-sm font-semibold text-[#181226] focus:border-[#FF5722] focus:ring-1 focus:ring-[#FF5722] outline-none shadow-inner resize-none mb-3"
+                        rows={3}
                       />
-                      <div className="flex justify-end">
-                        <button
-                          onClick={handleAddPlaylistUrls}
-                          className="arcade-btn-primary px-4 py-2 text-xs font-bold"
-                        >
-                          + Guardar Enlaces
-                        </button>
-                      </div>
+                      <button
+                        onClick={handleAddPlaylistUrls}
+                        disabled={!playlistInput.trim() || isLoadingPlaylist}
+                        className="w-full arcade-btn-primary py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        {isLoadingPlaylist ? (
+                          <>
+                            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span>Buscando canciones originales...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            <span>Agregar Links a la Cola</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   )}
 
