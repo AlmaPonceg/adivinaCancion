@@ -78,6 +78,8 @@ class GameManager {
       currentJudging: null,       // The buzz entry currently being judged
       roundNumber: 0,
       playlist: [],               // Preloaded playlist URLs
+      gameMode: 'teams',          // 'teams' | 'individual'
+      maxPlayersPerTeam: 4,       // Configurable limit: 2, 3, 4, 5, 6, etc.
     };
 
     this.rooms.set(code, room);
@@ -299,9 +301,33 @@ class GameManager {
       [players[i], players[j]] = [players[j], players[i]];
     }
 
-    // Maximum 4 players per team constraint:
-    // Minimum number of teams = ceil(players / 4), minimum 2 teams if at least 2 players
-    const minTeamsRequired = Math.max(players.length > 1 ? 2 : 1, Math.ceil(players.length / 4));
+    // ── Mode 1: Individual (Every player is their own team) ──
+    if (room.gameMode === 'individual') {
+      room.teams = [];
+      players.forEach((player, idx) => {
+        const meta = getTeamMeta(idx);
+        player.teamIndex = idx;
+        room.teams.push({
+          name: player.name,
+          color: meta.color,
+          bg: meta.bg,
+          score: 0,
+          players: [{
+            id: player.id,
+            name: player.name,
+            isManual: !!player.isManual,
+          }],
+          isReady: false,
+        });
+      });
+
+      room.state = GAME_STATES.TEAMS_ASSIGNED;
+      return room.teams;
+    }
+
+    // ── Mode 2: Teams with configurable max per team ──
+    const maxPerTeam = room.maxPlayersPerTeam || 4;
+    const minTeamsRequired = Math.max(players.length > 1 ? 2 : 1, Math.ceil(players.length / maxPerTeam));
     let numTeams = requestedNumTeams ? Math.max(requestedNumTeams, minTeamsRequired) : minTeamsRequired;
     numTeams = Math.min(numTeams, players.length);
 
@@ -319,7 +345,7 @@ class GameManager {
       });
     }
 
-    // Distribute players round-robin so they are balanced and <= 4 per team
+    // Distribute players round-robin so they are balanced and <= maxPerTeam per team
     players.forEach((player, idx) => {
       const teamIdx = idx % numTeams;
       player.teamIndex = teamIdx;
@@ -334,6 +360,26 @@ class GameManager {
     return room.teams;
   }
 
+  setGameMode(roomCode, mode) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return { error: 'Sala no encontrada' };
+    room.gameMode = mode === 'individual' ? 'individual' : 'teams';
+
+    // Auto-shuffle if players already exist and teams were initialized
+    if (room.players.size > 0 && room.state !== GAME_STATES.LOBBY) {
+      this.shuffleTeams(roomCode);
+    }
+    return { success: true, gameMode: room.gameMode, teams: room.teams };
+  }
+
+  setMaxPlayersPerTeam(roomCode, max) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return { error: 'Sala no encontrada' };
+    const parsed = parseInt(max, 10);
+    room.maxPlayersPerTeam = (!isNaN(parsed) && parsed >= 2) ? parsed : 4;
+    return { success: true, maxPlayersPerTeam: room.maxPlayersPerTeam };
+  }
+
   movePlayerToTeam(roomCode, playerId, targetTeamIndex) {
     const room = this.rooms.get(roomCode);
     if (!room) return { error: 'Sala no encontrada' };
@@ -346,10 +392,10 @@ class GameManager {
     }
 
     const targetTeam = room.teams[targetTeamIndex];
+    const maxLimit = room.maxPlayersPerTeam || 4;
 
-    // Strict rule: maximum 4 players per team
-    if (targetTeam.players.length >= 4) {
-      return { error: 'El equipo destino ya alcanzó el máximo de 4 integrantes' };
+    if (targetTeam.players.length >= maxLimit) {
+      return { error: `El equipo destino ya alcanzó el máximo de ${maxLimit} integrantes` };
     }
 
     // Remove from previous team
@@ -685,6 +731,8 @@ class GameManager {
       currentJudging: room.currentJudging,
       blockedTeams: Array.from(room.blockedTeams),
       roundNumber: room.roundNumber,
+      gameMode: room.gameMode || 'teams',
+      maxPlayersPerTeam: room.maxPlayersPerTeam || 4,
     };
   }
 
@@ -718,6 +766,7 @@ class GameManager {
       teamBg: team?.bg || null,
       isTeamReady: team ? !!team.isReady : false,
       allTeamsReady,
+      gameMode: room.gameMode || 'teams',
       gameState: room.state,
       canBuzz:
         (room.state === GAME_STATES.ROUND_ACTIVE || room.state === GAME_STATES.BUZZER_LOCKED) &&

@@ -166,8 +166,11 @@ export default function HostGame() {
   // ── Actions ────────────────────────────────────────────────
 
   const startNextRound = useCallback(() => {
+    const nextRound = roundNumber + 1;
     try {
-      if (roundNumber > 0) {
+      if (musicPlayerRef.current?.playTrackForRound) {
+        musicPlayerRef.current.playTrackForRound(nextRound);
+      } else if (roundNumber > 0) {
         musicPlayerRef.current?.nextAndPlay();
       } else {
         musicPlayerRef.current?.play();
@@ -190,8 +193,13 @@ export default function HostGame() {
   }, []);
 
   const skipCurrentSong = useCallback(() => {
+    const nextRound = roundNumber + 1;
     try {
-      musicPlayerRef.current?.nextAndPlay();
+      if (musicPlayerRef.current?.playTrackForRound) {
+        musicPlayerRef.current.playTrackForRound(nextRound);
+      } else {
+        musicPlayerRef.current?.nextAndPlay();
+      }
     } catch (audioErr) {
       console.warn('Audio playback warning:', audioErr);
     }
@@ -203,7 +211,7 @@ export default function HostGame() {
     setGameState('ROUND_ACTIVE');
     setBuzzQueue([]);
     setCurrentJudging(null);
-  }, [roomCode]);
+  }, [roomCode, roundNumber]);
 
   const judgeCorrect = useCallback(async () => {
     try {
@@ -282,6 +290,7 @@ export default function HostGame() {
             roomCode={roomCode}
             playlist={playlist}
             gameState={gameState}
+            roundNumber={roundNumber}
             onDurationChange={setMusicDuration}
           />
         </div>

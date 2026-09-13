@@ -190,6 +190,46 @@ app.post('/api/playlist', async (req, res) => {
   }
 });
 
+// Interactive song search endpoint (Fast YouTube suggestions with thumbnails & duration)
+app.get('/api/search-songs', async (req, res) => {
+  try {
+    const query = String(req.query.q || '').trim();
+    if (!query || query.length < 2) {
+      return res.json({ success: true, results: [] });
+    }
+
+    console.log(`[Search] Buscando canciones: "${query}"`);
+    const yt = await getInnertube();
+    const searchRes = await yt.search(query, { type: 'video' });
+    const videos = searchRes.videos || [];
+
+    const results = [];
+    for (const v of videos.slice(0, 15)) {
+      const id = v.id || v.content_id;
+      const title = v.title?.text || v.title?.toString() || v.metadata?.title?.text;
+      const author = v.author?.name || v.author?.toString() || '';
+      const duration = v.duration?.text || '';
+      const thumbnail = v.thumbnails?.[0]?.url || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null);
+
+      if (id && title) {
+        results.push({
+          id,
+          title: title.trim(),
+          author: author.trim(),
+          duration: duration.trim(),
+          thumbnail,
+          url: `https://www.youtube.com/watch?v=${id}`,
+        });
+      }
+    }
+
+    res.json({ success: true, results });
+  } catch (err) {
+    console.error('[Search] Error buscando canciones:', err);
+    res.status(500).json({ error: 'Error al buscar canciones' });
+  }
+});
+
 // Config & network info endpoint
 app.get('/api/config', (req, res) => {
   const localIp = getLocalIp();
@@ -502,8 +542,48 @@ io.on('connection', (socket) => {
 
     broadcastPlayerStates(roomCode);
 
-    console.log(`[Teams] Shuffled in room ${roomCode} (${teams.length} teams, max 4 per team)`);
+    console.log(`[Teams] Shuffled in room ${roomCode} (${teams.length} teams)`);
     callback?.({ success: true, teams: roomState.teams });
+  });
+
+  // ── HOST: Set Game Mode ('teams' vs 'individual') ──────────
+  socket.on('set-game-mode', ({ roomCode, gameMode }, callback) => {
+    const code = String(roomCode || '').trim().toUpperCase();
+    const res = gm.setGameMode(code, gameMode);
+    if (res.error) return callback?.({ error: res.error });
+
+    const roomState = gm.getRoomState(code);
+    io.to(code).emit('room-mode-updated', {
+      gameMode: roomState.gameMode,
+      teams: roomState.teams,
+      allTeamsReady: roomState.allTeamsReady,
+    });
+
+    // Notify each player of their updated status/mode
+    const room = gm.getRoom(code);
+    if (room) {
+      for (const [, player] of room.players) {
+        if (player.socketId) {
+          const playerState = gm.getPlayerState(code, player.id);
+          io.to(player.socketId).emit('your-team', playerState);
+        }
+      }
+    }
+
+    broadcastPlayerStates(code);
+    console.log(`[Mode] Room ${code} switched to ${roomState.gameMode} mode`);
+    callback?.({ success: true, gameMode: roomState.gameMode, teams: roomState.teams });
+  });
+
+  // ── HOST: Set Team Size Limit (e.g. 2, 3, 4, 5, 6) ────────
+  socket.on('set-team-size', ({ roomCode, maxPlayersPerTeam }, callback) => {
+    const code = String(roomCode || '').trim().toUpperCase();
+    const res = gm.setMaxPlayersPerTeam(code, maxPlayersPerTeam);
+    if (res.error) return callback?.({ error: res.error });
+
+    io.to(code).emit('team-size-updated', { maxPlayersPerTeam: res.maxPlayersPerTeam });
+    console.log(`[TeamSize] Room ${code} limit set to ${res.maxPlayersPerTeam} per team`);
+    callback?.({ success: true, maxPlayersPerTeam: res.maxPlayersPerTeam });
   });
 
   // ── HOST: Start Game (Transition from Lobby to Game) ────────

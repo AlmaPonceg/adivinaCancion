@@ -26,12 +26,14 @@ function shuffleArray(arr) {
 }
 
 const MusicPlayer = forwardRef(function MusicPlayer(
-  { roomCode, playlist = [], gameState, onDurationChange },
+  { roomCode, playlist = [], gameState, roundNumber = 0, onDurationChange },
   ref
 ) {
   const [shuffledPlaylist, setShuffledPlaylist] = useState([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isRandomMode, setIsRandomMode] = useState(true);
+  const queueSignatureRef = useRef('');
+  const activeQueueRef = useRef([]);
 
   const [currentTrack, setCurrentTrack] = useState(null);
   const [url, setUrl] = useState('');
@@ -354,15 +356,24 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     let isMounted = true;
     async function initPlaylistQueue() {
       if (playlist && playlist.length > 0) {
+        const sig = playlist.map((p) => (typeof p === 'object' ? p.id || p.name || p.url : p)).join(';;') + `::${isRandomMode}`;
+        if (queueSignatureRef.current === sig) {
+          return;
+        }
+        queueSignatureRef.current = sig;
+
         const hydrated = await hydratePlaylistTracks(playlist);
         if (!isMounted) return;
         const ordered = isRandomMode ? shuffleArray(hydrated) : [...hydrated];
+        activeQueueRef.current = ordered;
         setShuffledPlaylist(ordered);
         setCurrentTrackIndex(0);
         const initialTrack = ordered[0];
         setUrl(initialTrack.url || initialTrack);
         loadMedia(initialTrack);
       } else {
+        queueSignatureRef.current = '';
+        activeQueueRef.current = [];
         setShuffledPlaylist([]);
         setCurrentTrack(null);
       }
@@ -396,6 +407,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
   const handleReshuffle = () => {
     if (!playlist || playlist.length === 0) return;
     const randomized = shuffleArray(playlist);
+    activeQueueRef.current = randomized;
     setShuffledPlaylist(randomized);
     setCurrentTrackIndex(0);
     const nextTrack = randomized[0];
@@ -695,10 +707,73 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     setUrl(file.name);
   };
 
+  const playTrackForRound = useCallback(
+    (roundNum) => {
+      const queue =
+        activeQueueRef.current.length > 0
+          ? activeQueueRef.current
+          : shuffledPlaylist.length > 0
+          ? shuffledPlaylist
+          : playlist;
+      if (!queue || queue.length === 0) return;
+
+      const targetIdx = Math.max(0, roundNum - 1) % queue.length;
+      setCurrentTrackIndex(targetIdx);
+      const targetTrack = queue[targetIdx];
+      setUrl(targetTrack.url || targetTrack);
+      loadMedia(targetTrack);
+
+      const isLocal = isLocalTrack(targetTrack) || (typeof targetTrack === 'object' && targetTrack.type === 'local');
+
+      setTimeout(() => {
+        if (isLocal && audioPlayerRef.current) {
+          try {
+            const audio = audioPlayerRef.current;
+            audio.currentTime = 0;
+            setCurrentTrackTime(0);
+            const promise = audio.play();
+            if (promise !== undefined) promise.catch((err) => console.warn(err));
+            setIsPlaying(true);
+            startProgress();
+
+            if (timerRef.current) clearTimeout(timerRef.current);
+            timerRef.current = setTimeout(() => {
+              handlePause();
+            }, playDuration * 1000);
+          } catch (err) {
+            console.error('Local playTrackForRound error:', err);
+          }
+        } else {
+          try {
+            if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
+              ytPlayerRef.current.seekTo?.(0, true);
+              ytPlayerRef.current.unMute?.();
+              ytPlayerRef.current.setVolume?.(100);
+              ytPlayerRef.current.playVideo();
+              setCurrentTrackTime(0);
+            }
+
+            setIsPlaying(true);
+            startProgress();
+
+            if (timerRef.current) clearTimeout(timerRef.current);
+            timerRef.current = setTimeout(() => {
+              handlePause();
+            }, playDuration * 1000);
+          } catch (err) {
+            console.error('YT playTrackForRound error:', err);
+          }
+        }
+      }, isLocal ? 120 : 450);
+    },
+    [shuffledPlaylist, playlist, loadMedia, playDuration, startProgress, handlePause]
+  );
+
   useImperativeHandle(ref, () => ({
     play: playAudioOnly,
     replay: handleReplay,
     nextAndPlay: handleNextAndPlay,
+    playTrackForRound,
     pause: handlePause,
     stop: handleStop,
     next: handleNextTrack,

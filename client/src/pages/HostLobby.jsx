@@ -37,11 +37,22 @@ export default function HostLobby() {
   });
   const [playlistInput, setPlaylistInput] = useState('');
   const [showPlaylistDrawer, setShowPlaylistDrawer] = useState(false);
-  const [playlistTab, setPlaylistTab] = useState('local'); // 'local' | 'urls'
+  const [playlistTab, setPlaylistTab] = useState('search'); // 'search' | 'local' | 'urls'
   const [isLoadingPlaylist, setIsLoadingPlaylist] = useState(false);
   const [antiSpoiler, setAntiSpoiler] = useState(() => {
     return localStorage.getItem('trivia_anti_spoiler') === 'true';
   });
+
+  // ── Mode & Team Sizing ──────────────────────────────────────
+  const [gameMode, setGameMode] = useState('teams'); // 'teams' | 'individual'
+  const [maxPlayersPerTeam, setMaxPlayersPerTeam] = useState(4);
+
+  // ── Song Search API State ───────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const [recentlyAddedId, setRecentlyAddedId] = useState(null);
 
   // Hydrate local tracks from IndexedDB with active Object URLs on mount
   useEffect(() => {
@@ -198,9 +209,73 @@ export default function HostLobby() {
     setIsShuffling(false);
   });
 
-  // ── Shuffle Teams (Max 4 per team) ──────────────────────────
+  useSocketEvent('room-mode-updated', (data) => {
+    if (data.gameMode) setGameMode(data.gameMode);
+    if (data.teams) setTeams(data.teams);
+  });
+
+  useSocketEvent('team-size-updated', (data) => {
+    if (data.maxPlayersPerTeam) setMaxPlayersPerTeam(data.maxPlayersPerTeam);
+  });
+
+  // ── Mode Switch & Team Size Sizing Handlers ──────────────────
+  const handleSwitchGameMode = (mode) => {
+    setGameMode(mode);
+    socket.emit('set-game-mode', { roomCode, gameMode: mode }, (res) => {
+      if (res?.teams) setTeams(res.teams);
+    });
+  };
+
+  const handleChangeTeamSize = (size) => {
+    setMaxPlayersPerTeam(size);
+    socket.emit('set-team-size', { roomCode, maxPlayersPerTeam: size });
+  };
+
+  // ── Interactive Song Search ──────────────────────────────────
+  const handleSearchSongs = async (e) => {
+    e?.preventDefault();
+    const q = searchQuery.trim();
+    if (!q || q.length < 2) return;
+    setIsSearching(true);
+    setSearchError('');
+    try {
+      const serverEndpoint = SERVER_URL || socket.io?.uri || window.location.origin;
+      const res = await fetch(`${serverEndpoint}/api/search-songs?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.results)) {
+        setSearchResults(data.results);
+      } else {
+        setSearchError(data.error || 'No se encontraron resultados');
+      }
+    } catch (err) {
+      setSearchError('Error de red al conectar con el servidor para buscar canciones');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleAddSearchResult = (song) => {
+    const track = {
+      type: 'youtube',
+      id: song.id,
+      name: song.title,
+      url: song.url,
+      thumbnail: song.thumbnail,
+      duration: song.duration,
+      author: song.author,
+    };
+    const updated = [...playlist, track];
+    setPlaylist(updated);
+    savePlaylistToStorage(updated);
+    setRecentlyAddedId(song.id);
+    setTimeout(() => {
+      setRecentlyAddedId((curr) => (curr === song.id ? null : curr));
+    }, 2000);
+  };
+
+  // ── Shuffle Teams (Max per team or Individual) ──────────────
   const handleShuffle = async () => {
-    if (players.length < 2) return;
+    if (players.length < 2 && gameMode !== 'individual') return;
     setIsShuffling(true);
     try {
       await emit('shuffle-teams', { roomCode });
@@ -385,7 +460,7 @@ export default function HostLobby() {
     }
     lobbyAudioManager.stop();
     socket.emit('host-start-game', { roomCode });
-    navigate('/host/game', { state: { roomCode, teams, playlist } });
+    navigate('/host/game', { state: { roomCode, teams, playlist, gameMode } });
   };
 
   const cleanBase = baseUrl.replace(/\/+$/, '');
@@ -666,11 +741,27 @@ export default function HostLobby() {
 
               {showPlaylistDrawer && (
                 <div className="space-y-3 pt-2">
-                  {/* Selector de modo: Archivos locales vs URLs */}
-                  <div className="flex items-center p-1 bg-[#FAF7F2] rounded-xl border border-[#EAE3D5]">
+                  {/* Selector de modo: Buscar vs Archivos vs URLs */}
+                  <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#FAF7F2] rounded-xl border border-[#EAE3D5]">
                     <button
+                      type="button"
+                      onClick={() => setPlaylistTab('search')}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        playlistTab === 'search'
+                          ? 'bg-[#FF5722] text-white shadow-xs'
+                          : 'text-[#6B6280] hover:text-[#181226]'
+                      }`}
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <span className="truncate">Buscar Canciones</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => setPlaylistTab('local')}
-                      className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      className={`py-1.5 px-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                         playlistTab === 'local'
                           ? 'bg-[#059669] text-white shadow-xs'
                           : 'text-[#6B6280] hover:text-[#181226]'
@@ -679,26 +770,136 @@ export default function HostLobby() {
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                       </svg>
-                      <span>Archivos de Audio (Sin Internet)</span>
+                      <span className="truncate">Sin Internet (Local)</span>
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => setPlaylistTab('urls')}
-                      className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      className={`py-1.5 px-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                         playlistTab === 'urls'
-                          ? 'bg-[#FF5722] text-white shadow-xs'
+                          ? 'bg-[#181226] text-white shadow-xs'
                           : 'text-[#6B6280] hover:text-[#181226]'
                       }`}
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                       </svg>
-                      <span>URLs Web (YouTube)</span>
+                      <span className="truncate">Pegar Links</span>
                     </button>
                   </div>
 
-                  {/* Tab 1: Subir archivos de audio locales */}
-                  {playlistTab === 'local' ? (
+                  {/* Tab 1: Buscador interactivo de canciones con YouTube */}
+                  {playlistTab === 'search' && (
+                    <div className="space-y-3">
+                      <form onSubmit={handleSearchSongs} className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Buscá por canción o artista (ej. Crimen, Shake It Off...)"
+                            className="w-full bg-white border border-[#E0D9CB] rounded-xl pl-9 pr-3 py-2.5 text-xs sm:text-sm font-semibold text-[#181226] focus:border-[#FF5722] focus:ring-1 focus:ring-[#FF5722] outline-none shadow-inner"
+                          />
+                          <svg className="w-4 h-4 text-[#8E869E] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={!searchQuery.trim() || isSearching}
+                          className="arcade-btn-primary px-4 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
+                        >
+                          {isSearching ? (
+                            <>
+                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                              <span>Buscando...</span>
+                            </>
+                          ) : (
+                            <span>Buscar</span>
+                          )}
+                        </button>
+                      </form>
+
+                      {searchError && (
+                        <p className="text-xs text-[#E11D48] font-bold bg-[#FFF0F3] p-2.5 rounded-xl border border-[#E11D48]/30">
+                          {searchError}
+                        </p>
+                      )}
+
+                      {/* Lista de resultados encontrados */}
+                      {searchResults.length > 0 && (
+                        <div className="console-inset p-2.5 rounded-2xl max-h-64 overflow-y-auto space-y-2">
+                          {searchResults.map((song) => {
+                            const isAdded = playlist.some(
+                              (p) => (typeof p === 'object' && p.id === song.id) || (typeof p === 'string' && p.includes(song.id))
+                            );
+                            const wasJustAdded = recentlyAddedId === song.id;
+
+                            return (
+                              <div
+                                key={song.id}
+                                className="flex items-center justify-between gap-3 p-2 rounded-xl bg-white border border-[#EAE3D5] hover:border-[#FF5722]/50 transition-all shadow-2xs"
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                  {song.thumbnail ? (
+                                    <div className="relative w-12 h-9 rounded-lg overflow-hidden shrink-0 bg-black/10">
+                                      <img
+                                        src={song.thumbnail}
+                                        alt={song.title}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                      />
+                                      {song.duration > 0 && (
+                                        <span className="absolute bottom-0.5 right-0.5 bg-black/80 text-white text-[9px] font-bold px-1 rounded">
+                                          {Math.floor(song.duration / 60)}:{String(song.duration % 60).padStart(2, '0')}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="w-10 h-9 rounded-lg bg-[#FFF0EB] flex items-center justify-center text-[#FF5722] shrink-0">
+                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                                      </svg>
+                                    </div>
+                                  )}
+
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-bold text-xs text-[#181226] truncate leading-tight" title={song.title}>
+                                      {song.title}
+                                    </p>
+                                    <p className="text-[11px] text-[#6B6280] truncate mt-0.5">
+                                      {song.author || 'YouTube'}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddSearchResult(song)}
+                                  disabled={wasJustAdded}
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all shrink-0 cursor-pointer ${
+                                    wasJustAdded
+                                      ? 'bg-[#E6F9F0] text-[#059669] border border-[#059669]/30'
+                                      : isAdded
+                                      ? 'bg-[#FAF7F2] text-[#6B6280] border border-[#EAE3D5] hover:bg-[#FFF0EB] hover:text-[#FF5722]'
+                                      : 'arcade-btn-primary text-white shadow-xs'
+                                  }`}
+                                >
+                                  {wasJustAdded ? '¡Agregada! ✓' : isAdded ? '+ Agregar otra vez' : '+ Agregar'}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Tab 2: Subir archivos de audio locales */}
+                  {playlistTab === 'local' && (
                     <div className="space-y-2">
                       <label className="border-2 border-dashed border-[#DDD5C5] hover:border-[#059669] bg-[#FAF7F2] hover:bg-[#F3EFE6] p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all text-center group">
                         <div className="w-11 h-11 rounded-xl bg-[#E6F9F0] border border-[#059669]/30 flex items-center justify-center text-[#059669] mb-2 group-hover:scale-105 transition-transform shadow-xs">
@@ -721,8 +922,10 @@ export default function HostLobby() {
                         />
                       </label>
                     </div>
-                  ) : (
-                    /* Tab 2: Pegar URLs de YouTube / Spotify */
+                  )}
+
+                  {/* Tab 3: Pegar URLs de YouTube / Spotify */}
+                  {playlistTab === 'urls' && (
                     <div className="space-y-2">
                       <textarea
                         value={playlistInput}
@@ -885,21 +1088,81 @@ export default function HostLobby() {
               animate={{ opacity: 1, x: 0 }}
               className="party-card p-6 sm:p-8 rounded-[2rem]"
             >
-              {/* Header: Connected count & Teams rule */}
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#EAE3D5]">
+              {/* Header: Connected count & Mode selector */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-[#EAE3D5]">
                 <div>
                   <h2 className="font-display text-xl font-black text-[#181226]">
-                    Jugadores y Equipos
+                    Jugadores y Modalidad
                   </h2>
                   <p className="text-xs text-[#6B6280] mt-0.5">
-                    {players.length} participante{players.length === 1 ? '' : 's'} conectados · Máximo 4 por equipo
+                    {players.length} participante{players.length === 1 ? '' : 's'} · {gameMode === 'individual' ? 'Todos contra todos' : `Equipos de hasta ${maxPlayersPerTeam} integrantes`}
                   </p>
                 </div>
 
-                <span className="mono text-xs font-black px-3 py-1 rounded-full bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30">
-                  LÍMITE: 4 / EQUIPO
-                </span>
+                {/* Switcher Modo: Por Equipos vs Individual */}
+                <div className="flex items-center p-1 bg-[#FAF7F2] rounded-xl border border-[#EAE3D5] self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchGameMode('teams')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                      gameMode === 'teams'
+                        ? 'bg-[#FF5722] text-white shadow-xs'
+                        : 'text-[#6B6280] hover:text-[#181226]'
+                    }`}
+                  >
+                    <span>👥 Por Equipos</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchGameMode('individual')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                      gameMode === 'individual'
+                        ? 'bg-[#FF5722] text-white shadow-xs'
+                        : 'text-[#6B6280] hover:text-[#181226]'
+                    }`}
+                  >
+                    <span>👤 Individual</span>
+                  </button>
+                </div>
               </div>
+
+              {/* Selector de tamaño de equipo (cuando está en modo equipos) */}
+              {gameMode === 'teams' ? (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-[#FAF7F2] border border-[#EAE3D5] rounded-2xl mb-6">
+                  <div className="min-w-0">
+                    <p className="text-xs font-extrabold text-[#181226]">Integrantes por equipo:</p>
+                    <p className="text-[11px] text-[#6B6280]">
+                      Los participantes se balancearán automáticamente (máx. {maxPlayersPerTeam} por equipo)
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
+                    {[2, 3, 4, 5, 6].map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => handleChangeTeamSize(size)}
+                        className={`w-8 h-8 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                          maxPlayersPerTeam === size
+                            ? 'bg-[#FF5722] text-white shadow-xs scale-105'
+                            : 'bg-white text-[#6B6280] border border-[#EAE3D5] hover:border-[#FF5722]/50 hover:text-[#181226]'
+                        }`}
+                        title={`${size} jugadores por equipo`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-[#FFF0EB]/70 border border-[#FF5722]/20 rounded-2xl mb-6 flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-xl bg-[#FF5722] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                    ★
+                  </div>
+                  <p className="text-xs font-bold text-[#181226]">
+                    Modo Individual: Todos contra todos. Cada jugador suma sus propios puntos con su propio pulsador.
+                  </p>
+                </div>
+              )}
 
               {/* CARGA MANUAL DE JUGADORES */}
               <form onSubmit={handleAddManualPlayer} className="p-2 bg-[#FAF7F2] border border-[#EAE3D5] rounded-2xl mb-6 flex gap-2">
@@ -973,9 +1236,15 @@ export default function HostLobby() {
               ) : (
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="badge-tag text-[#6B6280]">Equipos asignados (balanceados, máx. 4 c/u)</p>
+                    <p className="badge-tag text-[#6B6280]">
+                      {gameMode === 'individual'
+                        ? `Jugadores individuales (${teams.length})`
+                        : `Equipos asignados (balanceados, máx. ${maxPlayersPerTeam} c/u)`}
+                    </p>
                     <span className="text-xs text-[#6B6280]">
-                      Podés reasignar jugadores usando el selector
+                      {gameMode === 'individual'
+                        ? 'Cada jugador tiene su propio equipo'
+                        : 'Podés reasignar jugadores usando el selector'}
                     </span>
                   </div>
 
@@ -988,13 +1257,19 @@ export default function HostLobby() {
                 {!teams ? (
                   <button
                     onClick={handleShuffle}
-                    disabled={players.length < 2 || isShuffling}
+                    disabled={players.length < (gameMode === 'individual' ? 1 : 2) || isShuffling}
                     className="arcade-btn-primary flex-1 py-4 rounded-2xl text-base font-black disabled:opacity-40 flex items-center justify-center gap-2 shadow-lg cursor-pointer"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    <span>{isShuffling ? 'Sorteando...' : 'Sortear Equipos (Máx. 4 por equipo)'}</span>
+                    <span>
+                      {isShuffling
+                        ? 'Configurando...'
+                        : gameMode === 'individual'
+                        ? 'Armar Partida Individual'
+                        : `Sortear Equipos (Máx. ${maxPlayersPerTeam} por equipo)`}
+                    </span>
                   </button>
                 ) : (
                   <>
@@ -1005,7 +1280,7 @@ export default function HostLobby() {
                       <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
-                      <span>Volver a sortear</span>
+                      <span>{gameMode === 'individual' ? 'Reordenar jugadores' : 'Volver a sortear'}</span>
                     </button>
 
                     {teams && teams.length > 0 && teams.every((t) => t.isReady) ? (
