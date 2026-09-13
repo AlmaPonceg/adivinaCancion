@@ -1,7 +1,13 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { parseSongAndArtist } from '../utils/trackHelper';
 
-export default function JudgePanel({ currentBuzz, onCorrect, onIncorrect }) {
+export default function JudgePanel({ currentBuzz, currentTrack, onCorrect, onIncorrect }) {
+  const [showSolution, setShowSolution] = useState(true);
+
   if (!currentBuzz) return null;
+
+  const { title: songTitle, artist: songArtist } = parseSongAndArtist(currentTrack);
 
   return (
     <div className="space-y-4">
@@ -52,6 +58,57 @@ export default function JudgePanel({ currentBuzz, onCorrect, onIncorrect }) {
         )}
       </motion.div>
 
+      {/* Host Answer Reveal Card — Single Source of Truth for Host Decision */}
+      {currentTrack && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#FFF8F5] to-[#FAF7F2] border-2 border-[#FF5722]/40 shadow-xs relative overflow-hidden text-left"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#FF5722] animate-pulse shrink-0" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#FF5722]">
+                Solución de la Canción (Solo Host)
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSolution(!showSolution)}
+              className="text-[11px] font-bold text-[#6B6280] hover:text-[#181226] underline cursor-pointer"
+            >
+              {showSolution ? 'Ocultar' : 'Mostrar'}
+            </button>
+          </div>
+
+          {showSolution ? (
+            <div className="space-y-1">
+              <p className="text-[11px] font-bold text-[#6B6280] uppercase tracking-wider">
+                Título correcto:
+              </p>
+              <h4 className="font-display text-xl sm:text-2xl font-black text-[#181226] leading-tight">
+                {songTitle || 'Pista sin título'}
+              </h4>
+              {songArtist && (
+                <p className="text-xs sm:text-sm font-bold text-[#6B6280] pt-0.5">
+                  Artista / Banda: <span className="text-[#181226] font-extrabold">{songArtist}</span>
+                </p>
+              )}
+              <p className="text-[11px] text-[#059669] font-bold pt-1.5 flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Si el participante dijo este título o artista, presioná "Correcto". Si no, "Incorrecto".</span>
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-[#8E869E] italic">
+              Solución oculta para evitar miradas indiscretas. Hacé clic en "Mostrar" para verla.
+            </p>
+          )}
+        </motion.div>
+      )}
+
       {/* Judge Buttons — chunky arcade cabinet pushers */}
       <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 rounded-2xl bg-[#FAF7F2] border-2 border-[#EAE3D5] p-2.5 sm:p-3.5 shadow-sm">
         <button
@@ -85,3 +142,4 @@ export default function JudgePanel({ currentBuzz, onCorrect, onIncorrect }) {
     </div>
   );
 }
+

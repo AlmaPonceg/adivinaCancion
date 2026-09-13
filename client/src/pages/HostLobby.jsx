@@ -60,6 +60,21 @@ export default function HostLobby() {
     return GAME_MODES.find(m => m.id === 'auto') || GAME_MODES[0];
   }, [autoHostEnabled, gameMode, teamSelectionMode]);
 
+  const assignedPlayerIds = useMemo(() => {
+    return new Set((teams || []).flatMap((t) => (t.players || []).map((p) => p.id)));
+  }, [teams]);
+
+  const unassignedPlayers = useMemo(() => {
+    return players.filter((p) => !assignedPlayerIds.has(p.id));
+  }, [players, assignedPlayerIds]);
+
+  const totalAssignedPlayers = useMemo(() => {
+    return (teams || []).reduce((acc, t) => acc + (t.players ? t.players.length : 0), 0);
+  }, [teams]);
+
+  const hasAssignedTeams = totalAssignedPlayers > 0;
+
+
   const handleConfirmGameModeFromSelector = (params) => {
     if (params.gameMode) {
       setGameMode(params.gameMode);
@@ -1615,57 +1630,127 @@ export default function HostLobby() {
               )}
 
               {/* Roster or Teams View */}
-              {!teams ? (
-                <div>
-                  <p className="badge-tag text-[#6B6280] mb-3">Lista de espera ({players.length})</p>
-                  <div className="console-inset p-3.5 rounded-2xl min-h-[180px] max-h-72 overflow-y-auto space-y-2 mb-6">
-                      {players.length === 0 ? (
-                        <div className="text-center py-12">
-                          <p className="text-sm font-semibold text-[#181226] mb-1">
-                            Aún no hay jugadores conectados
-                          </p>
-                          <p className="text-xs text-[#6B6280]">
-                            Escaneen el QR con la cámara del celular para ingresar.
-                          </p>
-                        </div>
-                      ) : (
-                        players.map((player) => (
-                          <div
-                            key={player.id}
-                            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white border border-[#EAE3D5] shadow-2xs animate-fade-in"
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <span className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white flex items-center justify-center font-black text-xs shadow-xs">
-                                {player.name.charAt(0).toUpperCase()}
-                              </span>
-                              <span className="font-bold text-sm text-[#181226]">{player.name}</span>
-                              {player.isManual && (
-                                <span className="text-[10px] uppercase font-black bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 px-2 py-0.5 rounded-md">
-                                  Manual
-                                </span>
-                              )}
-                            </div>
+              {!hasAssignedTeams ? (
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <p className="badge-tag text-[#6B6280]">
+                      Participantes conectados ({players.length})
+                    </p>
+                    <span className="text-xs text-[#059669] font-bold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#059669] animate-pulse" />
+                      En vivo (tiempo real)
+                    </span>
+                  </div>
 
-                            {player.isManual && (
-                              <button
-                                onClick={() => handleRemoveManualPlayer(player.id)}
-                                className="text-[#8E869E] hover:text-[#E11D48] p-1.5 cursor-pointer"
-                                title="Eliminar jugador manual"
-                                aria-label="Eliminar jugador"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
+                  <div className="console-inset p-3.5 rounded-2xl min-h-[180px] max-h-72 overflow-y-auto space-y-2">
+                    {players.length === 0 ? (
+                      <div className="text-center py-12">
+                        <p className="text-sm font-semibold text-[#181226] mb-1">
+                          Aún no hay jugadores conectados
+                        </p>
+                        <p className="text-xs text-[#6B6280]">
+                          Escaneen el código QR o abran el enlace desde el celular para ingresar.
+                        </p>
+                      </div>
+                    ) : (
+                      players.map((player) => (
+                        <div
+                          key={player.id}
+                          className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white border border-[#EAE3D5] shadow-2xs animate-fade-in"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white flex items-center justify-center font-black text-xs shadow-xs">
+                              {player.name.charAt(0).toUpperCase()}
+                            </span>
+                            <span className="font-bold text-sm text-[#181226]">{player.name}</span>
+                            {player.isManual ? (
+                              <span className="text-[10px] uppercase font-black bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 px-2 py-0.5 rounded-md">
+                                Manual
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-[#059669] bg-[#E6F9F0] px-2 py-0.5 rounded-md border border-[#059669]/30">
+                                Conectado
+                              </span>
                             )}
                           </div>
-                        ))
-                      )}
+
+                          {player.isManual && (
+                            <button
+                              onClick={() => handleRemoveManualPlayer(player.id)}
+                              className="text-[#8E869E] hover:text-[#E11D48] p-1.5 cursor-pointer"
+                              title="Eliminar jugador manual"
+                              aria-label="Eliminar jugador"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      ))
+                    )}
                   </div>
+
+                  {teamSelectionMode === 'manual' && teams && teams.length > 0 && (
+                    <div className="p-3 bg-white border border-[#EAE3D5] rounded-2xl shadow-2xs">
+                      <p className="text-[11px] font-bold text-[#6B6280] mb-1.5">
+                        Equipos disponibles para elegir desde el celular ({teams.length}):
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {teams.map((t, idx) => (
+                          <span
+                            key={idx}
+                            className="text-xs px-2.5 py-1 rounded-xl font-bold flex items-center gap-1.5 border shadow-2xs"
+                            style={{
+                              backgroundColor: `${t.color}15`,
+                              borderColor: `${t.color}40`,
+                              color: t.color,
+                            }}
+                          >
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
+                            {t.name} (0)
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="mb-6 space-y-4">
+                  {/* Newly arrived players waiting for team assignment */}
+                  {unassignedPlayers.length > 0 && (
+                    <div className="p-3.5 bg-[#FFF8F5] border-2 border-[#FF5722]/30 rounded-2xl shadow-xs animate-fade-in">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#FF5722] animate-pulse" />
+                          <p className="text-xs font-black text-[#181226]">
+                            Recién conectados sin equipo ({unassignedPlayers.length}):
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleShuffle}
+                          className="text-[11px] font-black text-[#FF5722] hover:underline cursor-pointer"
+                        >
+                          Sortear para incluir
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        {unassignedPlayers.map((p) => (
+                          <span
+                            key={p.id}
+                            className="text-xs px-2.5 py-1 rounded-xl bg-white border border-[#FF5722]/30 text-[#181226] font-bold shadow-2xs flex items-center gap-1"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#FF5722]" />
+                            {p.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
                     <p className="badge-tag text-[#6B6280]">
                       {gameMode === 'individual'
                         ? `Jugadores individuales (${teams.length})`
@@ -1694,7 +1779,7 @@ export default function HostLobby() {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                {!teams ? (
+                {!hasAssignedTeams ? (
                   <button
                     onClick={handleShuffle}
                     disabled={players.length < (gameMode === 'individual' ? 1 : 2) || isShuffling}

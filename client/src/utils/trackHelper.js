@@ -52,13 +52,44 @@ export function getTrackSource(item) {
   return 'url';
 }
 
+export function parseSongAndArtist(item) {
+  if (!item) return { title: 'Canción desconocida', artist: '', fullDisplay: 'Canción desconocida' };
+  let rawTitle = typeof item === 'object' ? (item.name || item.title || getTrackTitle(item)) : getTrackTitle(item);
+  let rawAuthor = typeof item === 'object' ? (item.author || item.artist || '') : '';
+
+  // Clean local file extensions (e.g. .mp3, .wav)
+  rawTitle = String(rawTitle || '').replace(/\.(mp3|wav|ogg|m4a|aac|flac)$/i, '').trim();
+
+  // If title is formatted as "Artist - Song Title"
+  if (rawTitle.includes(' - ')) {
+    const parts = rawTitle.split(' - ');
+    const possibleArtist = parts[0].trim();
+    const possibleSong = parts.slice(1).join(' - ').trim();
+    const artist = rawAuthor || possibleArtist;
+    return {
+      title: possibleSong,
+      artist,
+      fullDisplay: artist ? `${possibleSong} (${artist})` : possibleSong,
+    };
+  }
+
+  return {
+    title: rawTitle,
+    artist: rawAuthor,
+    fullDisplay: rawAuthor ? `${rawTitle} (${rawAuthor})` : rawTitle,
+  };
+}
+
 export function normalizeTrack(item) {
   if (!item) return null;
   if (typeof item === 'object') {
     return {
       id: item.id || `track_${Math.random().toString(36).slice(2, 9)}`,
       type: item.type || (isLocalTrack(item) ? 'local' : 'url'),
-      name: item.name || getTrackTitle(item),
+      name: item.name || item.title || getTrackTitle(item),
+      title: item.title || item.name || getTrackTitle(item),
+      author: item.author || item.artist || '',
+      artist: item.artist || item.author || '',
       url: item.url || '',
       size: item.size || null,
       fileId: item.fileId || item.id,
@@ -66,10 +97,15 @@ export function normalizeTrack(item) {
   }
   const str = String(item).trim();
   const source = getTrackSource(str);
+  const parsed = parseSongAndArtist(str);
   return {
     id: `track_${Math.random().toString(36).slice(2, 9)}`,
     type: source,
     name: getTrackTitle(str),
+    title: parsed.title,
+    author: parsed.artist,
+    artist: parsed.artist,
     url: str,
   };
 }
+

@@ -202,6 +202,17 @@ export default function HostGame() {
     setCurrentJudging(null);
   }, [roomCode, roundNumber]);
 
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (!autoStartedRef.current && roundNumber === 0 && playlist && playlist.length > 0) {
+      autoStartedRef.current = true;
+      const t = setTimeout(() => {
+        startNextRound();
+      }, 700);
+      return () => clearTimeout(t);
+    }
+  }, [playlist, roundNumber, startNextRound]);
+
   const replayAudio = useCallback(() => {
     musicPlayerRef.current?.replay();
   }, []);
@@ -490,6 +501,7 @@ export default function HostGame() {
 
                 <JudgePanel
                   currentBuzz={currentJudging || buzzQueue[0]}
+                  currentTrack={currentTrack}
                   onCorrect={judgeCorrect}
                   onIncorrect={judgeIncorrect}
                 />
@@ -546,6 +558,31 @@ export default function HostGame() {
                     Los pulsadores están habilitados en los teléfonos esperando respuestas...
                   </p>
                 </div>
+
+                {/* Host Solution Card — Visible only to Dedicated Host */}
+                {!autoHostEnabled && currentTrack && (
+                  <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FAF7F2] border-2 border-[#FF5722]/30 shadow-xs flex items-center justify-between text-left">
+                    <div className="min-w-0 flex-1 mr-3">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="w-2 h-2 rounded-full bg-[#FF5722] animate-pulse shrink-0" />
+                        <span className="text-[10px] font-black uppercase tracking-wider text-[#FF5722]">
+                          Solución para el Host (Ronda #{roundNumber})
+                        </span>
+                      </div>
+                      <p className="font-display text-sm sm:text-base font-black text-[#181226] truncate">
+                        {currentTrack.title || currentTrack.name || 'Pista de audio'}
+                      </p>
+                      {currentTrack.author && (
+                        <p className="text-xs font-bold text-[#6B6280] truncate mt-0.5">
+                          Artista: <span className="text-[#181226] font-bold">{currentTrack.author}</span>
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-white text-[#6B6280] border border-[#EAE3D5] shrink-0 shadow-2xs">
+                      Solo Host
+                    </span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <button

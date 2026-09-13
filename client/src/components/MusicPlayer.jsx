@@ -34,6 +34,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
   const [isRandomMode, setIsRandomMode] = useState(true);
   const queueSignatureRef = useRef('');
   const activeQueueRef = useRef([]);
+  const pendingPlayRef = useRef(null);
 
   const [currentTrack, setCurrentTrack] = useState(null);
   const [url, setUrl] = useState('');
@@ -310,6 +311,27 @@ const MusicPlayer = forwardRef(function MusicPlayer(
                 if (typeof d === 'number' && d > 0) setTrackDuration(d);
               } catch {
                 /* ignore */
+              }
+
+              if (pendingPlayRef.current) {
+                const target = pendingPlayRef.current.target || 0;
+                pendingPlayRef.current = null;
+                try {
+                  e.target.seekTo?.(target, true);
+                  e.target.unMute?.();
+                  e.target.setVolume?.(100);
+                  e.target.playVideo();
+                  setCurrentTrackTime(target);
+                  setIsPlaying(true);
+                  startProgress();
+
+                  if (timerRef.current) clearTimeout(timerRef.current);
+                  timerRef.current = setTimeout(() => {
+                    handlePause();
+                  }, playDuration * 1000);
+                } catch (err) {
+                  console.error('onReady pending play error:', err);
+                }
               }
             },
             onStateChange: (e) => {
@@ -588,24 +610,26 @@ const MusicPlayer = forwardRef(function MusicPlayer(
 
     // ── YouTube IFrame Audio Playback ────────────────────────
     if (mediaType === 'youtube') {
-      try {
-        const target = startTimeRef.current || 0;
-        if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
+      const target = startTimeRef.current || 0;
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
+        try {
           ytPlayerRef.current.seekTo?.(target, true);
           ytPlayerRef.current.unMute?.();
           ytPlayerRef.current.setVolume?.(100);
           ytPlayerRef.current.playVideo();
           setCurrentTrackTime(target);
-        }
-        
-        setIsPlaying(true);
-        startProgress();
+          setIsPlaying(true);
+          startProgress();
 
-        timerRef.current = setTimeout(() => {
-          handlePause();
-        }, playDuration * 1000);
-      } catch (e) {
-        console.error('YouTube play error:', e);
+          if (timerRef.current) clearTimeout(timerRef.current);
+          timerRef.current = setTimeout(() => {
+            handlePause();
+          }, playDuration * 1000);
+        } catch (e) {
+          console.error('YouTube play error:', e);
+        }
+      } else {
+        pendingPlayRef.current = { target };
       }
       return;
     }
@@ -748,22 +772,23 @@ const MusicPlayer = forwardRef(function MusicPlayer(
             console.error('Local playTrackForRound error:', err);
           }
         } else {
+          pendingPlayRef.current = { target: 0 };
           try {
             if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
+              pendingPlayRef.current = null;
               ytPlayerRef.current.seekTo?.(0, true);
               ytPlayerRef.current.unMute?.();
               ytPlayerRef.current.setVolume?.(100);
               ytPlayerRef.current.playVideo();
               setCurrentTrackTime(0);
+              setIsPlaying(true);
+              startProgress();
+
+              if (timerRef.current) clearTimeout(timerRef.current);
+              timerRef.current = setTimeout(() => {
+                handlePause();
+              }, playDuration * 1000);
             }
-
-            setIsPlaying(true);
-            startProgress();
-
-            if (timerRef.current) clearTimeout(timerRef.current);
-            timerRef.current = setTimeout(() => {
-              handlePause();
-            }, playDuration * 1000);
           } catch (err) {
             console.error('YT playTrackForRound error:', err);
           }
