@@ -1452,15 +1452,17 @@ export default function HostLobby() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {/* Stepper + Input */}
-                      <div className="flex items-center bg-white border border-[#EAE3D5] rounded-xl p-0.5 shadow-2xs">
+                      <div className="inline-flex items-center bg-white border-2 border-[#EAE3D5] rounded-xl shadow-2xs h-8 overflow-hidden">
                         <button
                           type="button"
                           onClick={() => handleInitManualTeams(Math.max(2, (teams?.length || 2) - 1))}
                           disabled={(teams?.length || 2) <= 2}
-                          className="w-7 h-7 rounded-lg text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer transition-colors"
+                          className="w-8 h-8 flex items-center justify-center text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] active:bg-[#EDE8DF] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                           title="Menos equipos"
                         >
-                          -
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+                          </svg>
                         </button>
                         <input
                           type="number"
@@ -1471,17 +1473,19 @@ export default function HostLobby() {
                             const val = parseInt(e.target.value, 10);
                             if (!isNaN(val) && val >= 2 && val <= 24) handleInitManualTeams(val);
                           }}
-                          className="w-10 text-center font-black text-xs text-[#181226] border-none focus:outline-none bg-transparent p-0"
+                          className="stepper-input w-10 h-8 font-display font-black text-sm text-[#181226] text-center"
                           title="Escribí la cantidad exacta de equipos"
                         />
                         <button
                           type="button"
                           onClick={() => handleInitManualTeams(Math.min(24, (teams?.length || 2) + 1))}
                           disabled={(teams?.length || 2) >= 24}
-                          className="w-7 h-7 rounded-lg text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer transition-colors"
+                          className="w-8 h-8 flex items-center justify-center text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] active:bg-[#EDE8DF] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                           title="Más equipos"
                         >
-                          +
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                          </svg>
                         </button>
                       </div>
 
@@ -1580,15 +1584,17 @@ export default function HostLobby() {
                     </div>
 
                     {/* Stepper + Custom Number Input */}
-                    <div className="flex items-center bg-white border border-[#EAE3D5] rounded-xl p-0.5 shadow-2xs shrink-0 self-start sm:self-auto">
+                    <div className="inline-flex items-center bg-white border-2 border-[#EAE3D5] rounded-xl shadow-2xs h-8 overflow-hidden shrink-0 self-start sm:self-auto">
                       <button
                         type="button"
                         onClick={() => handleChangeTeamSize(Math.max(1, (maxPlayersPerTeam || 4) - 1))}
                         disabled={(maxPlayersPerTeam || 4) <= 1}
-                        className="w-8 h-8 rounded-lg text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer transition-colors"
+                        className="w-8 h-8 flex items-center justify-center text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] active:bg-[#EDE8DF] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                         title="Menos jugadores por equipo"
                       >
-                        -
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+                        </svg>
                       </button>
                       <input
                         type="number"
@@ -1599,17 +1605,19 @@ export default function HostLobby() {
                           const val = parseInt(e.target.value, 10);
                           if (!isNaN(val) && val >= 1 && val <= 50) handleChangeTeamSize(val);
                         }}
-                        className="w-12 text-center font-black text-xs text-[#181226] border-none focus:outline-none bg-transparent p-0"
+                        className="stepper-input w-10 h-8 font-display font-black text-sm text-[#181226] text-center"
                         title="Escribí cualquier cantidad de integrantes por equipo"
                       />
                       <button
                         type="button"
                         onClick={() => handleChangeTeamSize(Math.min(50, (maxPlayersPerTeam || 4) + 1))}
                         disabled={(maxPlayersPerTeam || 4) >= 50}
-                        className="w-8 h-8 rounded-lg text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer transition-colors"
+                        className="w-8 h-8 flex items-center justify-center text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] active:bg-[#EDE8DF] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                         title="Más jugadores por equipo"
                       >
-                        +
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
                       </button>
                     </div>
                   </div>

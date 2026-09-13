@@ -231,6 +231,37 @@ select {
   font-family: inherit;
 }
 
+/* Remove default spin buttons on number inputs across all browsers */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Stepper number input reset (eliminates nested pill border and aligns text dead-center) */
+.stepper-input {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent !important;
+  text-align: center !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: textfield !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.stepper-input:focus {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 input:focus,
 textarea:focus,
 select:focus {
