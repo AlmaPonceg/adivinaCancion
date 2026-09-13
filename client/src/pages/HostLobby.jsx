@@ -708,39 +708,13 @@ export default function HostLobby() {
                       </button>
                     </div>
 
-                    {/* URL Display with Manual Override button */}
-                    <div className="w-full bg-[#FAF7F2] px-3.5 py-2.5 rounded-xl border border-[#EAE3D5] flex items-center justify-between gap-2 text-left shadow-inner">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF5722] shrink-0" />
-                        <span className="mono text-[10.5px] text-[#181226] font-bold truncate select-all">
-                          {joinUrl}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => setIsEditingUrl(!isEditingUrl)}
-                        className="text-[10px] font-mono font-bold text-[#FF5722] hover:text-[#E11D48] px-2 py-0.5 rounded bg-white border border-[#EAE3D5] shrink-0 cursor-pointer shadow-2xs"
-                      >
-                        {isEditingUrl ? 'Cerrar' : 'IP'}
-                      </button>
+                    {/* URL Display */}
+                    <div className="w-full bg-[#FAF7F2] px-3 py-2 rounded-xl border border-[#EAE3D5] flex items-center gap-1.5 text-left shadow-inner">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF5722] shrink-0" />
+                      <span className="mono text-[11px] text-[#181226] font-bold truncate select-all">
+                        {joinUrl}
+                      </span>
                     </div>
-
-                    {isEditingUrl && (
-                      <div className="w-full pt-2 border-t border-[#EAE3D5] flex gap-2">
-                        <input
-                          type="text"
-                          value={urlInput}
-                          onChange={(e) => setUrlInput(e.target.value)}
-                          placeholder="192.168.1.15:5173 o mitunel.ngrok.io"
-                          className="flex-1 px-2.5 py-1 text-xs font-mono rounded-lg border border-[#EAE3D5] bg-white text-[#181226]"
-                        />
-                        <button
-                          onClick={handleSaveCustomUrl}
-                          className="arcade-btn-primary px-3 py-1 text-xs font-bold shrink-0"
-                        >
-                          OK
-                        </button>
-                      </div>
-                    )}
                   </div>
 
                   {/* BOTTOM: Playlist Status & Edit Button */}
