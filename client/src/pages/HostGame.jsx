@@ -11,6 +11,34 @@ import { playHostBuzzerSound } from '../utils/audioEffects';
 import { hydratePlaylistTracks } from '../utils/audioStorage';
 import { lobbyAudioManager } from '../utils/lobbyAudio';
 import { parseSongAndArtist } from '../utils/trackHelper';
+import SpotlightTutorial from '../components/SpotlightTutorial';
+
+const GAME_TUTORIAL_STEPS = [
+  {
+    targetId: 'tour-game-scoreboard',
+    title: '1. Tabla de Posiciones',
+    description: 'Acá ves en vivo el puntaje de cada equipo o participante y quién va liderando la partida.',
+    placement: 'bottom',
+  },
+  {
+    targetId: 'tour-game-music-player',
+    title: '2. Reproductor de Audio',
+    description: 'Controlá la reproducción, regulá el volumen general o ajustá cuántos segundos suena la canción antes de detenerse.',
+    placement: 'right',
+  },
+  {
+    targetId: 'tour-game-master-card',
+    title: '3. Control de Ronda & Jurado',
+    description: 'Presioná "Iniciar Ronda" para que suene la música. Cuando un jugador toque el pulsador en su celular, acá podrás marcar si acertó o falló.',
+    placement: 'left',
+  },
+  {
+    targetId: 'tour-game-autohost-btn',
+    title: '4. Auto-Host (Todos Juegan)',
+    description: 'Activá el modo Auto-Host si querés que el juego avance solo y las canciones se revelen automáticamente para que vos también juegues.',
+    placement: 'bottom',
+  },
+];
 
 export default function HostGame() {
   const location = useLocation();
@@ -89,6 +117,20 @@ export default function HostGame() {
   const [autoAdvanceTimer, setAutoAdvanceTimer] = useState(null);
   const [isAutoAdvancePaused, setIsAutoAdvancePaused] = useState(false);
   const [speakCountdown, setSpeakCountdown] = useState(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Auto-show tutorial on first game entry if round hasn't started yet
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem('trivia_host_game_tutorial_seen');
+      if (!seen && roundNumber === 0) {
+        const timer = setTimeout(() => setShowTutorial(true), 600);
+        return () => clearTimeout(timer);
+      }
+    } catch {
+      // Safe fallback
+    }
+  }, [roundNumber]);
 
   useEffect(() => {
     if (!roomCode) {
@@ -418,6 +460,17 @@ export default function HostGame() {
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
+            onClick={() => setShowTutorial(true)}
+            className="arcade-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-[#6B6280] hover:text-[#FF5722] flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            title="Ver tutorial guiado de los controles de la partida"
+          >
+            <span className="w-4 h-4 rounded-full bg-[#FF5722] text-white flex items-center justify-center text-[10px] font-black leading-none">?</span>
+            <span>Tutorial</span>
+          </button>
+
+          <button
+            id="tour-game-autohost-btn"
+            type="button"
             onClick={toggleAutoHost}
             className={`px-3 py-1.5 rounded-xl text-xs font-tactical font-black transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs ${
               autoHostEnabled
@@ -440,14 +493,14 @@ export default function HostGame() {
       </div>
 
       {/* Top Section: Team Scoreboard */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-5 sm:pt-6">
+      <div id="tour-game-scoreboard" className="max-w-7xl mx-auto px-4 sm:px-8 pt-5 sm:pt-6">
         <Scoreboard teams={teams} />
       </div>
 
       {/* Main Content Grid: Audio Deck on Left, Master Round Console on Right */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-5 sm:py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Dedicated Audio Deck (No video, pure audio & visualizer) */}
-        <div className="lg:col-span-6 xl:col-span-5 space-y-6">
+        <div id="tour-game-music-player" className="lg:col-span-6 xl:col-span-5 space-y-6">
           <MusicPlayer
             ref={musicPlayerRef}
             roomCode={roomCode}
@@ -463,6 +516,7 @@ export default function HostGame() {
         <div className="lg:col-span-6 xl:col-span-7 space-y-5">
           {/* Master Round Control Card */}
           <motion.div
+            id="tour-game-master-card"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             className="party-card p-6 sm:p-7 rounded-[2rem] relative overflow-hidden"
@@ -879,6 +933,14 @@ export default function HostGame() {
           </div>
         </div>
       )}
+
+      {/* In-Game Controls Guided Tutorial */}
+      <SpotlightTutorial
+        steps={GAME_TUTORIAL_STEPS}
+        isOpen={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        storageKey="trivia_host_game_tutorial_seen"
+      />
     </div>
   );
 }

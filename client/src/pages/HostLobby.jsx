@@ -7,8 +7,48 @@ import TeamDisplay from '../components/TeamDisplay';
 import LobbyAudio from '../components/LobbyAudio';
 import PlaylistSetup from '../components/PlaylistSetup';
 import GameModeSelector, { GAME_MODES } from '../components/GameModeSelector';
+import SpotlightTutorial from '../components/SpotlightTutorial';
 import { lobbyAudioManager } from '../utils/lobbyAudio';
 import { hydratePlaylistTracks } from '../utils/audioStorage';
+
+const LOBBY_TUTORIAL_STEPS = [
+  {
+    targetId: 'tour-room-access',
+    title: '1. Código y QR de la Sala',
+    description: 'Tus invitados se unen escaneando este código QR con la cámara de su teléfono o ingresando el código de 4 letras desde la pantalla inicial.',
+    placement: 'right',
+  },
+  {
+    targetId: 'tour-share-links',
+    title: '2. Compartir la Sala',
+    description: '¿Hay amigos jugando a la distancia? Tocá "WhatsApp" para mandarles la invitación directa o "Copiar Link" para enviarlo por cualquier chat.',
+    placement: 'right',
+  },
+  {
+    targetId: 'tour-mode-badge',
+    title: '3. Modalidad de Juego',
+    description: 'Elegí cómo compiten: en equipos automáticos balanceados, equipos elegidos por los participantes, modo individual de todos contra todos, o Auto-Host para que vos también juegues sin ver las soluciones.',
+    placement: 'bottom',
+  },
+  {
+    targetId: 'tour-playlist-strip',
+    title: '4. Playlist de Canciones',
+    description: 'Acá ves la cantidad de canciones cargadas. Podés tocar "Editar Playlist" en cualquier momento para agregar más canciones de YouTube, subir audios locales o elegir listas guardadas.',
+    placement: 'right',
+  },
+  {
+    targetId: 'tour-players-section',
+    title: '5. Participantes e Invitados',
+    description: 'A medida que tus amigos entren, van a aparecer acá en tiempo real. Si alguien no tiene celular o se quedó sin batería, tocas "+ Invitado sin celular" para sumarlo a mano.',
+    placement: 'left',
+  },
+  {
+    targetId: 'tour-action-bar',
+    title: '6. ¡Sortear e Iniciar la Fiesta!',
+    description: 'Cuando estén todos los participantes conectados, presioná este botón para sortear los equipos balanceados. Luego tocas "Iniciar Partida" ¡y empieza la música!',
+    placement: 'top',
+  },
+];
 
 export default function HostLobby() {
   const navigate = useNavigate();
@@ -21,6 +61,22 @@ export default function HostLobby() {
 
   // ── Step State: 'mode' | 'playlist' | 'lobby' ───────────────
   const [setupStep, setSetupStep] = useState('mode');
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Auto-launch tutorial on first visit to the lobby
+  useEffect(() => {
+    if (setupStep === 'lobby') {
+      try {
+        const seen = localStorage.getItem('trivia_host_tutorial_seen');
+        if (!seen) {
+          const timer = setTimeout(() => setShowTutorial(true), 500);
+          return () => clearTimeout(timer);
+        }
+      } catch {
+        // Safe fallback if localStorage is blocked
+      }
+    }
+  }, [setupStep]);
 
   // ── Playlist State ──────────────────────────────────────────
   const [playlist, setPlaylist] = useState(() => {
@@ -514,6 +570,7 @@ export default function HostLobby() {
 
             {/* Quick Button to Change Mode */}
             <button
+              id="tour-mode-badge"
               type="button"
               onClick={() => setSetupStep('mode')}
               className="px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs hover:brightness-95"
@@ -545,6 +602,15 @@ export default function HostLobby() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowTutorial(true)}
+              className="arcade-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-[#6B6280] hover:text-[#FF5722] flex items-center gap-1.5 cursor-pointer"
+              title="Ver tutorial guiado de la pantalla"
+            >
+              <span className="w-4 h-4 rounded-full bg-[#FF5722] text-white flex items-center justify-center text-[10px] font-black leading-none">?</span>
+              <span>Tutorial</span>
+            </button>
             <LobbyAudio />
             <button
               id="spawn-bots-btn"
@@ -568,48 +634,50 @@ export default function HostLobby() {
             <div className="party-card p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-between h-full shadow-sm">
               {roomCode ? (
                 <>
-                  {/* VIP Access Ribbon */}
-                  <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] text-[#181226] mb-2 shadow-2xs">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#059669] animate-pulse" />
-                      <span className="font-tactical font-black text-[11px] tracking-widest uppercase text-[#6B6280]">
-                        Acceso de Invitados
-                      </span>
-                    </div>
-                    <span className="font-mono text-xs text-[#FF5722] font-black">
-                      SALA {roomCode}
-                    </span>
-                  </div>
-
-                  {/* 3D Physical Arcade Digit Tiles */}
-                  <div className="flex gap-2.5 justify-center my-auto">
-                    {roomCode.split('').map((digit, i) => (
-                      <div
-                        key={i}
-                        className="relative flex flex-col items-center justify-center w-12 h-14 bg-white rounded-xl border-2 border-[#FF5722] shadow-[0_4px_0_#E64A19] overflow-hidden"
-                      >
-                        <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-[#FFF5F0] to-transparent pointer-events-none" />
-                        <span className="font-display font-black text-2xl text-[#FF5722] z-10 leading-none">
-                          {digit}
+                  {/* VIP Access Ribbon + Digits + QR */}
+                  <div id="tour-room-access" className="w-full flex flex-col items-center">
+                    <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] text-[#181226] mb-2 shadow-2xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#059669] animate-pulse" />
+                        <span className="font-tactical font-black text-[11px] tracking-widest uppercase text-[#6B6280]">
+                          Acceso de Invitados
                         </span>
                       </div>
-                    ))}
-                  </div>
+                      <span className="font-mono text-xs text-[#FF5722] font-black">
+                        SALA {roomCode}
+                      </span>
+                    </div>
 
-                  {/* Target Framed QR Code */}
-                  <div className="relative p-2.5 rounded-2xl bg-white border-2 border-[#EAE3D5] shadow-xs my-auto group">
-                    <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-[#FF5722] rounded-tl-sm pointer-events-none" />
-                    <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-[#FF5722] rounded-tr-sm pointer-events-none" />
-                    <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-[#FF5722] rounded-bl-sm pointer-events-none" />
-                    <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-[#FF5722] rounded-br-sm pointer-events-none" />
-                    <QRDisplay value={joinUrl} size={145} />
+                    {/* 3D Physical Arcade Digit Tiles */}
+                    <div className="flex gap-2.5 justify-center my-auto">
+                      {roomCode.split('').map((digit, i) => (
+                        <div
+                          key={i}
+                          className="relative flex flex-col items-center justify-center w-12 h-14 bg-white rounded-xl border-2 border-[#FF5722] shadow-[0_4px_0_#E64A19] overflow-hidden"
+                        >
+                          <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-[#FFF5F0] to-transparent pointer-events-none" />
+                          <span className="font-display font-black text-2xl text-[#FF5722] z-10 leading-none">
+                            {digit}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Target Framed QR Code */}
+                    <div className="relative p-2.5 rounded-2xl bg-white border-2 border-[#EAE3D5] shadow-xs my-auto group">
+                      <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-[#FF5722] rounded-tl-sm pointer-events-none" />
+                      <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-[#FF5722] rounded-tr-sm pointer-events-none" />
+                      <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-[#FF5722] rounded-bl-sm pointer-events-none" />
+                      <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-[#FF5722] rounded-br-sm pointer-events-none" />
+                      <QRDisplay value={joinUrl} size={145} />
+                    </div>
+                    <p className="text-xs font-bold text-[#6B6280] text-center my-1">
+                      Escaneen con la cámara del celular para entrar
+                    </p>
                   </div>
-                  <p className="text-xs font-bold text-[#6B6280] text-center my-1">
-                    Escaneen con la cámara del celular para entrar
-                  </p>
 
                   {/* Share buttons */}
-                  <div className="w-full grid grid-cols-2 gap-2 my-1">
+                  <div id="tour-share-links" className="w-full grid grid-cols-2 gap-2 my-1">
                     <button
                       onClick={handleShareWhatsApp}
                       className="arcade-btn-mint py-2 px-3 rounded-xl font-tactical font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer"
@@ -672,7 +740,7 @@ export default function HostLobby() {
                   )}
 
                   {/* Clean Bottom Strip: Playlist Quick Status & Edit Button */}
-                  <div className="w-full mt-auto pt-3 border-t border-[#EAE3D5] flex items-center justify-between">
+                  <div id="tour-playlist-strip" className="w-full mt-auto pt-3 border-t border-[#EAE3D5] flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="w-8 h-8 rounded-xl bg-[#FFF0EB] border border-[#FF5722]/30 flex items-center justify-center text-[#FF5722] shrink-0">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -721,7 +789,7 @@ export default function HostLobby() {
 
           {/* RIGHT COLUMN: Jugadores, Carga Manual y Equipos (7 cols) */}
           <div className="lg:col-span-7 flex flex-col h-full min-h-0">
-            <div className="party-card p-3.5 sm:p-4 rounded-2xl flex-1 flex flex-col min-h-0 justify-between shadow-sm">
+            <div id="tour-players-section" className="party-card p-3.5 sm:p-4 rounded-2xl flex-1 flex flex-col min-h-0 justify-between shadow-sm">
               {/* Top Configuration Strip */}
               <div className="pb-2 border-b border-[#EAE3D5] shrink-0 space-y-2">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -1046,7 +1114,7 @@ export default function HostLobby() {
               </div>
 
               {/* Bottom Action Bar */}
-              <div className="pt-2.5 border-t border-[#EAE3D5] shrink-0 w-full">
+              <div id="tour-action-bar" className="pt-2.5 border-t border-[#EAE3D5] shrink-0 w-full">
                 {!hasAssignedTeams ? (
                   players.length < (gameMode === 'individual' ? 1 : 2) ? (
                     <div className="w-full flex items-center justify-between p-2.5 sm:p-3 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] shadow-inner gap-2">
@@ -1134,6 +1202,14 @@ export default function HostLobby() {
             </div>
           </div>
         </div>
+
+        {/* Interactive Guided Spotlight Tutorial */}
+        <SpotlightTutorial
+          steps={LOBBY_TUTORIAL_STEPS}
+          isOpen={showTutorial}
+          onClose={() => setShowTutorial(false)}
+          storageKey="trivia_host_tutorial_seen"
+        />
       </div>
     </div>
   );
