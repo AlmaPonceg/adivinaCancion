@@ -686,7 +686,7 @@ export default function HostLobby() {
 
   if (!isModeConfirmed) {
     return (
-      <div className="min-h-dvh p-3.5 sm:p-6 md:p-8 flex flex-col items-center justify-center relative overflow-hidden text-[var(--color-text-primary)]">
+      <div className="h-screen max-h-screen p-3 sm:p-4 md:p-6 flex items-center justify-center relative overflow-hidden text-[var(--color-text-primary)]">
         {/* Dynamic ambient color glow matching the current preview/mode */}
         <div
           className="absolute -top-12 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-20 pointer-events-none transition-all duration-700"
@@ -697,23 +697,12 @@ export default function HostLobby() {
           style={{ backgroundColor: currentTheme.color }}
         />
 
-        <div className="w-full max-w-6xl relative z-10">
-          <div className="mb-4">
-            <button
-              onClick={() => navigate('/')}
-              className="arcade-btn px-4 py-2 rounded-xl text-xs font-black text-[#181226] hover:text-[#FF5722] flex items-center gap-2 cursor-pointer shadow-xs active:translate-y-0.5 transition-all"
-            >
-              <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              <span>Volver al Inicio</span>
-            </button>
-          </div>
-
+        <div className="w-full max-w-xl relative z-10 flex items-center justify-center">
           <GameModeSelector
             roomCode={roomCode}
             initialParams={{ gameMode, teamSelectionMode, autoHostEnabled, maxPlayersPerTeam }}
             onConfirm={handleConfirmGameModeFromSelector}
+            onBack={() => navigate('/')}
           />
         </div>
       </div>
