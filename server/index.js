@@ -235,7 +235,7 @@ app.get('/api/search-songs', async (req, res) => {
 app.post('/api/dj-bot-generate', async (req, res) => {
   try {
     const { genre = 'all', decade = 'all', language = 'all', count = 15 } = req.body;
-    const requestedCount = Math.min(30, Math.max(5, parseInt(count, 10) || 15));
+    const requestedCount = Math.min(30, Math.max(1, parseInt(count, 10) || 15));
     console.log(`[DJ Bot] Generando playlist: género=${genre}, década=${decade}, idioma=${language}, cantidad=${requestedCount}`);
 
     const candidates = selectDjSongCandidates({ genre, decade, language, count: requestedCount });
@@ -602,9 +602,10 @@ io.on('connection', (socket) => {
   });
 
   // ── HOST: Set Game Mode ('teams' vs 'individual') ──────────
-  socket.on('set-game-mode', ({ roomCode, gameMode }, callback) => {
+  socket.on('set-game-mode', ({ roomCode, gameMode, mode }, callback) => {
     const code = String(roomCode || '').trim().toUpperCase();
-    const res = gm.setGameMode(code, gameMode);
+    const targetMode = gameMode || mode;
+    const res = gm.setGameMode(code, targetMode);
     if (res.error) return callback?.({ error: res.error });
 
     const roomState = gm.getRoomState(code);
@@ -716,7 +717,7 @@ io.on('connection', (socket) => {
   });
 
   // ── HOST: Start Game (Transition from Lobby to Game) ────────
-  socket.on('host-start-game', ({ roomCode }, callback) => {
+  const handleStartGame = ({ roomCode }, callback) => {
     const room = gm.getRoom(roomCode);
     if (!room) return callback?.({ error: 'Sala no encontrada' });
 
@@ -728,7 +729,9 @@ io.on('connection', (socket) => {
     });
     broadcastPlayerStates(roomCode);
     callback?.({ success: true });
-  });
+  };
+  socket.on('host-start-game', handleStartGame);
+  socket.on('start-game', handleStartGame);
 
   // ── HOST: Start Round ──────────────────────────────────────
 
