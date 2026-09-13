@@ -590,27 +590,6 @@ export default function HostLobby() {
 
           <div className="flex items-center gap-2">
             <LobbyAudio />
-            <button
-              type="button"
-              onClick={() => setShowTutorial(true)}
-              className="arcade-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-[#6B6280] hover:text-[#FF5722] flex items-center gap-1.5 cursor-pointer"
-              title="Ver tutorial guiado de la pantalla"
-            >
-              <span className="w-4 h-4 rounded-full bg-[#FF5722] text-white flex items-center justify-center text-[10px] font-black leading-none">?</span>
-              <span>Tutorial</span>
-            </button>
-            <button
-              id="spawn-bots-btn"
-              onClick={handleSpawnBots}
-              disabled={isSpawningBots || !roomCode}
-              title="Simular 100 bots de prueba"
-              className="arcade-btn px-3 py-1.5 rounded-xl text-xs font-bold text-[#6B6280] hover:text-[#FF5722] flex items-center gap-1.5 cursor-pointer"
-            >
-              <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <span>{isSpawningBots ? '100 bots...' : '+100 Bots'}</span>
-            </button>
           </div>
         </div>
 
@@ -1077,30 +1056,20 @@ export default function HostLobby() {
               <div id="tour-action-bar" className="pt-2.5 border-t border-[#EAE3D5] shrink-0 w-full">
                 {!hasAssignedTeams ? (
                   players.length < (gameMode === 'individual' ? 1 : 2) ? (
-                    <div className="w-full flex items-center justify-between p-2.5 sm:p-3 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] shadow-inner gap-2">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-xl bg-[#FFF0EB] border border-[#FF5722]/30 flex items-center justify-center text-[#FF5722] font-black text-xs shrink-0">
-                          {players.length}/{gameMode === 'individual' ? '1' : '2'}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-black text-[#181226] truncate">
-                            {gameMode === 'individual'
-                              ? 'Se necesita al menos 1 participante'
-                              : 'Se necesitan al menos 2 participantes para sortear equipos'}
-                          </p>
-                          <p className="text-[10px] text-[#6B6280] truncate">
-                            Escaneen el QR desde el celular o sumá bots para probar.
-                          </p>
-                        </div>
+                    <div className="w-full flex items-center p-2.5 sm:p-3 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] shadow-inner gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-[#FFF0EB] border border-[#FF5722]/30 flex items-center justify-center text-[#FF5722] font-black text-xs shrink-0">
+                        {players.length}/{gameMode === 'individual' ? '1' : '2'}
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleSpawnBots}
-                        disabled={isSpawningBots || !roomCode}
-                        className="arcade-btn px-3 py-1.5 rounded-xl text-xs font-bold text-[#FF5722] shrink-0 cursor-pointer"
-                      >
-                        {isSpawningBots ? 'Conectando...' : '+ Conectar Bots'}
-                      </button>
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-[#181226] truncate">
+                          {gameMode === 'individual'
+                            ? 'Se necesita al menos 1 participante para armar la partida'
+                            : 'Se necesitan al menos 2 participantes para sortear equipos'}
+                        </p>
+                        <p className="text-[10px] text-[#6B6280] truncate">
+                          Escaneen el QR con la cámara del celular para sumarse.
+                        </p>
+                      </div>
                     </div>
                   ) : (
                     <button
@@ -1162,6 +1131,19 @@ export default function HostLobby() {
             </div>
           </div>
         </div>
+
+        {/* Floating Round Tutorial Help Button (Bottom-Right) */}
+        <button
+          type="button"
+          onClick={() => setShowTutorial(true)}
+          className="fixed bottom-4 right-4 z-40 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-[#EAE3D5] text-[#FF5722] hover:bg-[#FFF0EB] hover:scale-110 active:scale-95 shadow-md flex items-center justify-center cursor-pointer transition-all group"
+          title="Ver tutorial guiado"
+          aria-label="Ver tutorial"
+        >
+          <span className="font-display font-black text-lg sm:text-xl leading-none group-hover:scale-110 transition-transform">
+            ?
+          </span>
+        </button>
 
         {/* Interactive Guided Spotlight Tutorial */}
         <SpotlightTutorial
