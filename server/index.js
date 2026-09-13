@@ -234,11 +234,19 @@ app.get('/api/search-songs', async (req, res) => {
 // DJ Bot automatic playlist generator
 app.post('/api/dj-bot-generate', async (req, res) => {
   try {
-    const { genre = 'all', decade = 'all', language = 'all', count = 15 } = req.body;
+    const { genre = 'all', decade = 'all', language = 'all', count = 15, excludeTitles = [] } = req.body;
     const requestedCount = Math.min(30, Math.max(1, parseInt(count, 10) || 15));
-    console.log(`[DJ Bot] Generando playlist: género=${genre}, década=${decade}, idioma=${language}, cantidad=${requestedCount}`);
+    console.log(
+      `[DJ Bot] Generando playlist: género=${genre}, década=${decade}, idioma=${language}, cantidad=${requestedCount}, excluidas=${Array.isArray(excludeTitles) ? excludeTitles.length : 0}`
+    );
 
-    const candidates = selectDjSongCandidates({ genre, decade, language, count: requestedCount });
+    const candidates = selectDjSongCandidates({
+      genre,
+      decade,
+      language,
+      count: requestedCount,
+      excludeTitles,
+    });
     const yt = await getInnertube();
 
     const playlist = [];

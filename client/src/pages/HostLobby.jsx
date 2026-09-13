@@ -784,28 +784,27 @@ export default function HostLobby() {
               {roomCode ? (
                 <>
                   {/* VIP Access Ribbon */}
-                  <div className="w-full flex items-center justify-between px-2.5 py-1 rounded-xl bg-[#181226] text-white mb-2 shadow-xs">
+                  <div className="w-full flex items-center justify-between px-2.5 py-1 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] text-[#181226] mb-2 shadow-2xs">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-                      <span className="font-tactical font-black text-[10px] tracking-widest uppercase text-[#DDD5C5]">
+                      <span className="w-2 h-2 rounded-full bg-[#059669] animate-pulse" />
+                      <span className="font-tactical font-black text-[10px] tracking-widest uppercase text-[#6B6280]">
                         Acceso de Invitados
                       </span>
                     </div>
-                    <span className="font-mono text-[10px] text-[#FF9800] font-bold">
+                    <span className="font-mono text-xs text-[#FF5722] font-black">
                       SALA {roomCode}
                     </span>
                   </div>
 
-                  {/* Retro Flip Scoreboard Digits */}
+                  {/* 3D Physical Arcade Digit Tiles */}
                   <div className="flex gap-2 justify-center mb-2">
                     {roomCode.split('').map((digit, i) => (
                       <div
                         key={i}
-                        className="relative flex flex-col items-center justify-center w-11 h-13 bg-[#181226] rounded-xl border-2 border-[#2E2445] shadow-[0_4px_10px_rgba(24,18,38,0.25)] overflow-hidden"
+                        className="relative flex flex-col items-center justify-center w-11 h-13 bg-white rounded-xl border-2 border-[#FF5722] shadow-[0_4px_0_#E64A19] overflow-hidden"
                       >
-                        <div className="absolute top-0 inset-x-0 h-1/2 bg-white/5 pointer-events-none" />
-                        <div className="absolute inset-x-0 top-1/2 h-[1px] bg-black/40" />
-                        <span className="font-mono font-black text-2xl text-[#FF9800] drop-shadow-[0_2px_4px_rgba(255,152,0,0.3)] z-10">
+                        <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-[#FFF5F0] to-transparent pointer-events-none" />
+                        <span className="font-display font-black text-2xl text-[#FF5722] z-10 leading-none">
                           {digit}
                         </span>
                       </div>
@@ -1817,6 +1816,7 @@ export default function HostLobby() {
         isOpen={isDjBotOpen}
         onClose={() => setIsDjBotOpen(false)}
         onPlaylistGenerated={handleDjBotGenerated}
+        existingPlaylist={playlist}
         serverUrl={SERVER_URL}
       />
 

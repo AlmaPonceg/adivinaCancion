@@ -26,7 +26,7 @@ const LANGUAGES = [
   { id: 'en', label: 'En Inglés' },
 ];
 
-export default function DjBotModal({ isOpen, onClose, onPlaylistGenerated, serverUrl }) {
+export default function DjBotModal({ isOpen, onClose, onPlaylistGenerated, existingPlaylist = [], serverUrl }) {
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [selectedDecade, setSelectedDecade] = useState('all');
   const [selectedLanguage, setSelectedLanguage] = useState('all');
@@ -42,6 +42,13 @@ export default function DjBotModal({ isOpen, onClose, onPlaylistGenerated, serve
 
     try {
       const endpoint = serverUrl || window.location.origin;
+      const excludeTitles = (existingPlaylist || [])
+        .map((t) => {
+          if (typeof t === 'string') return t;
+          return t.title || t.name || t.displayTitle || '';
+        })
+        .filter(Boolean);
+
       const res = await fetch(`${endpoint}/api/dj-bot-generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -50,6 +57,7 @@ export default function DjBotModal({ isOpen, onClose, onPlaylistGenerated, serve
           decade: selectedDecade,
           language: selectedLanguage,
           count: songCount,
+          excludeTitles,
         }),
       });
 
