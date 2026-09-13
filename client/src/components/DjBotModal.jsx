@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import PlaylistLoadingModal from './PlaylistLoadingModal';
 
 const GENRES = [
   { id: 'all', label: 'Variado Fiesta (Mezcla)', desc: 'Un poco de todo lo más conocido y bailable' },
@@ -250,6 +251,13 @@ export default function DjBotModal({ isOpen, onClose, onPlaylistGenerated, serve
           </div>
         </motion.div>
       </div>
+
+      <PlaylistLoadingModal
+        isOpen={isLoading}
+        tag="DJ BOT EN ACCIÓN"
+        title="Generando Playlist con DJ Bot"
+        subtitle="Buscando las mejores canciones en YouTube y organizando la lista sin spoilers."
+      />
     </AnimatePresence>
   );
 }

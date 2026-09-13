@@ -7,6 +7,7 @@ import QRDisplay from '../components/QRDisplay';
 import TeamDisplay from '../components/TeamDisplay';
 import LobbyAudio from '../components/LobbyAudio';
 import DjBotModal from '../components/DjBotModal';
+import PlaylistLoadingModal from '../components/PlaylistLoadingModal';
 import GameModeSelector, { GAME_MODES } from '../components/GameModeSelector';
 import { lobbyAudioManager } from '../utils/lobbyAudio';
 import {
@@ -1877,6 +1878,14 @@ export default function HostLobby() {
         onClose={() => setIsDjBotOpen(false)}
         onPlaylistGenerated={handleDjBotGenerated}
         serverUrl={SERVER_URL}
+      />
+
+      {/* Playlist Loading Modal for URL / list imports */}
+      <PlaylistLoadingModal
+        isOpen={isLoadingPlaylist}
+        tag="PROCESANDO PLAYLIST"
+        title="Cargando Canciones"
+        subtitle="Buscando las pistas en YouTube y organizando la lista sin spoilers."
       />
 
       {/* Modal de confirmación para Vaciar Playlist */}
