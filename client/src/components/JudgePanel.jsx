@@ -2,8 +2,14 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { parseSongAndArtist } from '../utils/trackHelper';
 
-export default function JudgePanel({ currentBuzz, currentTrack, onCorrect, onIncorrect }) {
-  const [showSolution, setShowSolution] = useState(true);
+export default function JudgePanel({
+  currentBuzz,
+  currentTrack,
+  onCorrect,
+  onIncorrect,
+  isAutoHost = false,
+}) {
+  const [showSolution, setShowSolution] = useState(!isAutoHost);
 
   if (!currentBuzz) return null;
 
@@ -58,55 +64,99 @@ export default function JudgePanel({ currentBuzz, currentTrack, onCorrect, onInc
         )}
       </motion.div>
 
-      {/* Host Answer Reveal Card — Single Source of Truth for Host Decision */}
-      {currentTrack && (
+      {/* Decision Card: Veredicto Popular en Auto-Host vs Solución en Host Humano */}
+      {isAutoHost ? (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#FFF8F5] to-[#FAF7F2] border-2 border-[#FF5722]/40 shadow-xs relative overflow-hidden text-left"
+          className="p-4 sm:p-5 rounded-2xl bg-[#FAF7F2] border-2 border-[#EAE3D5] shadow-xs text-left"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#FF5722] animate-pulse shrink-0" />
-              <span className="text-[11px] font-black uppercase tracking-wider text-[#FF5722]">
-                Solución de la Canción (Solo Host)
+              <span className="w-2.5 h-2.5 rounded-full bg-[#059669] animate-pulse shrink-0" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#059669]">
+                Veredicto de la Sala (Modo Todos Juegan)
               </span>
             </div>
             <button
               type="button"
               onClick={() => setShowSolution(!showSolution)}
-              className="text-[11px] font-bold text-[#6B6280] hover:text-[#181226] underline cursor-pointer"
+              className="text-[10px] font-bold text-[#6B6280] hover:text-[#181226] underline cursor-pointer"
             >
-              {showSolution ? 'Ocultar' : 'Mostrar'}
+              {showSolution ? 'Ocultar Solución' : 'Ver Solución (Solo en duda)'}
             </button>
           </div>
 
           {showSolution ? (
-            <div className="space-y-1">
-              <p className="text-[11px] font-bold text-[#6B6280] uppercase tracking-wider">
-                Título correcto:
+            <div className="space-y-1 p-3 rounded-xl bg-white border border-[#FF5722]/30 mb-2 shadow-xs">
+              <p className="text-[10px] font-bold text-[#FF5722] uppercase tracking-wider">
+                Solución revelada:
               </p>
-              <h4 className="font-display text-xl sm:text-2xl font-black text-[#181226] leading-tight">
+              <h4 className="font-display text-lg font-black text-[#181226] leading-tight">
                 {songTitle || 'Pista sin título'}
               </h4>
               {songArtist && (
-                <p className="text-xs sm:text-sm font-bold text-[#6B6280] pt-0.5">
-                  Artista / Banda: <span className="text-[#181226] font-extrabold">{songArtist}</span>
+                <p className="text-xs font-bold text-[#6B6280]">
+                  Artista: <span className="text-[#181226] font-extrabold">{songArtist}</span>
                 </p>
               )}
-              <p className="text-[11px] text-[#059669] font-bold pt-1.5 flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Si el participante dijo este título o artista, presioná "Correcto". Si no, "Incorrecto".</span>
-              </p>
             </div>
           ) : (
-            <p className="text-xs text-[#8E869E] italic">
-              Solución oculta para evitar miradas indiscretas. Hacé clic en "Mostrar" para verla.
+            <p className="text-xs text-[#574F6B] font-medium leading-relaxed">
+              El participante está cantando o arriesgando el título. Si la sala o los rivales aceptan la respuesta, presioná <strong className="text-[#059669]">Válido / Acertó</strong>. Si pifió o no era esa, presioná <strong className="text-[#E11D48]">Incorrecto</strong> (la canción seguirá oculta para que otros equipos puedan robar).
             </p>
           )}
         </motion.div>
+      ) : (
+        currentTrack && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#FFF8F5] to-[#FAF7F2] border-2 border-[#FF5722]/40 shadow-xs relative overflow-hidden text-left"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#FF5722] animate-pulse shrink-0" />
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#FF5722]">
+                  Solución de la Canción (Solo Host)
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSolution(!showSolution)}
+                className="text-[11px] font-bold text-[#6B6280] hover:text-[#181226] underline cursor-pointer"
+              >
+                {showSolution ? 'Ocultar' : 'Mostrar'}
+              </button>
+            </div>
+
+            {showSolution ? (
+              <div className="space-y-1">
+                <p className="text-[11px] font-bold text-[#6B6280] uppercase tracking-wider">
+                  Título correcto:
+                </p>
+                <h4 className="font-display text-xl sm:text-2xl font-black text-[#181226] leading-tight">
+                  {songTitle || 'Pista sin título'}
+                </h4>
+                {songArtist && (
+                  <p className="text-xs sm:text-sm font-bold text-[#6B6280] pt-0.5">
+                    Artista / Banda: <span className="text-[#181226] font-extrabold">{songArtist}</span>
+                  </p>
+                )}
+                <p className="text-[11px] text-[#059669] font-bold pt-1.5 flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Si el participante dijo este título o artista, presioná "Correcto". Si no, "Incorrecto".</span>
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-[#8E869E] italic">
+                Solución oculta para evitar miradas indiscretas. Hacé clic en "Mostrar" para verla.
+              </p>
+            )}
+          </motion.div>
+        )
       )}
 
       {/* Judge Buttons — chunky arcade cabinet pushers */}
@@ -122,7 +172,11 @@ export default function JudgePanel({ currentBuzz, currentTrack, onCorrect, onInc
               <path d="M5 13l4 4L19 7" />
             </svg>
           </span>
-          <span className="relative truncate">Correcto (+{currentBuzz.suggestedPoints || 1})</span>
+          <span className="relative truncate">
+            {isAutoHost
+              ? `Válido / Acertó (+${currentBuzz.suggestedPoints || 1})`
+              : `Correcto (+${currentBuzz.suggestedPoints || 1})`}
+          </span>
         </button>
 
         <button
@@ -136,7 +190,9 @@ export default function JudgePanel({ currentBuzz, currentTrack, onCorrect, onInc
               <path d="M6 18L18 6M6 6l12 12" />
             </svg>
           </span>
-          <span className="relative truncate">Incorrecto (-1 pt)</span>
+          <span className="relative truncate">
+            {isAutoHost ? 'Incorrecto / Pifió (-1 pt)' : 'Incorrecto (-1 pt)'}
+          </span>
         </button>
       </div>
     </div>

@@ -10,6 +10,7 @@ import JudgePanel from '../components/JudgePanel';
 import { playHostBuzzerSound } from '../utils/audioEffects';
 import { hydratePlaylistTracks } from '../utils/audioStorage';
 import { lobbyAudioManager } from '../utils/lobbyAudio';
+import { parseSongAndArtist } from '../utils/trackHelper';
 
 export default function HostGame() {
   const location = useLocation();
@@ -111,6 +112,9 @@ export default function HostGame() {
     setCurrentJudging(null);
     setLastResult(null);
     setShowResult(false);
+    if (playlist && data.roundNumber > 0 && playlist[data.roundNumber - 1]) {
+      setCurrentTrack(playlist[data.roundNumber - 1]);
+    }
   });
 
   useSocketEvent('first-buzz', (data) => {
@@ -254,6 +258,26 @@ export default function HostGame() {
     }
   }, [emit, roomCode]);
 
+  // Keyboard navigation shortcuts when someone buzzes
+  useEffect(() => {
+    if (gameState !== 'BUZZER_LOCKED') return;
+
+    const handleKeyDown = (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(e.target?.tagName)) return;
+
+      if (e.key === 'Enter' || e.key === '1' || e.key.toLowerCase() === 'c') {
+        e.preventDefault();
+        judgeCorrect();
+      } else if (e.key === 'Backspace' || e.key === '2' || e.key.toLowerCase() === 'i') {
+        e.preventDefault();
+        judgeIncorrect();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState, judgeCorrect, judgeIncorrect]);
+
   const openEndGameModal = useCallback(() => {
     setShowEndGameConfirm(true);
   }, []);
@@ -374,6 +398,9 @@ export default function HostGame() {
 
   if (!roomCode) return null;
 
+  const activeTrack = currentTrack || (playlist && roundNumber > 0 ? playlist[roundNumber - 1] : null);
+  const { title: songTitle, artist: songArtist } = parseSongAndArtist(activeTrack);
+
   return (
     <div className="min-h-dvh pb-12 text-[var(--color-text-primary)]">
       {/* Header Bar */}
@@ -475,33 +502,25 @@ export default function HostGame() {
             {/* ACTION ZONE BY GAME STATE */}
             {gameState === 'BUZZER_LOCKED' && (currentJudging || buzzQueue[0]) ? (
               <div className="space-y-4">
-                {/* Auto-Host Answer Reveal so all players can verify the answer on the TV */}
-                {autoHostEnabled && (currentTrack?.title || currentTrack?.author) && (
-                  <div className="p-4 rounded-2xl bg-gradient-to-r from-[#FFF8F5] to-[#FBF9F5] border-2 border-[#FF5722]/30 shadow-xs">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="badge-tag text-[#FF5722] font-black uppercase text-[10px]">
-                        RESPUESTA EN PANTALLA (AUTO-HOST)
+                {/* Auto-Host Countdown (Sin spoilers de título en pantalla) */}
+                {autoHostEnabled && speakCountdown !== null && speakCountdown > 0 && (
+                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#FFF0F3] border-2 border-[#E11D48]/30 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#E11D48] animate-pulse" />
+                      <span className="text-xs font-black text-[#181226]">
+                        Tiempo para responder o cantar en voz alta:
                       </span>
-                      {speakCountdown !== null && speakCountdown > 0 && (
-                        <span className="mono text-xs font-black text-[#E11D48] bg-[#FFF0F3] px-2 py-0.5 rounded-lg border border-[#E11D48]/30 animate-pulse">
-                          {speakCountdown}s para responder
-                        </span>
-                      )}
                     </div>
-                    <h4 className="font-display text-lg sm:text-xl font-black text-[#181226] leading-tight">
-                      {currentTrack.title}
-                    </h4>
-                    {currentTrack.author && (
-                      <p className="text-xs text-[#574F6B] font-bold mt-1">
-                        Artista: <span className="text-[#181226] font-extrabold">{currentTrack.author}</span>
-                      </p>
-                    )}
+                    <span className="mono text-xs font-black text-[#E11D48] bg-white px-3 py-1 rounded-xl border border-[#E11D48]/30 animate-pulse shadow-2xs">
+                      {speakCountdown}s
+                    </span>
                   </div>
                 )}
 
                 <JudgePanel
                   currentBuzz={currentJudging || buzzQueue[0]}
-                  currentTrack={currentTrack}
+                  currentTrack={activeTrack}
+                  isAutoHost={autoHostEnabled}
                   onCorrect={judgeCorrect}
                   onIncorrect={judgeIncorrect}
                 />
@@ -735,6 +754,22 @@ export default function HostGame() {
                       </span>
                     )}
                   </p>
+
+                  {(lastResult.title || songTitle) && (
+                    <div className="p-3.5 rounded-xl bg-white border border-[#059669]/30 mt-3 text-left shadow-2xs">
+                      <p className="text-[10px] font-bold text-[#059669] uppercase tracking-wider">
+                        Canción acertada:
+                      </p>
+                      <h3 className="text-[#181226] font-display font-black text-base">
+                        {lastResult.title || songTitle}
+                      </h3>
+                      {(lastResult.author || songArtist) && (
+                        <p className="text-xs text-[#6B6280] font-semibold mt-0.5">
+                          {lastResult.author || songArtist}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </>
             ) : lastResult.type === 'timeout' ? (
@@ -752,12 +787,12 @@ export default function HostGame() {
                 </h2>
                 <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] shadow-inner">
                   <p className="text-xs font-bold text-[#6B6280] mb-1">La canción era:</p>
-                  <p className="text-[#181226] font-display font-black text-lg">
-                    {lastResult.title || 'Canción en juego'}
-                  </p>
-                  {lastResult.author && (
+                  <h3 className="text-[#181226] font-display font-black text-lg">
+                    {lastResult.title || songTitle || 'Canción en juego'}
+                  </h3>
+                  {(lastResult.author || songArtist) && (
                     <p className="text-xs text-[#6B6280] font-semibold mt-0.5">
-                      {lastResult.author}
+                      {lastResult.author || songArtist}
                     </p>
                   )}
                 </div>
@@ -779,6 +814,21 @@ export default function HostGame() {
                   <p className="text-[#6B6280] text-xs sm:text-sm font-medium leading-relaxed">
                     Todos los equipos fallaron o se agotó el tiempo. Nadie sumó puntos en esta ronda.
                   </p>
+                  {(lastResult.title || songTitle) && (
+                    <div className="p-3.5 rounded-xl bg-white border border-[#EAE3D5] mt-3 text-left shadow-2xs">
+                      <p className="text-[10px] font-bold text-[#6B6280] uppercase tracking-wider">
+                        La canción era:
+                      </p>
+                      <h3 className="text-[#181226] font-display font-black text-base">
+                        {lastResult.title || songTitle}
+                      </h3>
+                      {(lastResult.author || songArtist) && (
+                        <p className="text-xs text-[#6B6280] font-semibold mt-0.5">
+                          {lastResult.author || songArtist}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </>
             )}
