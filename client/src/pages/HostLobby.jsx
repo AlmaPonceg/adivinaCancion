@@ -8,12 +8,7 @@ import LobbyAudio from '../components/LobbyAudio';
 import PlaylistSetup from '../components/PlaylistSetup';
 import GameModeSelector, { GAME_MODES } from '../components/GameModeSelector';
 import { lobbyAudioManager } from '../utils/lobbyAudio';
-import {
-  deleteAudioFile,
-  revokeTrackObjectUrl,
-  hydratePlaylistTracks,
-} from '../utils/audioStorage';
-import { getTrackTitle } from '../utils/trackHelper';
+import { hydratePlaylistTracks } from '../utils/audioStorage';
 
 export default function HostLobby() {
   const navigate = useNavigate();
@@ -371,16 +366,7 @@ export default function HostLobby() {
     localStorage.setItem('trivia_playlist', JSON.stringify(persistable));
   };
 
-  const handleRemovePlaylistItem = async (index) => {
-    const itemToRemove = playlist[index];
-    if (itemToRemove && typeof itemToRemove === 'object' && itemToRemove.fileId) {
-      await deleteAudioFile(itemToRemove.fileId);
-      revokeTrackObjectUrl(itemToRemove.fileId);
-    }
-    const updated = playlist.filter((_, idx) => idx !== index);
-    setPlaylist(updated);
-    savePlaylistToStorage(updated);
-  };
+
 
   // ── Start Game Navigation ───────────────────────────────────
   const handleStartGame = () => {
@@ -577,17 +563,16 @@ export default function HostLobby() {
 
         {/* ── Main 2-Column Console Layout (Clean & Zero Scroll) ─── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-0 items-stretch overflow-hidden">
-          {/* LEFT COLUMN: QR Card + Mini Playlist Summary (5 cols) */}
-          <div className="lg:col-span-5 flex flex-col h-full min-h-0 gap-2.5">
-            {/* Upper Card: Room Access & QR Code */}
-            <div className="party-card p-3 sm:p-3.5 rounded-2xl flex flex-col items-center justify-between shrink-0 shadow-sm">
+          {/* LEFT COLUMN: Room Access & QR Code (5 cols) */}
+          <div className="lg:col-span-5 flex flex-col h-full min-h-0">
+            <div className="party-card p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-between h-full shadow-sm">
               {roomCode ? (
                 <>
                   {/* VIP Access Ribbon */}
-                  <div className="w-full flex items-center justify-between px-2.5 py-1 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] text-[#181226] mb-2 shadow-2xs">
+                  <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] text-[#181226] mb-2 shadow-2xs">
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-[#059669] animate-pulse" />
-                      <span className="font-tactical font-black text-[10px] tracking-widest uppercase text-[#6B6280]">
+                      <span className="font-tactical font-black text-[11px] tracking-widest uppercase text-[#6B6280]">
                         Acceso de Invitados
                       </span>
                     </div>
@@ -597,11 +582,11 @@ export default function HostLobby() {
                   </div>
 
                   {/* 3D Physical Arcade Digit Tiles */}
-                  <div className="flex gap-2 justify-center mb-2">
+                  <div className="flex gap-2.5 justify-center my-auto">
                     {roomCode.split('').map((digit, i) => (
                       <div
                         key={i}
-                        className="relative flex flex-col items-center justify-center w-11 h-13 bg-white rounded-xl border-2 border-[#FF5722] shadow-[0_4px_0_#E64A19] overflow-hidden"
+                        className="relative flex flex-col items-center justify-center w-12 h-14 bg-white rounded-xl border-2 border-[#FF5722] shadow-[0_4px_0_#E64A19] overflow-hidden"
                       >
                         <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-[#FFF5F0] to-transparent pointer-events-none" />
                         <span className="font-display font-black text-2xl text-[#FF5722] z-10 leading-none">
@@ -612,24 +597,24 @@ export default function HostLobby() {
                   </div>
 
                   {/* Target Framed QR Code */}
-                  <div className="relative p-2 rounded-xl bg-white border-2 border-[#EAE3D5] shadow-xs mb-1 group">
-                    <div className="absolute top-1 left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-[#FF5722] rounded-tl-sm pointer-events-none" />
-                    <div className="absolute top-1 right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-[#FF5722] rounded-tr-sm pointer-events-none" />
-                    <div className="absolute bottom-1 left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-[#FF5722] rounded-bl-sm pointer-events-none" />
-                    <div className="absolute bottom-1 right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-[#FF5722] rounded-br-sm pointer-events-none" />
-                    <QRDisplay value={joinUrl} size={105} />
+                  <div className="relative p-2.5 rounded-2xl bg-white border-2 border-[#EAE3D5] shadow-xs my-auto group">
+                    <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-[#FF5722] rounded-tl-sm pointer-events-none" />
+                    <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-[#FF5722] rounded-tr-sm pointer-events-none" />
+                    <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-[#FF5722] rounded-bl-sm pointer-events-none" />
+                    <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-[#FF5722] rounded-br-sm pointer-events-none" />
+                    <QRDisplay value={joinUrl} size={145} />
                   </div>
-                  <p className="text-[10px] font-bold text-[#6B6280] text-center mb-1.5">
-                    Escaneen con la cámara del celular
+                  <p className="text-xs font-bold text-[#6B6280] text-center my-1">
+                    Escaneen con la cámara del celular para entrar
                   </p>
 
                   {/* Share buttons */}
-                  <div className="w-full grid grid-cols-2 gap-2 mb-1.5">
+                  <div className="w-full grid grid-cols-2 gap-2 my-1">
                     <button
                       onClick={handleShareWhatsApp}
-                      className="arcade-btn-mint py-1.5 px-2 rounded-xl font-tactical font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="arcade-btn-mint py-2 px-3 rounded-xl font-tactical font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                         <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.897 2.796.897 3.182 0 5.769-2.587 5.769-5.766.001-3.181-2.586-5.766-5.769-5.766zm9.969 5.766c0 5.514-4.486 10-10 10-1.745 0-3.376-.452-4.801-1.241l-5.2 1.361 1.385-5.066c-.928-1.503-1.464-3.267-1.464-5.054 0-5.514 4.486-10 10-10 5.514 0 10 4.486 10 10z" />
                       </svg>
                       <span>WhatsApp</span>
@@ -637,13 +622,13 @@ export default function HostLobby() {
 
                     <button
                       onClick={handleCopyLink}
-                      className="arcade-btn py-1.5 px-2 rounded-xl font-tactical font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer text-[#181226] hover:text-[#FF5722]"
+                      className="arcade-btn py-2 px-3 rounded-xl font-tactical font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer text-[#181226] hover:text-[#FF5722]"
                     >
                       {copied ? (
                         <span className="text-[#059669] font-black">¡Copiado!</span>
                       ) : (
                         <>
-                          <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                          <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                           <span>Copiar Link</span>
@@ -653,7 +638,7 @@ export default function HostLobby() {
                   </div>
 
                   {/* URL Display with Manual Override button */}
-                  <div className="w-full bg-[#FAF7F2] px-2.5 py-1.5 rounded-xl border border-[#EAE3D5] flex items-center justify-between gap-2 text-left shadow-inner">
+                  <div className="w-full bg-[#FAF7F2] px-3 py-1.5 rounded-xl border border-[#EAE3D5] flex items-center justify-between gap-2 text-left shadow-inner my-1">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#FF5722] shrink-0" />
                       <span className="mono text-[11px] text-[#181226] font-bold truncate select-all">
@@ -685,9 +670,40 @@ export default function HostLobby() {
                       </button>
                     </div>
                   )}
+
+                  {/* Clean Bottom Strip: Playlist Quick Status & Edit Button */}
+                  <div className="w-full mt-auto pt-3 border-t border-[#EAE3D5] flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-[#FFF0EB] border border-[#FF5722]/30 flex items-center justify-center text-[#FF5722] shrink-0">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-[#181226] truncate">
+                          Playlist de la Partida
+                        </p>
+                        <p className="text-[11px] font-bold text-[#FF5722]">
+                          {playlist.length} {playlist.length === 1 ? 'canción cargada' : 'canciones cargadas'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSetupStep('playlist')}
+                      className="arcade-btn px-3 py-1.5 rounded-xl text-xs font-black text-[#FF5722] hover:bg-[#FFF0EB] border border-[#FF5722]/30 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all"
+                      title="Volver a editar la playlist sin perder la partida ni los participantes"
+                    >
+                      <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      <span>Editar Playlist</span>
+                    </button>
+                  </div>
                 </>
               ) : (
-                <div className="py-8 flex flex-col items-center justify-center space-y-2">
+                <div className="py-8 flex flex-col items-center justify-center space-y-2 my-auto">
                   <div className="w-8 h-8 border-3 border-[#FF5722] border-t-transparent rounded-full animate-spin" />
                   <p className="text-xs font-semibold text-[#6B6280]">
                     Generando código y QR...
@@ -698,140 +714,6 @@ export default function HostLobby() {
                   >
                     Reintentar
                   </button>
-                </div>
-              )}
-            </div>
-
-            {/* Lower Card: Clean Playlist Summary (Uncontaminated) */}
-            <div className="party-card p-3 sm:p-3.5 rounded-2xl flex-1 flex flex-col min-h-0 overflow-hidden shadow-sm">
-              <div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-[#EAE3D5] shrink-0">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="text-xs font-black uppercase tracking-wider text-[#181226] whitespace-nowrap">
-                    Playlist
-                  </span>
-                  <span className="mono text-[10px] font-black px-2 py-0.5 rounded-full bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 shrink-0">
-                    {playlist.length} {playlist.length === 1 ? 'canción' : 'canciones'}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const next = !antiSpoiler;
-                      setAntiSpoiler(next);
-                      localStorage.setItem('trivia_anti_spoiler', next ? 'true' : 'false');
-                    }}
-                    className={`h-7 px-2 rounded-lg text-[10px] font-black border transition-all flex items-center gap-1 cursor-pointer ${
-                      antiSpoiler
-                        ? 'bg-[#FFF0EB] text-[#FF5722] border-[#FF5722]/40 shadow-xs'
-                        : 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5] hover:text-[#181226]'
-                    }`}
-                    title={antiSpoiler ? 'Anti-Spoiler activo' : 'Ocultar títulos'}
-                  >
-                    <span>Anti-Spoiler</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSetupStep('playlist')}
-                    className="h-7 px-2.5 rounded-lg bg-[#FF5722] hover:bg-[#E64A19] text-white text-[11px] font-black shadow-xs active:scale-98 transition-all inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>Editar Playlist</span>
-                  </button>
-                </div>
-              </div>
-
-              {playlist.length === 0 ? (
-                <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-3 bg-gradient-to-b from-[#FAF7F2] to-white rounded-xl border border-[#EAE3D5] shadow-inner my-auto">
-                  <div className="w-12 h-12 rounded-full bg-[#181226] border-2 border-[#2E2445] shadow-sm flex items-center justify-center mb-2">
-                    <div className="w-4 h-4 rounded-full bg-[#FF5722] flex items-center justify-center shadow-inner">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                    </div>
-                  </div>
-                  <h4 className="font-display font-black text-xs sm:text-sm text-[#181226] mb-0.5">
-                    Sin canciones cargadas
-                  </h4>
-                  <p className="text-[11px] text-[#6B6280] max-w-xs mb-2.5 leading-snug">
-                    Cargá tus canciones antes de iniciar la partida.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setSetupStep('playlist')}
-                    className="py-1.5 px-3 rounded-xl bg-[#FF5722] hover:bg-[#E64A19] text-white text-xs font-black shadow-xs cursor-pointer active:scale-98 transition-all"
-                  >
-                    + Cargar Playlist →
-                  </button>
-                </div>
-              ) : (
-                <div className="flex-1 min-h-0 flex flex-col space-y-1.5 overflow-hidden">
-                  <div className="console-inset p-2 rounded-xl flex-1 min-h-0 overflow-y-auto space-y-1.5 custom-scrollbar">
-                    {playlist.map((track, idx) => {
-                      const isLocal = typeof track === 'object' && track.type === 'local';
-                      const title = getTrackTitle(track);
-
-                      return (
-                        <div
-                          key={track.id || idx}
-                          className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-white border border-[#EAE3D5] shadow-2xs gap-2"
-                        >
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <span className="mono text-[10px] font-black text-[#6B6280] shrink-0">
-                              #{idx + 1}
-                            </span>
-                            {isLocal ? (
-                              <span className="badge-tag bg-[#E6F9F0] text-[#059669] border border-[#059669]/40 px-1 py-0.2 rounded text-[8px] shrink-0 font-black">
-                                LOCAL
-                              </span>
-                            ) : (
-                              <span className="badge-tag bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 px-1 py-0.2 rounded text-[8px] shrink-0 font-black">
-                                WEB
-                              </span>
-                            )}
-                            <span
-                              className={`truncate font-bold text-xs ${
-                                antiSpoiler
-                                  ? 'filter blur-[5px] select-none hover:blur-none transition-all duration-200 cursor-pointer text-[#8E869E]'
-                                  : 'text-[#181226]'
-                              }`}
-                              title={
-                                antiSpoiler
-                                  ? 'Pista protegida contra spoilers'
-                                  : title
-                              }
-                            >
-                              {antiSpoiler ? `•••••••••••••••••••• (Pista #${idx + 1})` : title}
-                            </span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePlaylistItem(idx)}
-                            className="text-[#8E869E] hover:text-[#E11D48] hover:bg-[#FFF0F3] p-1 rounded cursor-pointer transition-colors"
-                            title="Quitar canción"
-                          >
-                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="flex items-center justify-between text-[10px] text-[#6B6280] px-1 shrink-0 pt-0.5">
-                    <span>
-                      {playlist.filter((t) => typeof t === 'object' && t.type === 'local').length} locales ·{' '}
-                      {playlist.filter((t) => (typeof t === 'string' ? true : t.type !== 'local')).length} web
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setSetupStep('playlist')}
-                      className="text-[#FF5722] font-black hover:underline cursor-pointer"
-                    >
-                      Gestionar lista completa →
-                    </button>
-                  </div>
                 </div>
               )}
             </div>
