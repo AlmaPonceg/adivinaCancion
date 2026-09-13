@@ -920,25 +920,25 @@ export default function HostLobby() {
               animate={{ opacity: 1, y: 0 }}
               className="party-card p-6 rounded-3xl"
             >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#181226]">
+              <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3 pb-3 border-b border-[#EAE3D5]">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#181226] whitespace-nowrap">
                     Playlist de Canciones
                   </span>
-                  <span className="mono text-xs font-black px-2.5 py-0.5 rounded-full bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30">
+                  <span className="mono text-xs font-black px-2.5 py-1 rounded-full bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 whitespace-nowrap shrink-0">
                     {playlist.length} {playlist.length === 1 ? 'canción' : 'canciones'}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   {playlist.length > 0 && (
                     <button
                       type="button"
                       onClick={() => setShowClearPlaylistConfirm(true)}
-                      className="px-2.5 py-1 rounded-xl text-xs font-bold text-[#E11D48] hover:bg-[#FFF0F3] border border-[#E11D48]/30 transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                      className="h-8 px-2.5 rounded-xl text-xs font-bold text-[#E11D48] hover:bg-[#FFF0F3] border border-[#E11D48]/30 hover:border-[#E11D48] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs"
                       title="Borrar todas las canciones cargadas"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                       <span>Borrar Todas</span>
@@ -948,18 +948,25 @@ export default function HostLobby() {
                   <button
                     type="button"
                     onClick={() => setIsDjBotOpen(true)}
-                    className="px-3 py-1 rounded-xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white text-xs font-black shadow-xs hover:scale-105 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                    className="h-8 px-3 rounded-xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white text-xs font-black shadow-xs hover:scale-[1.02] active:scale-[0.98] transition-all inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
                     title="Generar playlist automática por género y época"
                   >
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                    </svg>
                     <span>DJ Bot</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setShowPlaylistDrawer(!showPlaylistDrawer)}
-                    className="text-xs font-bold text-[#FF5722] hover:underline cursor-pointer"
+                    className={`h-8 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0 border ${
+                      showPlaylistDrawer
+                        ? 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5] hover:text-[#181226]'
+                        : 'bg-[#FFF0EB] text-[#FF5722] border-[#FF5722]/30 hover:bg-[#FFE5DC]'
+                    }`}
                   >
-                    {showPlaylistDrawer ? 'Cerrar' : '+ Agregar'}
+                    <span>{showPlaylistDrawer ? 'Cerrar' : '+ Agregar'}</span>
                   </button>
                 </div>
               </div>
