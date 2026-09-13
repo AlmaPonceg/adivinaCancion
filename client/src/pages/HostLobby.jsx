@@ -634,9 +634,9 @@ export default function HostLobby() {
             <div className="party-card p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-between h-full shadow-sm">
               {roomCode ? (
                 <>
-                  {/* VIP Access Ribbon + Digits + QR */}
-                  <div id="tour-room-access" className="w-full flex flex-col items-center">
-                    <div className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] text-[#181226] mb-2 shadow-2xs">
+                  {/* TOP: VIP Access Ribbon & 3D Digit Tiles */}
+                  <div className="w-full flex flex-col items-center shrink-0">
+                    <div className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] text-[#181226] mb-3 shadow-2xs">
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-[#059669] animate-pulse" />
                         <span className="font-tactical font-black text-[11px] tracking-widest uppercase text-[#6B6280]">
@@ -649,155 +649,114 @@ export default function HostLobby() {
                     </div>
 
                     {/* 3D Physical Arcade Digit Tiles */}
-                    <div className="flex gap-2.5 justify-center my-auto">
+                    <div className="flex gap-2.5 sm:gap-3 justify-center">
                       {roomCode.split('').map((digit, i) => (
                         <div
                           key={i}
-                          className="relative flex flex-col items-center justify-center w-12 h-14 bg-white rounded-xl border-2 border-[#FF5722] shadow-[0_4px_0_#E64A19] overflow-hidden"
+                          className="relative flex flex-col items-center justify-center w-14 h-16 sm:w-16 sm:h-18 bg-white rounded-2xl border-2 border-[#FF5722] shadow-[0_5px_0_#E64A19] overflow-hidden"
                         >
                           <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-[#FFF5F0] to-transparent pointer-events-none" />
-                          <span className="font-display font-black text-2xl text-[#FF5722] z-10 leading-none">
+                          <span className="font-display font-black text-3xl sm:text-4xl text-[#FF5722] z-10 leading-none">
                             {digit}
                           </span>
                         </div>
                       ))}
                     </div>
+                  </div>
 
-                    {/* Target Framed QR Code */}
-                    <div className="relative p-3 rounded-2xl bg-white border-2 border-[#EAE3D5] shadow-xs my-1 group">
-                      <div className="absolute top-1 left-1 w-3.5 h-3.5 border-t-2 border-l-2 border-[#FF5722] rounded-tl-sm pointer-events-none" />
-                      <div className="absolute top-1 right-1 w-3.5 h-3.5 border-t-2 border-r-2 border-[#FF5722] rounded-tr-sm pointer-events-none" />
-                      <div className="absolute bottom-1 left-1 w-3.5 h-3.5 border-b-2 border-l-2 border-[#FF5722] rounded-bl-sm pointer-events-none" />
-                      <div className="absolute bottom-1 right-1 w-3.5 h-3.5 border-b-2 border-r-2 border-[#FF5722] rounded-br-sm pointer-events-none" />
-                      <QRDisplay value={joinUrl} size={175} />
+                  {/* CENTER HERO: Prominent Framed QR Code & Helper Text */}
+                  <div id="tour-room-access" className="w-full flex flex-col items-center justify-center">
+                    <div className="relative p-4 rounded-2xl bg-white border-2 border-[#EAE3D5] shadow-xs group">
+                      <div className="absolute top-1.5 left-1.5 w-4 h-4 border-t-2 border-l-2 border-[#FF5722] rounded-tl-sm pointer-events-none" />
+                      <div className="absolute top-1.5 right-1.5 w-4 h-4 border-t-2 border-r-2 border-[#FF5722] rounded-tr-sm pointer-events-none" />
+                      <div className="absolute bottom-1.5 left-1.5 w-4 h-4 border-b-2 border-l-2 border-[#FF5722] rounded-bl-sm pointer-events-none" />
+                      <div className="absolute bottom-1.5 right-1.5 w-4 h-4 border-b-2 border-r-2 border-[#FF5722] rounded-br-sm pointer-events-none" />
+                      <QRDisplay value={joinUrl} size={250} />
                     </div>
-                    <p className="text-xs font-bold text-[#6B6280] text-center my-1">
+                    <p className="text-xs sm:text-sm font-bold text-[#6B6280] text-center mt-3">
                       Escaneen con la cámara del celular para entrar
                     </p>
                   </div>
 
-                  {/* Share buttons */}
-                  <div id="tour-share-links" className="w-full grid grid-cols-2 gap-2 my-1">
-                    <button
-                      onClick={handleShareWhatsApp}
-                      className="arcade-btn-mint py-2 px-3 rounded-xl font-tactical font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.897 2.796.897 3.182 0 5.769-2.587 5.769-5.766.001-3.181-2.586-5.766-5.769-5.766zm9.969 5.766c0 5.514-4.486 10-10 10-1.745 0-3.376-.452-4.801-1.241l-5.2 1.361 1.385-5.066c-.928-1.503-1.464-3.267-1.464-5.054 0-5.514 4.486-10 10-10 5.514 0 10 4.486 10 10z" />
-                      </svg>
-                      <span>WhatsApp</span>
-                    </button>
-
-                    <button
-                      onClick={handleCopyLink}
-                      className="arcade-btn py-2 px-3 rounded-xl font-tactical font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer text-[#181226] hover:text-[#FF5722]"
-                    >
-                      {copied ? (
-                        <span className="text-[#059669] font-black">¡Copiado!</span>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                          <span>Copiar Link</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* URL Display with Manual Override button */}
-                  <div className="w-full bg-[#FAF7F2] px-3 py-1.5 rounded-xl border border-[#EAE3D5] flex items-center justify-between gap-2 text-left shadow-inner my-1">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF5722] shrink-0" />
-                      <span className="mono text-[11px] text-[#181226] font-bold truncate select-all">
-                        {joinUrl}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setIsEditingUrl(!isEditingUrl)}
-                      className="text-[10px] font-mono font-bold text-[#FF5722] hover:text-[#E11D48] px-1.5 py-0.5 rounded bg-white border border-[#EAE3D5] shrink-0 cursor-pointer shadow-2xs"
-                    >
-                      {isEditingUrl ? 'Cerrar' : 'IP'}
-                    </button>
-                  </div>
-
-                  {isEditingUrl && (
-                    <div className="w-full mt-2 pt-2 border-t border-[#EAE3D5] flex gap-2">
-                      <input
-                        type="text"
-                        value={urlInput}
-                        onChange={(e) => setUrlInput(e.target.value)}
-                        placeholder="192.168.1.15:5173 o mitunel.ngrok.io"
-                        className="flex-1 px-2.5 py-1 text-xs font-mono rounded-lg border border-[#EAE3D5] bg-white text-[#181226]"
-                      />
+                  {/* ACTIONS: Share buttons & URL bar */}
+                  <div className="w-full shrink-0 space-y-2.5">
+                    <div id="tour-share-links" className="w-full grid grid-cols-2 gap-2.5">
                       <button
-                        onClick={handleSaveCustomUrl}
-                        className="arcade-btn-primary px-3 py-1 text-xs font-bold shrink-0"
+                        onClick={handleShareWhatsApp}
+                        className="arcade-btn-mint py-3 px-3.5 rounded-xl font-tactical font-black text-xs flex items-center justify-center gap-2 cursor-pointer"
                       >
-                        OK
+                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.897 2.796.897 3.182 0 5.769-2.587 5.769-5.766.001-3.181-2.586-5.766-5.769-5.766zm9.969 5.766c0 5.514-4.486 10-10 10-1.745 0-3.376-.452-4.801-1.241l-5.2 1.361 1.385-5.066c-.928-1.503-1.464-3.267-1.464-5.054 0-5.514 4.486-10 10-10 5.514 0 10 4.486 10 10z" />
+                        </svg>
+                        <span>WhatsApp</span>
+                      </button>
+
+                      <button
+                        onClick={handleCopyLink}
+                        className="arcade-btn py-3 px-3.5 rounded-xl font-tactical font-black text-xs flex items-center justify-center gap-2 cursor-pointer text-[#181226] hover:text-[#FF5722]"
+                      >
+                        {copied ? (
+                          <span className="text-[#059669] font-black">¡Copiado!</span>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            <span>Copiar Link</span>
+                          </>
+                        )}
                       </button>
                     </div>
-                  )}
 
-                  {/* 3-Step Guest Quick Join Guide (Fills middle void seamlessly) */}
-                  <div className="w-full my-auto py-2.5 px-3 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] shadow-2xs space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-tactical font-black text-[11px] uppercase tracking-wider text-[#6B6280] flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#059669]" />
-                        ¿Cómo sumarse desde el celular?
-                      </span>
-                      <span className="text-[10px] font-bold text-[#FF5722] bg-white px-2 py-0.5 rounded-md border border-[#EAE3D5]">
-                        Sin instalar nada
-                      </span>
+                    {/* URL Display with Manual Override button */}
+                    <div className="w-full bg-[#FAF7F2] px-3.5 py-2.5 rounded-xl border border-[#EAE3D5] flex items-center justify-between gap-2 text-left shadow-inner">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF5722] shrink-0" />
+                        <span className="mono text-[11px] text-[#181226] font-bold truncate select-all">
+                          {joinUrl}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setIsEditingUrl(!isEditingUrl)}
+                        className="text-[10px] font-mono font-bold text-[#FF5722] hover:text-[#E11D48] px-2 py-0.5 rounded bg-white border border-[#EAE3D5] shrink-0 cursor-pointer shadow-2xs"
+                      >
+                        {isEditingUrl ? 'Cerrar' : 'IP'}
+                      </button>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="p-2 rounded-xl bg-white border border-[#EAE3D5] flex flex-col items-center justify-center gap-0.5 shadow-2xs">
-                        <span className="w-5 h-5 rounded-lg bg-[#FFF0EB] text-[#FF5722] flex items-center justify-center font-black text-xs">
-                          1
-                        </span>
-                        <span className="font-bold text-[11px] text-[#181226] leading-tight">Escanear</span>
-                        <span className="text-[10px] text-[#8E869E] leading-tight">Con la cámara</span>
+                    {isEditingUrl && (
+                      <div className="w-full pt-2 border-t border-[#EAE3D5] flex gap-2">
+                        <input
+                          type="text"
+                          value={urlInput}
+                          onChange={(e) => setUrlInput(e.target.value)}
+                          placeholder="192.168.1.15:5173 o mitunel.ngrok.io"
+                          className="flex-1 px-2.5 py-1 text-xs font-mono rounded-lg border border-[#EAE3D5] bg-white text-[#181226]"
+                        />
+                        <button
+                          onClick={handleSaveCustomUrl}
+                          className="arcade-btn-primary px-3 py-1 text-xs font-bold shrink-0"
+                        >
+                          OK
+                        </button>
                       </div>
-
-                      <div className="p-2 rounded-xl bg-white border border-[#EAE3D5] flex flex-col items-center justify-center gap-0.5 shadow-2xs">
-                        <span className="w-5 h-5 rounded-lg bg-[#FFF0EB] text-[#FF5722] flex items-center justify-center font-black text-xs">
-                          2
-                        </span>
-                        <span className="font-bold text-[11px] text-[#181226] leading-tight">Tu Apodo</span>
-                        <span className="text-[10px] text-[#8E869E] leading-tight">Para la pantalla</span>
-                      </div>
-
-                      <div className="p-2 rounded-xl bg-white border border-[#EAE3D5] flex flex-col items-center justify-center gap-0.5 shadow-2xs">
-                        <span className="w-5 h-5 rounded-lg bg-[#FFF0EB] text-[#FF5722] flex items-center justify-center font-black text-xs">
-                          3
-                        </span>
-                        <span className="font-bold text-[11px] text-[#181226] leading-tight">¡Pulsador!</span>
-                        <span className="text-[10px] text-[#8E869E] leading-tight">Tocá y adiviná</span>
-                      </div>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Elevated Bottom Strip: Playlist Status & Quick Edit Button */}
-                  <div id="tour-playlist-strip" className="w-full mt-auto pt-2.5 border-t border-[#EAE3D5] flex items-center justify-between gap-2.5">
+                  {/* BOTTOM: Playlist Status & Edit Button */}
+                  <div id="tour-playlist-strip" className="w-full pt-3 border-t border-[#EAE3D5] flex items-center justify-between gap-2.5 shrink-0">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-[#FFF0EB] border border-[#FF5722]/30 flex items-center justify-center text-[#FF5722] shrink-0 shadow-2xs">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <div className="w-9 h-9 rounded-xl bg-[#FFF0EB] border border-[#FF5722]/30 flex items-center justify-center text-[#FF5722] shrink-0 shadow-2xs">
+                        <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                         </svg>
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-xs font-black text-[#181226] truncate">
-                            Playlist de la Partida
-                          </p>
-                          <span className="text-[9px] font-bold text-[#059669] bg-[#E6F9F0] px-1.5 py-0.2 rounded border border-[#059669]/30">
-                            Lista
-                          </span>
-                        </div>
+                        <p className="text-xs font-black text-[#181226] truncate">
+                          Playlist de la Partida
+                        </p>
                         <p className="text-[11px] font-bold text-[#FF5722] truncate">
                           {playlist.length} {playlist.length === 1 ? 'canción cargada' : 'canciones cargadas'}
-                          {antiSpoiler ? ' · Incógnito activo' : ''}
                         </p>
                       </div>
                     </div>
@@ -805,7 +764,7 @@ export default function HostLobby() {
                     <button
                       type="button"
                       onClick={() => setSetupStep('playlist')}
-                      className="arcade-btn px-3 py-1.5 rounded-xl text-xs font-black text-[#FF5722] hover:bg-[#FFF0EB] border border-[#FF5722]/30 flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0 transition-all active:scale-95"
+                      className="arcade-btn px-3 py-2 rounded-xl text-xs font-black text-[#FF5722] hover:bg-[#FFF0EB] border border-[#FF5722]/30 flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0 transition-all active:scale-95"
                       title="Volver a editar la playlist sin perder la partida ni los participantes"
                     >
                       <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
