@@ -630,8 +630,8 @@ export default function HostLobby() {
         {/* ── Main 2-Column Console Layout (Clean & Zero Scroll) ─── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-0 items-stretch overflow-hidden">
           {/* LEFT COLUMN: Room Access & QR Code (5 cols) */}
-          <div className="lg:col-span-5 flex flex-col h-full min-h-0">
-            <div className="party-card p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-between h-full shadow-sm">
+          <div className="lg:col-span-5 flex flex-col justify-center items-center h-full min-h-0">
+            <div className="party-card p-5 sm:p-6 rounded-3xl flex flex-col items-center w-full max-w-[435px] shadow-md my-auto space-y-3.5">
               {roomCode ? (
                 <>
                   {/* TOP: VIP Access Ribbon & 3D Digit Tiles */}
@@ -712,7 +712,7 @@ export default function HostLobby() {
                     <div className="w-full bg-[#FAF7F2] px-3.5 py-2.5 rounded-xl border border-[#EAE3D5] flex items-center justify-between gap-2 text-left shadow-inner">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#FF5722] shrink-0" />
-                        <span className="mono text-[11px] text-[#181226] font-bold truncate select-all">
+                        <span className="mono text-[10.5px] text-[#181226] font-bold truncate select-all">
                           {joinUrl}
                         </span>
                       </div>
