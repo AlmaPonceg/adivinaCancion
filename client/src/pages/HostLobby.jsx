@@ -634,17 +634,12 @@ export default function HostLobby() {
             <div className="party-card p-5 sm:p-6 rounded-3xl flex flex-col items-center w-full max-w-[435px] shadow-md my-auto space-y-3.5">
               {roomCode ? (
                 <>
-                  {/* TOP: VIP Access Ribbon & 3D Digit Tiles */}
+                  {/* TOP: PIN Header & 3D Digit Tiles */}
                   <div className="w-full flex flex-col items-center shrink-0">
-                    <div className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] text-[#181226] mb-3 shadow-2xs">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#059669] animate-pulse" />
-                        <span className="font-tactical font-black text-[11px] tracking-widest uppercase text-[#6B6280]">
-                          Acceso de Invitados
-                        </span>
-                      </div>
-                      <span className="font-mono text-xs text-[#FF5722] font-black">
-                        SALA {roomCode}
+                    <div className="flex items-center justify-center gap-2 mb-2.5">
+                      <span className="w-2 h-2 rounded-full bg-[#059669] animate-pulse" />
+                      <span className="font-tactical font-black text-xs tracking-widest uppercase text-[#6B6280]">
+                        PIN DE LA SALA
                       </span>
                     </div>
 
