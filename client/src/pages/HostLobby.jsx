@@ -710,152 +710,116 @@ export default function HostLobby() {
   }
 
   return (
-    <div className="min-h-dvh p-3.5 sm:p-6 md:p-8 text-[var(--color-text-primary)] relative overflow-hidden">
+    <div className="h-screen max-h-screen p-3 sm:p-4 flex flex-col text-[var(--color-text-primary)] relative overflow-hidden">
       {/* Ambient background glow tailored to the active mode color */}
       <div
         className="absolute top-[-10%] left-[20%] w-96 h-96 rounded-full blur-3xl pointer-events-none opacity-15 transition-all duration-700"
         style={{ backgroundColor: currentTheme.color }}
       />
 
-      <div className="max-w-6xl mx-auto relative z-10">
-        {/* Top Navigation / Header Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8"
-        >
-          <div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
-              <button
-                onClick={() => navigate('/')}
-                className="arcade-btn px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-black text-[#181226] hover:text-[#FF5722] flex items-center gap-2 cursor-pointer shadow-xs active:translate-y-0.5 transition-all"
-              >
-                <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                <span>Volver al Inicio</span>
-              </button>
+      <div className="max-w-7xl w-full mx-auto flex-1 flex flex-col min-h-0 relative z-10">
+        {/* ── Master Console Header Bar ────────────────────────────── */}
+        <div className="flex items-center justify-between gap-3 mb-2.5 shrink-0">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              onClick={() => navigate('/')}
+              className="arcade-btn px-3 py-1.5 rounded-xl text-xs font-bold text-[#181226] hover:text-[#FF5722] flex items-center gap-1.5 cursor-pointer"
+            >
+              <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              <span>Inicio</span>
+            </button>
 
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E8DFD1] text-xs font-semibold text-[#181226] shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-[#FF5722] animate-pulse" />
-                <span className="font-bold text-[#181226]">Pantalla del Host</span>
-                <span className="text-[#D1C9BD]">·</span>
-                <span className="text-[#6B6280] font-medium">Cumple de Alma</span>
-              </span>
-
-              {/* Mode Badge with distinct color */}
-              <div
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black border shadow-2xs transition-all"
-                style={{
-                  backgroundColor: currentTheme.colorLight,
-                  borderColor: currentTheme.colorBorder,
-                  color: currentTheme.colorText,
-                }}
-              >
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentTheme.color }} />
-                <span>Modo: {currentTheme.name}</span>
-              </div>
-
-              {/* Button to reopen Mode Selection Menu */}
-              <button
-                type="button"
-                onClick={() => setIsModeConfirmed(false)}
-                className="arcade-btn px-3 py-1.5 rounded-full text-xs font-bold text-[#6B6280] hover:text-[#181226] flex items-center gap-1.5 cursor-pointer shadow-2xs hover:border-[#FF5722]/50 transition-colors"
-                title="Cambiar la modalidad de juego"
-              >
-                <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <span>Cambiar Modo</span>
-              </button>
-            </div>
-            <h1 className="font-display text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-[#181226]">
+            <h1 className="font-display font-black text-sm sm:text-base text-[#181226] tracking-tight">
               Lobby de Equipos
             </h1>
-            <p className="text-[#6B6280] text-xs sm:text-sm mt-0.5">
-              Compartí el código o QR para que los invitados se sumen desde el celular.
-            </p>
+
+            <div className="px-2.5 py-1 rounded-xl bg-white border border-[#DDD5C5] font-mono text-xs font-black text-[#181226] shadow-2xs flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${roomCode ? 'bg-[#059669]' : 'bg-[#D97706]'}`} />
+              <span>{roomCode ? `SALA ${roomCode}` : 'CONECTANDO...'}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsModeConfirmed(false)}
+              className="px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs hover:brightness-95"
+              style={{
+                backgroundColor: currentTheme.colorLight,
+                borderColor: currentTheme.colorBorder,
+                color: currentTheme.colorText,
+              }}
+              title="Cambiar la modalidad de juego"
+            >
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentTheme.color }} />
+              <span>Modo: {currentTheme.shortName || currentTheme.name}</span>
+              <span className="text-[10px] underline ml-0.5">Cambiar</span>
+            </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          <div className="flex items-center gap-2">
+            <LobbyAudio />
             <button
               id="spawn-bots-btn"
               onClick={handleSpawnBots}
               disabled={isSpawningBots || !roomCode}
-              title="Simular 100 bots de prueba para test de carga y estrés en vivo"
-              className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-2xl flex items-center gap-2 bg-gradient-to-r from-[#FF5722] to-[#FF8A65] hover:from-[#E64A19] hover:to-[#FF7043] text-white text-xs font-black cursor-pointer shadow-sm active:translate-y-0.5 transition-all disabled:opacity-50"
+              title="Simular 100 bots de prueba"
+              className="arcade-btn px-3 py-1.5 rounded-xl text-xs font-bold text-[#6B6280] hover:text-[#FF5722] flex items-center gap-1.5 cursor-pointer"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              <span>{isSpawningBots ? 'Conectando 100 bots...' : 'Simular 100 Bots'}</span>
+              <span>{isSpawningBots ? '100 bots...' : '+100 Bots'}</span>
             </button>
-            <LobbyAudio />
-            <div className="p-1 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl flex items-center gap-2.5 bg-white border border-[#EAE3D5] shadow-xs">
-              <span className={`w-2.5 h-2.5 rounded-full ${roomCode ? 'bg-[#059669] shadow-[0_0_8px_#059669]' : 'bg-[#D97706]'}`} />
-              <span className="mono text-xs font-black text-[#181226]">
-                {roomCode ? `SALA ${roomCode}` : 'CONECTANDO...'}
-              </span>
-            </div>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Main 2-Column Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
-          {/* LEFT COLUMN: Room Code, QR, Sharing & Playlist (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* Room Code & QR Card */}
-            <motion.div
-              initial={{ opacity: 0, x: -16 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="party-card p-5 sm:p-7 md:p-8 rounded-[2rem] flex flex-col items-center text-center relative overflow-hidden"
-            >
-              <div className="flex items-center justify-center gap-2.5 mb-4">
-                <span className="h-px w-6 bg-[#E5DFD5]" />
-                <span className="badge-tag text-[#FF5722] text-[10px] sm:text-xs">
-                  CÓDIGO DE LA SALA
-                </span>
-                <span className="h-px w-6 bg-[#E5DFD5]" />
-              </div>
-
+        {/* ── Main 2-Column Console Layout (Zero Scroll Grid) ────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-0 items-stretch overflow-hidden">
+          {/* LEFT COLUMN: QR & Playlist (5 cols) */}
+          <div className="lg:col-span-5 flex flex-col h-full min-h-0 gap-2.5">
+            {/* Upper Card: Room Access & QR Code */}
+            <div className="party-card p-3 sm:p-3.5 rounded-2xl flex flex-col items-center justify-between shrink-0 shadow-sm">
               {roomCode ? (
                 <>
-                  {/* Big Bold Digits (Billboard Display) */}
-                  <div className="flex gap-2 sm:gap-3 mb-6 justify-center">
+                  {/* Digits Display */}
+                  <div className="flex gap-1.5 justify-center mb-1.5">
                     {roomCode.split('').map((digit, i) => (
-                      <motion.span
+                      <span
                         key={i}
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: i * 0.08 }}
-                        className="mono w-12 h-16 sm:w-14 sm:h-18 md:w-16 md:h-20 bg-[#FAF7F2] border-2 border-[#FF5722] rounded-2xl flex items-center justify-center text-2xl sm:text-3xl md:text-4xl font-black text-[#FF5722] shadow-[0_4px_12px_rgba(255,87,34,0.15)]"
+                        className="mono w-10 h-12 bg-[#FAF7F2] border-2 border-[#FF5722] rounded-xl flex items-center justify-center text-xl sm:text-2xl font-black text-[#FF5722] shadow-2xs"
                       >
                         {digit}
-                      </motion.span>
+                      </span>
                     ))}
                   </div>
 
+                  {/* QR Code */}
+                  <div className="p-2 rounded-xl bg-white border border-[#EAE3D5] shadow-2xs mb-1.5">
+                    <QRDisplay value={joinUrl} size={110} />
+                  </div>
+
                   {/* Share buttons */}
-                  <div className="w-full grid grid-cols-2 gap-2.5 sm:gap-3 mb-6">
+                  <div className="w-full grid grid-cols-2 gap-2 mb-1.5">
                     <button
                       onClick={handleShareWhatsApp}
-                      className="arcade-btn-mint py-3 px-3 rounded-xl font-tactical font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="arcade-btn-mint py-1.5 px-2 rounded-xl font-tactical font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                      <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                         <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.897 2.796.897 3.182 0 5.769-2.587 5.769-5.766.001-3.181-2.586-5.766-5.769-5.766zm9.969 5.766c0 5.514-4.486 10-10 10-1.745 0-3.376-.452-4.801-1.241l-5.2 1.361 1.385-5.066c-.928-1.503-1.464-3.267-1.464-5.054 0-5.514 4.486-10 10-10 5.514 0 10 4.486 10 10z" />
                       </svg>
-                      WhatsApp
+                      <span>WhatsApp</span>
                     </button>
 
                     <button
                       onClick={handleCopyLink}
-                      className="arcade-btn py-3 px-3 rounded-xl font-tactical font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="arcade-btn py-1.5 px-2 rounded-xl font-tactical font-black text-xs flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       {copied ? (
-                        <span className="text-[#059669] font-bold">¡Copiado!</span>
+                        <span className="text-[#059669] font-bold">Copiado</span>
                       ) : (
                         <>
-                          <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                           <span>Copiar Link</span>
@@ -864,134 +828,95 @@ export default function HostLobby() {
                     </button>
                   </div>
 
-                  {/* QR Code */}
-                  <div className="mb-4 p-3.5 rounded-2xl bg-white border border-[#EAE3D5] shadow-md">
-                    <QRDisplay value={joinUrl} size={160} />
+                  {/* URL Display with Manual Override button */}
+                  <div className="w-full bg-[#FAF7F2] px-2.5 py-1.5 rounded-xl border border-[#EAE3D5] flex items-center justify-between gap-2 text-left">
+                    <span className="mono text-[11px] text-[#181226] font-bold truncate select-all">
+                      {joinUrl}
+                    </span>
+                    <button
+                      onClick={() => setIsEditingUrl(!isEditingUrl)}
+                      className="text-[10px] font-bold text-[#FF5722] shrink-0 hover:underline cursor-pointer"
+                    >
+                      {isEditingUrl ? 'Cerrar' : 'IP'}
+                    </button>
                   </div>
 
-                  {/* URL Display with Manual Override button */}
-                  <div className="w-full bg-[#FAF7F2] p-3.5 rounded-2xl border border-[#EAE3D5] text-left">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[11px] font-bold text-[#6B6280] uppercase tracking-wider">
-                        Enlace de conexión:
-                      </span>
+                  {/* Editor de IP / Host manual */}
+                  {isEditingUrl && (
+                    <div className="w-full mt-2 pt-2 border-t border-[#EAE3D5] flex gap-2">
+                      <input
+                        type="text"
+                        value={urlInput}
+                        onChange={(e) => setUrlInput(e.target.value)}
+                        placeholder="192.168.1.15:5173 o mitunel.ngrok.io"
+                        className="flex-1 px-2.5 py-1 text-xs font-mono rounded-lg border border-[#EAE3D5] bg-white text-[#181226]"
+                      />
                       <button
-                        onClick={() => setIsEditingUrl(!isEditingUrl)}
-                        className="text-[11px] font-bold text-[#FF5722] hover:underline flex items-center gap-1 cursor-pointer"
+                        onClick={handleSaveCustomUrl}
+                        className="arcade-btn-primary px-3 py-1 text-xs font-bold shrink-0"
                       >
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                        {isEditingUrl ? 'Cerrar' : 'Cambiar IP/Host'}
+                        OK
                       </button>
                     </div>
-
-                    <p className="mono text-xs text-[#181226] font-bold break-all select-all">
-                      {joinUrl}
-                    </p>
-
-                    {/* Editor de IP / Host manual */}
-                    {isEditingUrl && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        className="mt-3 pt-3 border-t border-[#EAE3D5] space-y-2"
-                      >
-                        <p className="text-[11px] text-[#6B6280]">
-                          Si estás en red local y el celular no conecta con localhost, poné la IP de tu PC (ej: <code>192.168.1.50</code> o tu túnel ngrok):
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <input
-                            type="text"
-                            value={urlInput}
-                            onChange={(e) => setUrlInput(e.target.value)}
-                            placeholder="Ej: 192.168.1.15:5173 o mitunel.ngrok.io"
-                            className="flex-1 px-3 py-1.5 text-xs font-mono rounded-lg border border-[#EAE3D5] bg-white text-[#181226]"
-                          />
-                          <div className="flex gap-2 self-end sm:self-auto">
-                            <button
-                              onClick={() => setIsEditingUrl(false)}
-                              className="text-xs text-[#6B6280] hover:text-[#181226] px-2 py-1 font-semibold"
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              onClick={handleSaveCustomUrl}
-                              className="arcade-btn-primary px-3.5 py-1.5 text-xs font-bold"
-                            >
-                              Guardar
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
+                  )}
                 </>
               ) : (
-                <div className="py-12 flex flex-col items-center justify-center space-y-4">
-                  <div className="w-10 h-10 border-4 border-[#FF5722] border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm font-semibold text-[#6B6280]">
-                    Generando código y código QR...
+                <div className="py-8 flex flex-col items-center justify-center space-y-2">
+                  <div className="w-8 h-8 border-3 border-[#FF5722] border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xs font-semibold text-[#6B6280]">
+                    Generando código y QR...
                   </p>
                   <button
                     onClick={handleManualRetryRoom}
-                    className="arcade-btn px-4 py-2 text-xs font-bold text-[#FF5722] mt-2"
+                    className="arcade-btn px-3 py-1.5 text-xs font-bold text-[#FF5722]"
                   >
-                    Reintentar conexión
+                    Reintentar
                   </button>
                 </div>
               )}
-            </motion.div>
+            </div>
 
-            {/* PRECARGA DE PLAYLIST */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="party-card p-6 rounded-3xl"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3 pb-3 border-b border-[#EAE3D5]">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#181226] whitespace-nowrap">
-                    Playlist de Canciones
+            {/* Lower Card: Playlist Console */}
+            <div className="party-card p-3 sm:p-3.5 rounded-2xl flex-1 flex flex-col min-h-0 overflow-hidden shadow-sm">
+              <div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-[#EAE3D5] shrink-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-xs font-black uppercase tracking-wider text-[#181226] whitespace-nowrap">
+                    Playlist
                   </span>
-                  <span className="mono text-xs font-black px-2.5 py-1 rounded-full bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 whitespace-nowrap shrink-0">
-                    {playlist.length} {playlist.length === 1 ? 'canción' : 'canciones'}
+                  <span className="mono text-[10px] font-black px-2 py-0.5 rounded-full bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 shrink-0">
+                    {playlist.length}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   {playlist.length > 0 && (
                     <button
                       type="button"
                       onClick={() => setShowClearPlaylistConfirm(true)}
-                      className="h-8 px-2.5 rounded-xl text-xs font-bold text-[#E11D48] hover:bg-[#FFF0F3] border border-[#E11D48]/30 hover:border-[#E11D48] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs"
-                      title="Borrar todas las canciones cargadas"
+                      className="h-7 px-2 rounded-lg text-[10px] font-bold text-[#E11D48] hover:bg-[#FFF0F3] border border-[#E11D48]/30 transition-all cursor-pointer inline-flex items-center gap-1"
+                      title="Borrar todas las canciones"
                     >
-                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
-                      <span>Borrar Todas</span>
+                      <span>Vaciar</span>
                     </button>
                   )}
 
                   <button
                     type="button"
                     onClick={() => setIsDjBotOpen(true)}
-                    className="h-8 px-3 rounded-xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white text-xs font-black shadow-xs hover:scale-[1.02] active:scale-[0.98] transition-all inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
-                    title="Generar playlist automática por género y época"
+                    className="h-7 px-2.5 rounded-lg bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white text-[11px] font-black shadow-2xs hover:brightness-105 active:scale-98 transition-all inline-flex items-center gap-1 cursor-pointer"
                   >
-                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                    </svg>
                     <span>DJ Bot</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setShowPlaylistDrawer(!showPlaylistDrawer)}
-                    className={`h-8 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0 border ${
+                    className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 border ${
                       showPlaylistDrawer
-                        ? 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5] hover:text-[#181226]'
+                        ? 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5]'
                         : 'bg-[#FFF0EB] text-[#FF5722] border-[#FF5722]/30 hover:bg-[#FFE5DC]'
                     }`}
                   >
@@ -1000,11 +925,10 @@ export default function HostLobby() {
                 </div>
               </div>
 
-              <p className="text-xs text-[#6B6280] mb-3">
-                Cargá archivos descargados (.mp3, .wav) para jugar 100% offline sin datos, o pegá enlaces web de YouTube.
-              </p>
-
-              {showPlaylistDrawer && (
+              {/* Drawer Content or Tracks Roster */}
+              {showPlaylistDrawer ? (
+                <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
+                  {showPlaylistDrawer && (
                 <div className="space-y-3 pt-2">
                   {/* Selector de modo: Buscar vs Archivos vs URLs */}
                   <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#FAF7F2] rounded-xl border border-[#EAE3D5]">
@@ -1285,7 +1209,10 @@ export default function HostLobby() {
               )}
 
               {/* Playlist items list preview */}
-              {playlist.length > 0 && (
+                </div>
+              ) : (
+                <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1">
+                  {playlist.length > 0 && (
                 <div className="mt-4">
                   <div className="flex items-center justify-between mb-2 px-1">
                     <span className="mono text-[11px] font-black text-[#6B6280]">
@@ -1392,360 +1319,159 @@ export default function HostLobby() {
                   </div>
                 </div>
               )}
-            </motion.div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* RIGHT COLUMN: Jugadores, Carga Manual y Equipos (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            <motion.div
-              initial={{ opacity: 0, x: 16 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="party-card p-6 sm:p-8 rounded-[2rem]"
-            >
-              {/* Header: Connected count & Mode selector */}
-              <div className="space-y-4 mb-6 pb-4 border-b border-[#EAE3D5]">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <h2 className="font-display text-xl font-black text-[#181226]">
-                      Modalidad de Juego y Equipos
-                    </h2>
-                    <p className="text-xs text-[#6B6280] mt-0.5">
-                      {players.length} participante{players.length === 1 ? '' : 's'} · <span className="font-bold text-[#181226]">{currentTheme.name}</span>
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-                    {/* Botón para ver explicación detallada de modos */}
-                    <button
-                      type="button"
-                      onClick={() => setIsModeConfirmed(false)}
-                      className="px-3 py-1.5 rounded-xl text-xs font-bold text-[#6B6280] bg-white border border-[#EAE3D5] hover:border-[#FF5722]/50 hover:text-[#181226] transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
-                      title="Ver guía completa y cambiar modo"
-                    >
-                      <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>Ver Explicación / Cambiar</span>
-                    </button>
-
-                    {/* Switcher Auto-Host (Todos Juegan) */}
-                    <button
-                      type="button"
-                      onClick={handleToggleAutoHost}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer border shadow-xs ${
-                        autoHostEnabled
-                          ? 'bg-[#059669] text-white border-[#059669]/60 shadow-xs scale-102'
-                          : 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5] hover:text-[#181226]'
-                      }`}
-                    >
-                      <span>{autoHostEnabled ? 'Modo Todos Juegan: ACTIVO' : 'Con Host Dedicado'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Switcher Formación: Sorteo (Índigo) vs Elección Manual (Naranja) vs Individual (Fucsia) */}
-                <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#FAF7F2] rounded-2xl border border-[#EAE3D5]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleSwitchGameMode('teams');
-                      handleSwitchTeamSelectionMode('auto');
-                    }}
-                    className={`py-2 px-2 rounded-xl text-xs font-black transition-all cursor-pointer text-center ${
-                      gameMode === 'teams' && teamSelectionMode === 'auto'
-                        ? 'bg-[#4F46E5] text-white shadow-xs'
-                        : 'text-[#6B6280] hover:text-[#181226]'
-                    }`}
-                  >
-                    <span>Sorteo Automático</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleSwitchGameMode('teams');
-                      handleSwitchTeamSelectionMode('manual');
-                    }}
-                    className={`py-2 px-2 rounded-xl text-xs font-black transition-all cursor-pointer text-center ${
-                      gameMode === 'teams' && teamSelectionMode === 'manual'
-                        ? 'bg-[#FF5722] text-white shadow-xs'
-                        : 'text-[#6B6280] hover:text-[#181226]'
-                    }`}
-                  >
-                    <span>Elección Manual</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleSwitchGameMode('individual');
-                    }}
-                    className={`py-2 px-2 rounded-xl text-xs font-black transition-all cursor-pointer text-center ${
-                      gameMode === 'individual'
-                        ? 'bg-[#D946EF] text-white shadow-xs'
-                        : 'text-[#6B6280] hover:text-[#181226]'
-                    }`}
-                  >
-                    <span>Individual</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Banner Informativo / Configuración contextual según el modo elegido */}
-              {autoHostEnabled && (
-                <div className="p-3 bg-[#E6F9F0] border border-[#059669]/30 rounded-2xl mb-5 flex items-center gap-2.5 text-[#065F46]">
-                  <span className="w-8 h-8 rounded-xl bg-[#059669] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </span>
-                  <p className="text-xs font-bold leading-tight">
-                    <strong>Modo Todos Juegan:</strong> La pantalla conduce automáticamente la ronda y revela la canción al cabo de 5 segundos. ¡El anfitrión también puede unirse a jugar desde su teléfono!
-                  </p>
-                </div>
-              )}
-
-              {gameMode === 'teams' && teamSelectionMode === 'manual' && (
-                <div className="p-4 bg-[#FAF7F2] border border-[#EAE3D5] rounded-2xl mb-5 space-y-3.5">
-                  {/* Fila 1: Cantidad de Equipos */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-[#EAE3D5]/80">
-                    <div>
-                      <p className="text-xs font-black text-[#181226]">
-                        Cantidad de Equipos:{' '}
-                        <span className="text-[#FF5722]">{teams?.length || 2} equipos</span>
-                      </p>
-                      <p className="text-[11px] text-[#6B6280]">
-                        Elegí cuántos grupos crear para que los participantes se unan libremente:
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {/* Stepper + Input */}
-                      <div className="inline-flex items-center bg-white border-2 border-[#EAE3D5] rounded-xl shadow-2xs h-8 overflow-hidden">
+          <div className="lg:col-span-7 flex flex-col h-full min-h-0">
+            <div className="party-card p-3.5 sm:p-4 rounded-2xl flex-1 flex flex-col min-h-0 justify-between shadow-sm">
+              {/* Top Configuration Strip */}
+              <div className="pb-2.5 border-b border-[#EAE3D5] shrink-0 space-y-2">
+                {/* Mode contextual parameter */}
+                {gameMode === 'teams' && teamSelectionMode === 'auto' && (
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-[#181226]">Cupo por equipo:</span>
+                      <div className="inline-flex items-center bg-white border border-[#DDD5C5] rounded-xl shadow-2xs h-7 overflow-hidden">
                         <button
                           type="button"
-                          onClick={() => handleInitManualTeams(Math.max(2, (teams?.length || 2) - 1))}
-                          disabled={(teams?.length || 2) <= 2}
-                          className="w-8 h-8 flex items-center justify-center text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] active:bg-[#EDE8DF] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                          title="Menos equipos"
+                          onClick={() => handleChangeTeamSize(Math.max(1, (maxPlayersPerTeam || 4) - 1))}
+                          disabled={(maxPlayersPerTeam || 4) <= 1}
+                          className="w-7 h-7 flex items-center justify-center text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] disabled:opacity-30 cursor-pointer"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-                          </svg>
+                          -
                         </button>
-                        <input
-                          type="number"
-                          min="2"
-                          max="24"
-                          value={teams?.length || 2}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value, 10);
-                            if (!isNaN(val) && val >= 2 && val <= 24) handleInitManualTeams(val);
-                          }}
-                          className="stepper-input w-10 h-8 font-display font-black text-sm text-[#181226] text-center"
-                          title="Escribí la cantidad exacta de equipos"
-                        />
+                        <span className="w-8 text-center font-display font-black text-xs text-[#181226]">
+                          {maxPlayersPerTeam || 4}
+                        </span>
                         <button
                           type="button"
-                          onClick={() => handleInitManualTeams(Math.min(24, (teams?.length || 2) + 1))}
-                          disabled={(teams?.length || 2) >= 24}
-                          className="w-8 h-8 flex items-center justify-center text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] active:bg-[#EDE8DF] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                          title="Más equipos"
+                          onClick={() => handleChangeTeamSize(Math.min(50, (maxPlayersPerTeam || 4) + 1))}
+                          disabled={(maxPlayersPerTeam || 4) >= 50}
+                          className="w-7 h-7 flex items-center justify-center text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] disabled:opacity-30 cursor-pointer"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                          </svg>
+                          +
                         </button>
                       </div>
-
-                      {/* Botón rápido + 1 equipo */}
-                      <button
-                        type="button"
-                        onClick={() => handleAddManualTeam()}
-                        className="px-2.5 py-1.5 rounded-xl text-[11px] font-black bg-white border border-[#EAE3D5] hover:border-[#FF5722] hover:text-[#FF5722] text-[#181226] cursor-pointer shadow-2xs shrink-0 transition-colors"
-                        title="Sumar un equipo más al listado"
-                      >
-                        + 1 Equipo
-                      </button>
                     </div>
-                  </div>
 
-                  {/* Chips rápidos de cantidad de equipos */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] uppercase font-bold text-[#8E869E] mr-1">Equipos:</span>
-                    {[2, 3, 4, 5, 6, 8, 10, 12, 16].map((count) => (
-                      <button
-                        key={count}
-                        type="button"
-                        onClick={() => handleInitManualTeams(count)}
-                        className={`px-2 py-0.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
-                          (teams?.length || 2) === count
-                            ? 'bg-[#FF5722] text-white shadow-2xs font-black'
-                            : 'bg-white border border-[#EAE3D5] text-[#6B6280] hover:border-[#FF5722]/50 hover:text-[#181226]'
-                        }`}
-                      >
-                        {count} eq.
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Fila 2: Límite de Jugadores por Equipo */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-[#EAE3D5]/80">
-                    <div>
-                      <p className="text-xs font-black text-[#181226]">
-                        Cupo por Equipo:{' '}
-                        <span className="text-[#FF5722]">
-                          {maxPlayersPerTeam === 0 ? 'Sin límite (Libre)' : `${maxPlayersPerTeam} personas`}
-                        </span>
-                      </p>
-                      <p className="text-[11px] text-[#6B6280]">
-                        {maxPlayersPerTeam === 0
-                          ? 'Cualquier cantidad de jugadores puede unirse al mismo equipo.'
-                          : `Si un equipo llega a ${maxPlayersPerTeam} integrantes, se bloquea el ingreso en los teléfonos.`}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-wrap shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleChangeTeamSize(0)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                          maxPlayersPerTeam === 0
-                            ? 'bg-[#059669] text-white shadow-2xs'
-                            : 'bg-white text-[#6B6280] border border-[#EAE3D5] hover:border-[#059669]/50 hover:text-[#181226]'
-                        }`}
-                        title="Sin límite de participantes por equipo"
-                      >
-                        Sin límite
-                      </button>
-                      {[2, 3, 4, 5, 6, 8, 10].map((size) => (
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] uppercase font-bold text-[#8E869E] mr-1">Rápidos:</span>
+                      {[2, 3, 4, 6, 8].map((s) => (
                         <button
-                          key={size}
+                          key={s}
                           type="button"
-                          onClick={() => handleChangeTeamSize(size)}
-                          className={`w-7 h-7 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                            maxPlayersPerTeam === size
-                              ? 'bg-[#FF5722] text-white shadow-2xs'
-                              : 'bg-white text-[#6B6280] border border-[#EAE3D5] hover:border-[#FF5722]/50 hover:text-[#181226]'
+                          onClick={() => handleChangeTeamSize(s)}
+                          className={`w-6 h-6 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                            maxPlayersPerTeam === s
+                              ? 'bg-[#FF5722] text-white font-black shadow-2xs'
+                              : 'bg-white text-[#6B6280] border border-[#EAE3D5] hover:border-[#FF5722]'
                           }`}
-                          title={`${size} jugadores por equipo`}
                         >
-                          {size}
+                          {s}
                         </button>
                       ))}
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {gameMode === 'teams' && teamSelectionMode === 'auto' && (
-                <div className="p-4 bg-[#FAF7F2] border border-[#EAE3D5] rounded-2xl mb-5 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                    <div className="min-w-0">
-                      <p className="text-xs font-black text-[#181226]">
-                        Integrantes por equipo:{' '}
-                        <span className="text-[#FF5722]">{maxPlayersPerTeam} personas</span>
-                      </p>
-                      <p className="text-[11px] text-[#6B6280]">
-                        {players.length > 0
-                          ? `Para ${players.length} participante${players.length === 1 ? '' : 's'}, se formarán aprox. ${Math.max(players.length > 1 ? 2 : 1, Math.ceil(players.length / (maxPlayersPerTeam || 1)))} equipos.`
-                          : `Los participantes se balancearán automáticamente (máx. ${maxPlayersPerTeam} por equipo).`}
-                      </p>
-                    </div>
-
-                    {/* Stepper + Custom Number Input */}
-                    <div className="inline-flex items-center bg-white border-2 border-[#EAE3D5] rounded-xl shadow-2xs h-8 overflow-hidden shrink-0 self-start sm:self-auto">
+                {gameMode === 'teams' && teamSelectionMode === 'manual' && (
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-[#181226]">Equipos:</span>
+                      <div className="inline-flex items-center bg-white border border-[#DDD5C5] rounded-xl shadow-2xs h-7 overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => handleInitManualTeams(Math.max(2, (teams?.length || 2) - 1))}
+                          disabled={(teams?.length || 2) <= 2}
+                          className="w-7 h-7 flex items-center justify-center text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] disabled:opacity-30 cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <span className="w-8 text-center font-display font-black text-xs text-[#181226]">
+                          {teams?.length || 2}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleInitManualTeams(Math.min(24, (teams?.length || 2) + 1))}
+                          disabled={(teams?.length || 2) >= 24}
+                          className="w-7 h-7 flex items-center justify-center text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] disabled:opacity-30 cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => handleChangeTeamSize(Math.max(1, (maxPlayersPerTeam || 4) - 1))}
-                        disabled={(maxPlayersPerTeam || 4) <= 1}
-                        className="w-8 h-8 flex items-center justify-center text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] active:bg-[#EDE8DF] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                        title="Menos jugadores por equipo"
+                        onClick={handleAddManualTeam}
+                        className="px-2 py-1 rounded-lg text-[10px] font-black bg-white border border-[#DDD5C5] hover:border-[#FF5722] text-[#181226] cursor-pointer"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-                        </svg>
-                      </button>
-                      <input
-                        type="number"
-                        min="1"
-                        max="50"
-                        value={maxPlayersPerTeam || 4}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value, 10);
-                          if (!isNaN(val) && val >= 1 && val <= 50) handleChangeTeamSize(val);
-                        }}
-                        className="stepper-input w-10 h-8 font-display font-black text-sm text-[#181226] text-center"
-                        title="Escribí cualquier cantidad de integrantes por equipo"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleChangeTeamSize(Math.min(50, (maxPlayersPerTeam || 4) + 1))}
-                        disabled={(maxPlayersPerTeam || 4) >= 50}
-                        className="w-8 h-8 flex items-center justify-center text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] active:bg-[#EDE8DF] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                        title="Más jugadores por equipo"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                        </svg>
+                        + 1 Equipo
                       </button>
                     </div>
-                  </div>
 
-                  {/* Quick Chips Presets */}
-                  <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-[#EAE3D5]/80">
-                    <span className="text-[10px] uppercase font-bold text-[#8E869E] mr-1">Rápidos:</span>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12].map((size) => (
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-[#6B6280] mr-1">Cupo:</span>
                       <button
-                        key={size}
                         type="button"
-                        onClick={() => handleChangeTeamSize(size)}
-                        className={`w-7 h-7 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                          maxPlayersPerTeam === size
-                            ? 'bg-[#FF5722] text-white shadow-2xs'
-                            : 'bg-white text-[#6B6280] border border-[#EAE3D5] hover:border-[#FF5722]/50 hover:text-[#181226]'
+                        onClick={() => handleChangeTeamSize(0)}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer ${
+                          maxPlayersPerTeam === 0 ? 'bg-[#059669] text-white font-black' : 'bg-white text-[#6B6280] border border-[#EAE3D5]'
                         }`}
-                        title={`${size} jugadores por equipo`}
                       >
-                        {size}
+                        Libre
                       </button>
-                    ))}
+                      {[2, 3, 4, 6].map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => handleChangeTeamSize(s)}
+                          className={`w-6 h-6 rounded-lg text-[11px] font-bold cursor-pointer ${
+                            maxPlayersPerTeam === s ? 'bg-[#FF5722] text-white font-black' : 'bg-white text-[#6B6280] border border-[#EAE3D5]'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {gameMode === 'individual' && (
-                <div className="p-3 bg-[#FFF0EB]/70 border border-[#FF5722]/20 rounded-2xl mb-5 flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-xl bg-[#FF5722] text-white flex items-center justify-center text-xs shrink-0 shadow-xs">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+                {gameMode === 'individual' && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-[#D946EF]">
+                      Modo Individual: Cada participante suma sus propios puntos con su propio pulsador.
+                    </span>
                   </div>
-                  <p className="text-xs font-bold text-[#181226]">
-                    Modo Individual: Todos contra todos. Cada jugador suma sus propios puntos con su propio pulsador buzzer.
+                )}
+
+                {/* Inline Manual Player Input */}
+                <form onSubmit={handleAddManualPlayer} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={manualName}
+                    onChange={(e) => setManualName(e.target.value)}
+                    placeholder="Nombre de invitado sin teléfono..."
+                    className="flex-1 px-3 py-1.5 text-xs bg-[#FAF7F2] border border-[#DDD5C5] rounded-xl focus:bg-white focus:outline-none focus:border-[#FF5722] text-[#181226]"
+                  />
+                  <button
+                    type="submit"
+                    className="arcade-btn px-3 py-1.5 font-bold text-xs text-[#FF5722] shrink-0 cursor-pointer"
+                  >
+                    + Cargar
+                  </button>
+                </form>
+                {manualError && (
+                  <p className="text-[11px] text-[#E11D48] font-bold bg-[#FFF0F3] p-1.5 rounded-lg border border-[#E11D48]/30">
+                    {manualError}
                   </p>
-                </div>
-              )}
+                )}
+              </div>
 
-              {/* CARGA MANUAL DE JUGADORES */}
-              <form onSubmit={handleAddManualPlayer} className="p-2 bg-[#FAF7F2] border border-[#EAE3D5] rounded-2xl mb-6 flex gap-2">
-                <input
-                  type="text"
-                  value={manualName}
-                  onChange={(e) => setManualName(e.target.value)}
-                  placeholder="Nombre de invitado sin teléfono..."
-                  className="flex-1 px-3 py-2 text-xs sm:text-sm bg-transparent border-none shadow-none focus:outline-none text-[#181226] placeholder:text-[#8E869E]"
-                />
-                <button
-                  type="submit"
-                  className="arcade-btn px-4 py-2 font-bold text-xs text-[#FF5722] shrink-0 cursor-pointer"
-                >
-                  + Cargar Manual
-                </button>
-              </form>
-              {manualError && (
-                <p className="text-xs text-[#E11D48] font-bold mb-4 bg-[#FFF0F3] p-2.5 rounded-xl border border-[#E11D48]/30">{manualError}</p>
-              )}
-
-              {/* Roster or Teams View */}
+              {/* Scrollable Center Roster / Teams */}
+              <div className="flex-1 min-h-0 overflow-y-auto pr-1 my-2 space-y-2">
+                {/* Roster or Teams View */}
               {!hasAssignedTeams ? (
                 <div className="space-y-4 mb-6">
                   <div className="flex items-center justify-between">
@@ -1892,8 +1618,11 @@ export default function HostLobby() {
                   />
                 </div>
               )}
+              </div>
 
-              {/* Action Buttons */}
+              {/* Bottom Action Bar */}
+              <div className="pt-2.5 border-t border-[#EAE3D5] shrink-0 flex gap-2.5">
+                {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 {!hasAssignedTeams ? (
                   <button
@@ -1951,10 +1680,12 @@ export default function HostLobby() {
                   </>
                 )}
               </div>
-            </motion.div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
       {/* DJ Bot Modal */}
       <DjBotModal
         isOpen={isDjBotOpen}

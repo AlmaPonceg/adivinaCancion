@@ -22,7 +22,7 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam, onRemov
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[460px] overflow-y-auto pr-1">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-1">
       <AnimatePresence>
         {teams.map((team, teamIdx) => (
           <motion.div
@@ -75,7 +75,7 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam, onRemov
                     className="flex items-center gap-1.5 cursor-pointer group truncate"
                     title="Hacé clic para cambiar el nombre del equipo"
                   >
-                    <span className="font-display font-black text-sm text-[#181226] group-hover:text-[#FF5722] transition-colors truncate">
+                    <span className="font-bold text-sm text-[#181226] group-hover:text-[#FF5722] transition-colors truncate">
                       {team.name}
                     </span>
                     <svg
