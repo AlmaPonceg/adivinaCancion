@@ -548,7 +548,7 @@ export default function HostLobby() {
       <div className="max-w-7xl w-full mx-auto flex-1 flex flex-col min-h-0 relative z-10">
         {/* ── Master Console Header Bar ────────────────────────────── */}
         <div className="flex items-center justify-between gap-3 mb-2.5 shrink-0">
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/')}
               className="arcade-btn px-3 py-1.5 rounded-xl text-xs font-bold text-[#181226] hover:text-[#FF5722] flex items-center gap-1.5 cursor-pointer"
@@ -559,49 +559,37 @@ export default function HostLobby() {
               <span>Inicio</span>
             </button>
 
-            <h1 className="font-display font-black text-sm sm:text-base text-[#181226] tracking-tight">
-              Lobby de Espera
-            </h1>
+            <div className="h-4 w-px bg-[#DDD5C5]" />
 
-            <div className="px-2.5 py-1 rounded-xl bg-white border border-[#DDD5C5] font-mono text-xs font-black text-[#181226] shadow-2xs flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${roomCode ? 'bg-[#059669]' : 'bg-[#D97706]'}`} />
-              <span>{roomCode ? `SALA ${roomCode}` : 'CONECTANDO...'}</span>
+            <div className="flex items-center gap-2.5">
+              <h1 className="font-display font-black text-sm sm:text-base text-[#181226] tracking-tight">
+                Lobby de Espera
+              </h1>
+
+              {/* Quick Button to Change Mode */}
+              <button
+                id="tour-mode-badge"
+                type="button"
+                onClick={() => setSetupStep('mode')}
+                className="px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs hover:brightness-95"
+                style={{
+                  backgroundColor: currentTheme.colorLight,
+                  borderColor: currentTheme.colorBorder,
+                  color: currentTheme.colorText,
+                }}
+                title="Cambiar la modalidad de juego"
+              >
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentTheme.color }} />
+                <span>Modo: {currentTheme.shortName || currentTheme.name}</span>
+                <svg className="w-3 h-3 opacity-60 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
             </div>
-
-            {/* Quick Button to Change Mode */}
-            <button
-              id="tour-mode-badge"
-              type="button"
-              onClick={() => setSetupStep('mode')}
-              className="px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs hover:brightness-95"
-              style={{
-                backgroundColor: currentTheme.colorLight,
-                borderColor: currentTheme.colorBorder,
-                color: currentTheme.colorText,
-              }}
-              title="Cambiar la modalidad de juego"
-            >
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentTheme.color }} />
-              <span>Modo: {currentTheme.shortName || currentTheme.name}</span>
-              <span className="text-[10px] underline ml-0.5 font-black">Cambiar</span>
-            </button>
-
-            {/* Quick Button to Change / View Playlist */}
-            <button
-              type="button"
-              onClick={() => setSetupStep('playlist')}
-              className="px-2.5 py-1 rounded-xl text-xs font-bold border border-[#FF5722]/30 bg-[#FFF0EB] text-[#FF5722] hover:bg-[#FFE5DC] transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-              title="Ver o cambiar la playlist de canciones"
-            >
-              <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-              </svg>
-              <span>Playlist: {playlist.length} {playlist.length === 1 ? 'canción' : 'canciones'}</span>
-              <span className="text-[10px] underline ml-0.5 font-black">Editar</span>
-            </button>
           </div>
 
           <div className="flex items-center gap-2">
+            <LobbyAudio />
             <button
               type="button"
               onClick={() => setShowTutorial(true)}
@@ -611,7 +599,6 @@ export default function HostLobby() {
               <span className="w-4 h-4 rounded-full bg-[#FF5722] text-white flex items-center justify-center text-[10px] font-black leading-none">?</span>
               <span>Tutorial</span>
             </button>
-            <LobbyAudio />
             <button
               id="spawn-bots-btn"
               onClick={handleSpawnBots}
