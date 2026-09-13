@@ -44,6 +44,7 @@ export default function HostLobby() {
   const [antiSpoiler, setAntiSpoiler] = useState(() => {
     return localStorage.getItem('trivia_anti_spoiler') === 'true';
   });
+  const [showClearPlaylistConfirm, setShowClearPlaylistConfirm] = useState(false);
 
   // ── Mode & Team Sizing ──────────────────────────────────────
   const [gameMode, setGameMode] = useState('teams'); // 'teams' | 'individual'
@@ -445,7 +446,9 @@ export default function HostLobby() {
         return {
           id: t.id,
           type: t.type,
-          name: t.name,
+          name: t.name || t.title,
+          title: t.title || t.name,
+          author: t.author || '',
           url: t.type === 'local' ? '' : t.url,
           size: t.size,
           fileId: t.fileId || t.id,
@@ -560,10 +563,14 @@ export default function HostLobby() {
     savePlaylistToStorage(updated);
   };
 
-  const handleClearPlaylist = async () => {
-    await clearAudioFiles();
+  const handleClearPlaylist = () => {
     setPlaylist([]);
-    localStorage.removeItem('trivia_playlist');
+    try {
+      localStorage.removeItem('trivia_playlist');
+    } catch {
+      /* ignore */
+    }
+    clearAudioFiles().catch((e) => console.warn('Error clearing audio files:', e));
   };
 
   // ── Start Game Navigation ───────────────────────────────────
@@ -923,6 +930,20 @@ export default function HostLobby() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {playlist.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowClearPlaylistConfirm(true)}
+                      className="px-2.5 py-1 rounded-xl text-xs font-bold text-[#E11D48] hover:bg-[#FFF0F3] border border-[#E11D48]/30 transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                      title="Borrar todas las canciones cargadas"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      <span>Borrar Todas</span>
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => setIsDjBotOpen(true)}
@@ -933,6 +954,7 @@ export default function HostLobby() {
                   </button>
 
                   <button
+                    type="button"
                     onClick={() => setShowPlaylistDrawer(!showPlaylistDrawer)}
                     className="text-xs font-bold text-[#FF5722] hover:underline cursor-pointer"
                   >
@@ -1193,37 +1215,46 @@ export default function HostLobby() {
                     <span className="mono text-[11px] font-black text-[#6B6280]">
                       PISTAS CARGADAS ({playlist.length})
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = !antiSpoiler;
-                        setAntiSpoiler(next);
-                        localStorage.setItem('trivia_anti_spoiler', next ? 'true' : 'false');
-                      }}
-                      className={`text-xs font-black px-2.5 py-1 rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
-                        antiSpoiler
-                          ? 'bg-[#FFF0EB] text-[#FF5722] border-[#FF5722]/40 shadow-xs'
-                          : 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5] hover:text-[#181226]'
-                      }`}
-                      title={antiSpoiler ? 'Hacé clic para ver los títulos reales' : 'Ocultar títulos para evitar spoilers (no hacer trampa)'}
-                    >
-                      {antiSpoiler ? (
-                        <>
-                          <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-                          </svg>
-                          <span>Modo Anti-Spoiler (Activo)</span>
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          <span>Ocultar Títulos</span>
-                        </>
-                      )}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowClearPlaylistConfirm(true)}
+                        className="text-xs font-bold text-[#E11D48] hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        Vaciar Lista
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = !antiSpoiler;
+                          setAntiSpoiler(next);
+                          localStorage.setItem('trivia_anti_spoiler', next ? 'true' : 'false');
+                        }}
+                        className={`text-xs font-black px-2.5 py-1 rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
+                          antiSpoiler
+                            ? 'bg-[#FFF0EB] text-[#FF5722] border-[#FF5722]/40 shadow-xs'
+                            : 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5] hover:text-[#181226]'
+                        }`}
+                        title={antiSpoiler ? 'Hacé clic para ver los títulos reales' : 'Ocultar títulos para evitar spoilers (no hacer trampa)'}
+                      >
+                        {antiSpoiler ? (
+                          <>
+                            <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                            </svg>
+                            <span>Modo Anti-Spoiler (Activo)</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>Ocultar Títulos</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="console-inset p-3 rounded-2xl max-h-52 overflow-y-auto space-y-2">
@@ -1269,13 +1300,14 @@ export default function HostLobby() {
                           </div>
 
                           <button
+                            type="button"
                             onClick={() => handleRemovePlaylistItem(idx)}
-                            className="text-[#8E869E] hover:text-[#E11D48] p-1 shrink-0 cursor-pointer"
-                            title="Eliminar canción"
+                            className="text-[#8E869E] hover:text-[#E11D48] hover:bg-[#FFF0F3] p-1.5 rounded-lg shrink-0 cursor-pointer transition-colors"
+                            title="Eliminar canción de la lista"
                             aria-label="Eliminar canción"
                           >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
                         </div>
@@ -1846,6 +1878,53 @@ export default function HostLobby() {
         onPlaylistGenerated={handleDjBotGenerated}
         serverUrl={SERVER_URL}
       />
+
+      {/* Modal de confirmación para Vaciar Playlist */}
+      {showClearPlaylistConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0E0A16]/80 animate-fade-in select-none"
+          onClick={() => setShowClearPlaylistConfirm(false)}
+        >
+          <div
+            className="party-card p-6 sm:p-8 max-w-md w-full rounded-[2rem] bg-white border-2 border-[#EAE3D5] text-center shadow-2xl animate-fade-in text-[#181226]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-14 h-14 rounded-2xl bg-[#FFF0F3] border-2 border-[#E11D48]/30 flex items-center justify-center mx-auto mb-4 text-[#E11D48] shadow-xs">
+              <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+
+            <p className="badge-tag text-[#E11D48] mb-1">VACIAR PLAYLIST</p>
+            <h3 className="font-display text-xl sm:text-2xl font-black text-[#181226] tracking-tight mb-2">
+              ¿Eliminar todas las canciones?
+            </h3>
+            <p className="text-xs sm:text-sm text-[#6B6280] font-medium leading-relaxed mb-6">
+              Se quitarán las {playlist.length} canciones cargadas actualmente para que puedas armar una lista nueva desde cero.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowClearPlaylistConfirm(false)}
+                className="flex-1 py-3 px-4 rounded-xl border border-[#EAE3D5] text-xs sm:text-sm font-bold text-[#6B6280] hover:bg-[#FAF7F2] transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleClearPlaylist();
+                  setShowClearPlaylistConfirm(false);
+                }}
+                className="flex-1 py-3 px-4 rounded-xl bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs sm:text-sm font-black transition-all cursor-pointer shadow-xs"
+              >
+                Sí, borrar todas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
