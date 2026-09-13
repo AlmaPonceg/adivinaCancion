@@ -26,7 +26,7 @@ function shuffleArray(arr) {
 }
 
 const MusicPlayer = forwardRef(function MusicPlayer(
-  { roomCode, playlist = [], gameState, roundNumber = 0, onDurationChange },
+  { roomCode, playlist = [], gameState, roundNumber = 0, onDurationChange, onTrackChange },
   ref
 ) {
   const [shuffledPlaylist, setShuffledPlaylist] = useState([]);
@@ -48,6 +48,10 @@ const MusicPlayer = forwardRef(function MusicPlayer(
   useEffect(() => {
     setRevealedCurrentTrack(false);
   }, [currentTrack?.id]);
+
+  useEffect(() => {
+    onTrackChange?.(currentTrack);
+  }, [currentTrack, onTrackChange]);
 
   const audioPlayerRef = useRef(null);
   const [playDuration, setPlayDuration] = useState(() => {
@@ -779,6 +783,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     next: handleNextTrack,
     prev: handlePrevTrack,
     currentTrackIndex,
+    currentTrack,
     totalTracks: activeQueue.length,
     isPlaying,
     playDuration,

@@ -6,6 +6,7 @@ import { useSocketEvent, useSocketEmit } from '../hooks/useSocket';
 import QRDisplay from '../components/QRDisplay';
 import TeamDisplay from '../components/TeamDisplay';
 import LobbyAudio from '../components/LobbyAudio';
+import DjBotModal from '../components/DjBotModal';
 import { lobbyAudioManager } from '../utils/lobbyAudio';
 import {
   saveAudioFile,
@@ -46,6 +47,9 @@ export default function HostLobby() {
   // ── Mode & Team Sizing ──────────────────────────────────────
   const [gameMode, setGameMode] = useState('teams'); // 'teams' | 'individual'
   const [maxPlayersPerTeam, setMaxPlayersPerTeam] = useState(4);
+  const [teamSelectionMode, setTeamSelectionMode] = useState('auto'); // 'auto' | 'manual'
+  const [autoHostEnabled, setAutoHostEnabled] = useState(false);
+  const [isDjBotOpen, setIsDjBotOpen] = useState(false);
 
   // ── Song Search API State ───────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
@@ -218,6 +222,15 @@ export default function HostLobby() {
     if (data.maxPlayersPerTeam) setMaxPlayersPerTeam(data.maxPlayersPerTeam);
   });
 
+  useSocketEvent('team-selection-mode-updated', (data) => {
+    if (data.teamSelectionMode) setTeamSelectionMode(data.teamSelectionMode);
+    if (data.teams) setTeams(data.teams);
+  });
+
+  useSocketEvent('auto-host-updated', (data) => {
+    if (typeof data.autoHostEnabled === 'boolean') setAutoHostEnabled(data.autoHostEnabled);
+  });
+
   // ── Mode Switch & Team Size Sizing Handlers ──────────────────
   const handleSwitchGameMode = (mode) => {
     setGameMode(mode);
@@ -226,9 +239,40 @@ export default function HostLobby() {
     });
   };
 
+  const handleSwitchTeamSelectionMode = (mode) => {
+    setTeamSelectionMode(mode);
+    socket.emit('set-team-selection-mode', { roomCode, mode }, (res) => {
+      if (res?.teams) setTeams(res.teams);
+    });
+  };
+
+  const handleToggleAutoHost = () => {
+    const next = !autoHostEnabled;
+    setAutoHostEnabled(next);
+    socket.emit('set-auto-host', { roomCode, enabled: next });
+  };
+
+  const handleInitManualTeams = (count) => {
+    socket.emit('init-manual-teams', { roomCode, count }, (res) => {
+      if (res?.teams) setTeams(res.teams);
+    });
+  };
+
   const handleChangeTeamSize = (size) => {
     setMaxPlayersPerTeam(size);
     socket.emit('set-team-size', { roomCode, maxPlayersPerTeam: size });
+  };
+
+  const handleDjBotGenerated = (generatedPlaylist) => {
+    const updated = [...playlist, ...generatedPlaylist];
+    setPlaylist(updated);
+    savePlaylistToStorage(updated);
+    setAntiSpoiler(true);
+    try {
+      localStorage.setItem('trivia_anti_spoiler', 'true');
+    } catch {
+      /* ignore */
+    }
   };
 
   // ── Interactive Song Search ──────────────────────────────────
@@ -460,7 +504,16 @@ export default function HostLobby() {
     }
     lobbyAudioManager.stop();
     socket.emit('host-start-game', { roomCode });
-    navigate('/host/game', { state: { roomCode, teams, playlist, gameMode } });
+    navigate('/host/game', {
+      state: {
+        roomCode,
+        teams,
+        playlist,
+        gameMode,
+        teamSelectionMode,
+        autoHostEnabled,
+      },
+    });
   };
 
   const cleanBase = baseUrl.replace(/\/+$/, '');
@@ -727,12 +780,23 @@ export default function HostLobby() {
                   </span>
                 </div>
 
-                <button
-                  onClick={() => setShowPlaylistDrawer(!showPlaylistDrawer)}
-                  className="text-xs font-bold text-[#FF5722] hover:underline cursor-pointer"
-                >
-                  {showPlaylistDrawer ? 'Cerrar opciones' : '+ Agregar canciones'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDjBotOpen(true)}
+                    className="px-3 py-1 rounded-xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white text-xs font-black shadow-xs hover:scale-105 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                    title="Generar playlist automática por género y época"
+                  >
+                    <span>🎧 DJ Bot</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowPlaylistDrawer(!showPlaylistDrawer)}
+                    className="text-xs font-bold text-[#FF5722] hover:underline cursor-pointer"
+                  >
+                    {showPlaylistDrawer ? 'Cerrar' : '+ Agregar'}
+                  </button>
+                </div>
               </div>
 
               <p className="text-xs text-[#6B6280] mb-3">
@@ -1089,33 +1153,69 @@ export default function HostLobby() {
               className="party-card p-6 sm:p-8 rounded-[2rem]"
             >
               {/* Header: Connected count & Mode selector */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-[#EAE3D5]">
-                <div>
-                  <h2 className="font-display text-xl font-black text-[#181226]">
-                    Jugadores y Modalidad
-                  </h2>
-                  <p className="text-xs text-[#6B6280] mt-0.5">
-                    {players.length} participante{players.length === 1 ? '' : 's'} · {gameMode === 'individual' ? 'Todos contra todos' : `Equipos de hasta ${maxPlayersPerTeam} integrantes`}
-                  </p>
-                </div>
+              <div className="space-y-4 mb-6 pb-4 border-b border-[#EAE3D5]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h2 className="font-display text-xl font-black text-[#181226]">
+                      Modalidad de Juego y Equipos
+                    </h2>
+                    <p className="text-xs text-[#6B6280] mt-0.5">
+                      {players.length} participante{players.length === 1 ? '' : 's'} · {gameMode === 'individual' ? 'Todos contra todos' : teamSelectionMode === 'manual' ? 'Elección libre de equipo' : `Sorteo automático (máx. ${maxPlayersPerTeam} por equipo)`}
+                    </p>
+                  </div>
 
-                {/* Switcher Modo: Por Equipos vs Individual */}
-                <div className="flex items-center p-1 bg-[#FAF7F2] rounded-xl border border-[#EAE3D5] self-start sm:self-auto">
+                  {/* Switcher Auto-Host (Todos Juegan) */}
                   <button
                     type="button"
-                    onClick={() => handleSwitchGameMode('teams')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-                      gameMode === 'teams'
+                    onClick={handleToggleAutoHost}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer self-start sm:self-auto border shadow-xs ${
+                      autoHostEnabled
+                        ? 'bg-[#059669] text-white border-[#059669]/60 shadow-xs scale-102'
+                        : 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5] hover:text-[#181226]'
+                    }`}
+                  >
+                    <span>{autoHostEnabled ? '🤖 Modo Todos Juegan: ACTIVO' : '🎙️ Con Host Dedicado'}</span>
+                  </button>
+                </div>
+
+                {/* Switcher Formación: Sorteo vs Elección Manual vs Individual */}
+                <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#FAF7F2] rounded-2xl border border-[#EAE3D5]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSwitchGameMode('teams');
+                      handleSwitchTeamSelectionMode('auto');
+                    }}
+                    className={`py-2 px-2 rounded-xl text-xs font-black transition-all cursor-pointer text-center ${
+                      gameMode === 'teams' && teamSelectionMode === 'auto'
                         ? 'bg-[#FF5722] text-white shadow-xs'
                         : 'text-[#6B6280] hover:text-[#181226]'
                     }`}
                   >
-                    <span>👥 Por Equipos</span>
+                    <span>🎲 Sorteo Automático</span>
                   </button>
+
                   <button
                     type="button"
-                    onClick={() => handleSwitchGameMode('individual')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                    onClick={() => {
+                      handleSwitchGameMode('teams');
+                      handleSwitchTeamSelectionMode('manual');
+                    }}
+                    className={`py-2 px-2 rounded-xl text-xs font-black transition-all cursor-pointer text-center ${
+                      gameMode === 'teams' && teamSelectionMode === 'manual'
+                        ? 'bg-[#FF5722] text-white shadow-xs'
+                        : 'text-[#6B6280] hover:text-[#181226]'
+                    }`}
+                  >
+                    <span>👆 Elección Manual</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSwitchGameMode('individual');
+                    }}
+                    className={`py-2 px-2 rounded-xl text-xs font-black transition-all cursor-pointer text-center ${
                       gameMode === 'individual'
                         ? 'bg-[#FF5722] text-white shadow-xs'
                         : 'text-[#6B6280] hover:text-[#181226]'
@@ -1126,9 +1226,45 @@ export default function HostLobby() {
                 </div>
               </div>
 
-              {/* Selector de tamaño de equipo (cuando está en modo equipos) */}
-              {gameMode === 'teams' ? (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-[#FAF7F2] border border-[#EAE3D5] rounded-2xl mb-6">
+              {/* Banner Informativo / Configuración contextual según el modo elegido */}
+              {autoHostEnabled && (
+                <div className="p-3 bg-[#E6F9F0] border border-[#059669]/30 rounded-2xl mb-5 flex items-center gap-2.5 text-[#065F46]">
+                  <span className="w-8 h-8 rounded-xl bg-[#059669] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
+                    🤖
+                  </span>
+                  <p className="text-xs font-bold leading-tight">
+                    <strong>Modo Todos Juegan:</strong> La pantalla conduce automáticamente la ronda y revela la canción al cabo de 5 segundos. ¡El anfitrión también puede unirse a jugar desde su teléfono!
+                  </p>
+                </div>
+              )}
+
+              {gameMode === 'teams' && teamSelectionMode === 'manual' && (
+                <div className="p-3.5 bg-[#FAF7F2] border border-[#EAE3D5] rounded-2xl mb-5 space-y-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-black text-[#181226]">Elección Manual de Equipos</p>
+                      <p className="text-[11px] text-[#6B6280]">
+                        Los participantes eligen su equipo desde su teléfono. Podés generar los grupos acá:
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
+                      {[2, 3, 4].map((count) => (
+                        <button
+                          key={count}
+                          type="button"
+                          onClick={() => handleInitManualTeams(count)}
+                          className="px-2.5 py-1 rounded-lg text-xs font-black bg-white border border-[#EAE3D5] hover:border-[#FF5722] text-[#181226] cursor-pointer shadow-2xs"
+                        >
+                          {count} Equipos
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {gameMode === 'teams' && teamSelectionMode === 'auto' && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-[#FAF7F2] border border-[#EAE3D5] rounded-2xl mb-5">
                   <div className="min-w-0">
                     <p className="text-xs font-extrabold text-[#181226]">Integrantes por equipo:</p>
                     <p className="text-[11px] text-[#6B6280]">
@@ -1153,13 +1289,15 @@ export default function HostLobby() {
                     ))}
                   </div>
                 </div>
-              ) : (
-                <div className="p-3 bg-[#FFF0EB]/70 border border-[#FF5722]/20 rounded-2xl mb-6 flex items-center gap-2.5">
+              )}
+
+              {gameMode === 'individual' && (
+                <div className="p-3 bg-[#FFF0EB]/70 border border-[#FF5722]/20 rounded-2xl mb-5 flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-xl bg-[#FF5722] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
                     ★
                   </div>
                   <p className="text-xs font-bold text-[#181226]">
-                    Modo Individual: Todos contra todos. Cada jugador suma sus propios puntos con su propio pulsador.
+                    Modo Individual: Todos contra todos. Cada jugador suma sus propios puntos con su propio pulsador buzzer.
                   </p>
                 </div>
               )}
@@ -1314,6 +1452,13 @@ export default function HostLobby() {
           </div>
         </div>
       </div>
+      {/* DJ Bot Modal */}
+      <DjBotModal
+        isOpen={isDjBotOpen}
+        onClose={() => setIsDjBotOpen(false)}
+        onPlaylistGenerated={handleDjBotGenerated}
+        serverUrl={SERVER_URL}
+      />
     </div>
   );
 }

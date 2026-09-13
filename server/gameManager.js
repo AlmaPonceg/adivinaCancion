@@ -80,6 +80,8 @@ class GameManager {
       playlist: [],               // Preloaded playlist URLs
       gameMode: 'teams',          // 'teams' | 'individual'
       maxPlayersPerTeam: 4,       // Configurable limit: 2, 3, 4, 5, 6, etc.
+      teamSelectionMode: 'auto',  // 'auto' (sorteo) | 'manual' (elección manual)
+      autoHostEnabled: false,     // true = partida sin host exclusivo, todos juegan
     };
 
     this.rooms.set(code, room);
@@ -378,6 +380,72 @@ class GameManager {
     const parsed = parseInt(max, 10);
     room.maxPlayersPerTeam = (!isNaN(parsed) && parsed >= 2) ? parsed : 4;
     return { success: true, maxPlayersPerTeam: room.maxPlayersPerTeam };
+  }
+
+  setTeamSelectionMode(roomCode, mode) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return { error: 'Sala no encontrada' };
+    room.teamSelectionMode = mode === 'manual' ? 'manual' : 'auto';
+
+    // If manual and no teams exist yet, initialize 2 default teams
+    if (room.teamSelectionMode === 'manual' && room.teams.length === 0 && room.gameMode !== 'individual') {
+      this.initManualTeams(roomCode, 2);
+    }
+    return {
+      success: true,
+      teamSelectionMode: room.teamSelectionMode,
+      teams: room.teams,
+    };
+  }
+
+  initManualTeams(roomCode, count = 2) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return { error: 'Sala no encontrada' };
+    const targetCount = Math.max(2, Math.min(8, Number(count) || 2));
+
+    // Preserve existing players by re-distributing or keeping current teams if already present
+    const existingTeams = room.teams || [];
+    room.teams = [];
+    for (let i = 0; i < targetCount; i++) {
+      const meta = getTeamMeta(i);
+      const prev = existingTeams[i];
+      room.teams.push({
+        name: prev?.name || meta.name,
+        color: prev?.color || meta.color,
+        bg: prev?.bg || meta.bg,
+        score: prev?.score || 0,
+        players: prev?.players || [],
+        isReady: false,
+      });
+    }
+
+    room.state = GAME_STATES.TEAMS_ASSIGNED;
+    return { success: true, teams: room.teams };
+  }
+
+  createCustomTeam(roomCode, teamName) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return { error: 'Sala no encontrada' };
+    const idx = room.teams.length;
+    const meta = getTeamMeta(idx);
+    const newTeam = {
+      name: String(teamName || '').trim() || meta.name,
+      color: meta.color,
+      bg: meta.bg,
+      score: 0,
+      players: [],
+      isReady: false,
+    };
+    room.teams.push(newTeam);
+    room.state = GAME_STATES.TEAMS_ASSIGNED;
+    return { success: true, teams: room.teams, newTeam };
+  }
+
+  setAutoHost(roomCode, enabled) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return { error: 'Sala no encontrada' };
+    room.autoHostEnabled = !!enabled;
+    return { success: true, autoHostEnabled: room.autoHostEnabled };
   }
 
   movePlayerToTeam(roomCode, playerId, targetTeamIndex) {
@@ -733,6 +801,8 @@ class GameManager {
       roundNumber: room.roundNumber,
       gameMode: room.gameMode || 'teams',
       maxPlayersPerTeam: room.maxPlayersPerTeam || 4,
+      teamSelectionMode: room.teamSelectionMode || 'auto',
+      autoHostEnabled: !!room.autoHostEnabled,
     };
   }
 
@@ -767,6 +837,8 @@ class GameManager {
       isTeamReady: team ? !!team.isReady : false,
       allTeamsReady,
       gameMode: room.gameMode || 'teams',
+      teamSelectionMode: room.teamSelectionMode || 'auto',
+      autoHostEnabled: !!room.autoHostEnabled,
       gameState: room.state,
       canBuzz:
         (room.state === GAME_STATES.ROUND_ACTIVE || room.state === GAME_STATES.BUZZER_LOCKED) &&

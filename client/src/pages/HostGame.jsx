@@ -75,6 +75,20 @@ export default function HostGame() {
   });
   const musicPlayerRef = useRef(null);
 
+  // Auto-Host ("Todos Juegan") state
+  const [autoHostEnabled, setAutoHostEnabled] = useState(() => {
+    if (typeof stateData.autoHostEnabled === 'boolean') return stateData.autoHostEnabled;
+    try {
+      return localStorage.getItem('trivia_auto_host') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [currentTrack, setCurrentTrack] = useState(null);
+  const [autoAdvanceTimer, setAutoAdvanceTimer] = useState(null);
+  const [isAutoAdvancePaused, setIsAutoAdvancePaused] = useState(false);
+  const [speakCountdown, setSpeakCountdown] = useState(null);
+
   useEffect(() => {
     if (!roomCode) {
       navigate('/');
@@ -252,6 +266,101 @@ export default function HostGame() {
 
   const isPlaylistFinished = playlist.length > 0 && roundNumber >= playlist.length;
 
+  useSocketEvent('auto-host-updated', (data) => {
+    if (typeof data?.autoHostEnabled === 'boolean') {
+      setAutoHostEnabled(data.autoHostEnabled);
+    }
+  });
+
+  const toggleAutoHost = useCallback(() => {
+    setAutoHostEnabled((prev) => {
+      const nextVal = !prev;
+      try {
+        localStorage.setItem('trivia_auto_host', String(nextVal));
+      } catch {
+        /* */
+      }
+      socket.emit('set-auto-host', { roomCode, enabled: nextVal });
+      return nextVal;
+    });
+  }, [roomCode]);
+
+  // 1. Countdown for speaking when someone buzzes in Auto-Host mode
+  useEffect(() => {
+    if (gameState !== 'BUZZER_LOCKED' || !autoHostEnabled) {
+      setSpeakCountdown(null);
+      return;
+    }
+    setSpeakCountdown(7);
+    const interval = setInterval(() => {
+      setSpeakCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [gameState, autoHostEnabled, currentJudging?.playerId]);
+
+  // 2. Auto-advance countdown when round ends in Auto-Host mode
+  useEffect(() => {
+    if (!autoHostEnabled || gameState !== 'ROUND_END' || isPlaylistFinished) {
+      setAutoAdvanceTimer(null);
+      return;
+    }
+
+    setAutoAdvanceTimer(5);
+    setIsAutoAdvancePaused(false);
+
+    const interval = setInterval(() => {
+      setAutoAdvanceTimer((prev) => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [autoHostEnabled, gameState, roundNumber, isPlaylistFinished]);
+
+  useEffect(() => {
+    if (
+      autoAdvanceTimer === 0 &&
+      !isAutoAdvancePaused &&
+      gameState === 'ROUND_END' &&
+      !isPlaylistFinished
+    ) {
+      startNextRound();
+    }
+  }, [autoAdvanceTimer, isAutoAdvancePaused, gameState, isPlaylistFinished, startNextRound]);
+
+  // 3. Auto-skip if nobody buzzes during music clip in Auto-Host mode
+  useEffect(() => {
+    if (gameState !== 'ROUND_ACTIVE' || !autoHostEnabled) return;
+
+    const timeoutMs = (musicDuration + 7) * 1000;
+    const timer = setTimeout(() => {
+      if (gameState === 'ROUND_ACTIVE') {
+        musicPlayerRef.current?.pause();
+        setGameState('ROUND_END');
+        setLastResult({
+          type: 'timeout',
+          title: currentTrack?.title,
+          author: currentTrack?.author,
+        });
+        setShowResult(true);
+        setTimeout(() => setShowResult(false), 3500);
+      }
+    }, timeoutMs);
+
+    return () => clearTimeout(timer);
+  }, [gameState, autoHostEnabled, musicDuration, currentTrack]);
+
   if (!roomCode) return null;
 
   return (
@@ -268,12 +377,28 @@ export default function HostGame() {
           </p>
         </div>
 
-        <button
-          onClick={openEndGameModal}
-          className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-tactical font-black text-[#E11D48] hover:bg-[#FFF0F3] border border-[#E11D48]/30 bg-white transition-colors cursor-pointer shadow-2xs"
-        >
-          Terminar Partida
-        </button>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={toggleAutoHost}
+            className={`px-3 py-1.5 rounded-xl text-xs font-tactical font-black transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs ${
+              autoHostEnabled
+                ? 'bg-[#E6F9F0] text-[#059669] border-[#059669]/50 hover:bg-[#D4F5E5]'
+                : 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5] hover:text-[#181226]'
+            }`}
+            title="En modo Auto-Host la pantalla avanza automáticamente sin necesidad de un operador en la computadora"
+          >
+            <span className={`w-2 h-2 rounded-full ${autoHostEnabled ? 'bg-[#059669] animate-pulse' : 'bg-[#A098AE]'}`} />
+            <span>Auto-Host: {autoHostEnabled ? 'ACTIVO' : 'MANUAL'}</span>
+          </button>
+
+          <button
+            onClick={openEndGameModal}
+            className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-tactical font-black text-[#E11D48] hover:bg-[#FFF0F3] border border-[#E11D48]/30 bg-white transition-colors cursor-pointer shadow-2xs"
+          >
+            Terminar Partida
+          </button>
+        </div>
       </div>
 
       {/* Top Section: Team Scoreboard */}
@@ -292,6 +417,7 @@ export default function HostGame() {
             gameState={gameState}
             roundNumber={roundNumber}
             onDurationChange={setMusicDuration}
+            onTrackChange={setCurrentTrack}
           />
         </div>
 
@@ -338,6 +464,30 @@ export default function HostGame() {
             {/* ACTION ZONE BY GAME STATE */}
             {gameState === 'BUZZER_LOCKED' && (currentJudging || buzzQueue[0]) ? (
               <div className="space-y-4">
+                {/* Auto-Host Answer Reveal so all players can verify the answer on the TV */}
+                {autoHostEnabled && (currentTrack?.title || currentTrack?.author) && (
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-[#FFF8F5] to-[#FBF9F5] border-2 border-[#FF5722]/30 shadow-xs">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="badge-tag text-[#FF5722] font-black uppercase text-[10px]">
+                        RESPUESTA EN PANTALLA (AUTO-HOST)
+                      </span>
+                      {speakCountdown !== null && speakCountdown > 0 && (
+                        <span className="mono text-xs font-black text-[#E11D48] bg-[#FFF0F3] px-2 py-0.5 rounded-lg border border-[#E11D48]/30 animate-pulse">
+                          {speakCountdown}s para responder
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="font-display text-lg sm:text-xl font-black text-[#181226] leading-tight">
+                      {currentTrack.title}
+                    </h4>
+                    {currentTrack.author && (
+                      <p className="text-xs text-[#574F6B] font-bold mt-1">
+                        Artista: <span className="text-[#181226] font-extrabold">{currentTrack.author}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <JudgePanel
                   currentBuzz={currentJudging || buzzQueue[0]}
                   onCorrect={judgeCorrect}
@@ -438,6 +588,32 @@ export default function HostGame() {
                       Se han jugado todas las canciones de la lista. Finalizá para revelar al equipo campeón.
                     </p>
                   </div>
+                ) : autoHostEnabled && gameState === 'ROUND_END' && autoAdvanceTimer !== null ? (
+                  <div className="p-5 rounded-2xl bg-[#FFF9F2] border-2 border-[#D97706]/40 text-center shadow-sm space-y-3">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#D97706] animate-ping" />
+                      <span className="badge-tag text-[#D97706] font-black uppercase text-xs">
+                        MODO AUTO-HOST ACTIVO
+                      </span>
+                    </div>
+                    <h3 className="font-display text-xl sm:text-2xl font-black text-[#181226]">
+                      {isAutoAdvancePaused ? 'Avance automático en pausa' : `Siguiente ronda en ${autoAdvanceTimer}s...`}
+                    </h3>
+                    <div className="flex items-center justify-center gap-2.5 pt-1">
+                      <button
+                        onClick={startNextRound}
+                        className="arcade-btn-primary py-2.5 px-4 rounded-xl text-xs font-black shadow-md active:scale-98 cursor-pointer"
+                      >
+                        Iniciar Ya →
+                      </button>
+                      <button
+                        onClick={() => setIsAutoAdvancePaused((prev) => !prev)}
+                        className="arcade-btn py-2.5 px-4 rounded-xl text-xs font-black text-[#181226] border border-[#EAE3D5] shadow-2xs cursor-pointer"
+                      >
+                        {isAutoAdvancePaused ? '▶️ Reanudar' : '⏸️ Pausar'}
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     <button
@@ -450,12 +626,14 @@ export default function HostGame() {
                       </svg>
                       <span>
                         {roundNumber === 0
-                          ? 'Iniciar 1ª Canción y Ronda →'
+                          ? (autoHostEnabled ? '🚀 Iniciar Partida (Auto-Host) →' : 'Iniciar 1ª Canción y Ronda →')
                           : `Iniciar Siguiente Ronda (${roundNumber + 1}${playlist.length > 0 ? `/${playlist.length}` : ''}) →`}
                       </span>
                     </button>
                     <p className="text-xs text-[#6B6280] text-center font-medium">
-                      Al presionar, la música sonará por el parlante y los pulsadores se activarán automáticamente en los celulares.
+                      {autoHostEnabled
+                        ? 'En modo Auto-Host, las rondas y canciones avanzarán solas en pantalla.'
+                        : 'Al presionar, la música sonará por el parlante y los pulsadores se activarán automáticamente en los celulares.'}
                     </p>
                   </div>
                 )}
@@ -481,6 +659,8 @@ export default function HostGame() {
             className={`p-7 sm:p-9 text-center max-w-md w-full rounded-[2rem] shadow-2xl border-2 bg-white animate-fade-in ${
               lastResult.type === 'correct'
                 ? 'border-[#059669]'
+                : lastResult.type === 'timeout'
+                ? 'border-[#D97706]'
                 : 'border-[#E11D48]'
             }`}
           >
@@ -518,6 +698,31 @@ export default function HostGame() {
                       </span>
                     )}
                   </p>
+                </div>
+              </>
+            ) : lastResult.type === 'timeout' ? (
+              <>
+                <div className="w-16 h-16 rounded-2xl bg-[#FFFBEB] border-2 border-[#D97706] flex items-center justify-center mx-auto mb-4 shadow-sm text-[#D97706]">
+                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="badge-tag text-[#D97706] mb-1">
+                  TIEMPO AGOTADO
+                </p>
+                <h2 className="font-display text-2xl sm:text-3xl font-black mb-3 text-[#181226] tracking-tight">
+                  Nadie adivinó a tiempo
+                </h2>
+                <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] shadow-inner">
+                  <p className="text-xs font-bold text-[#6B6280] mb-1">La canción era:</p>
+                  <p className="text-[#181226] font-display font-black text-lg">
+                    {lastResult.title || 'Canción en juego'}
+                  </p>
+                  {lastResult.author && (
+                    <p className="text-xs text-[#6B6280] font-semibold mt-0.5">
+                      {lastResult.author}
+                    </p>
+                  )}
                 </div>
               </>
             ) : (

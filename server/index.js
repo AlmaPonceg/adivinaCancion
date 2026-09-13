@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 import { GameManager, GAME_STATES, TEAM_COLORS } from './gameManager.js';
 import YouTube from 'youtube-sr';
 import { Innertube, Log } from 'youtubei.js';
+import { selectDjSongCandidates } from './djCatalog.js';
 
 // Silence verbose attachment warnings from Innertube's text parser
 Log.setLevel(Log.Level.ERROR);
@@ -227,6 +228,60 @@ app.get('/api/search-songs', async (req, res) => {
   } catch (err) {
     console.error('[Search] Error buscando canciones:', err);
     res.status(500).json({ error: 'Error al buscar canciones' });
+  }
+});
+
+// DJ Bot automatic playlist generator
+app.post('/api/dj-bot-generate', async (req, res) => {
+  try {
+    const { genre = 'all', decade = 'all', language = 'all', count = 15 } = req.body;
+    const requestedCount = Math.min(30, Math.max(5, parseInt(count, 10) || 15));
+    console.log(`[DJ Bot] Generando playlist: género=${genre}, década=${decade}, idioma=${language}, cantidad=${requestedCount}`);
+
+    const candidates = selectDjSongCandidates({ genre, decade, language, count: requestedCount });
+    const yt = await getInnertube();
+
+    const playlist = [];
+    const chunkSize = 4;
+    for (let i = 0; i < candidates.length; i += chunkSize) {
+      const chunk = candidates.slice(i, i + chunkSize);
+      const chunkResults = await Promise.allSettled(
+        chunk.map(async (c) => {
+          const searchRes = await yt.search(c.q, { type: 'video' });
+          const first = searchRes.videos?.[0];
+          if (first) {
+            const id = first.id || first.content_id;
+            const title = first.title?.text || first.title?.toString() || c.title;
+            const author = first.author?.name || first.author?.toString() || c.artist;
+            const duration = first.duration?.text || '';
+            const thumbnail = first.thumbnails?.[0]?.url || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null);
+            return {
+              type: 'youtube',
+              id,
+              name: `${c.artist} - ${c.title}`,
+              displayTitle: title,
+              author,
+              duration,
+              thumbnail,
+              url: `https://www.youtube.com/watch?v=${id}`,
+            };
+          }
+          return null;
+        })
+      );
+
+      for (const r of chunkResults) {
+        if (r.status === 'fulfilled' && r.value) {
+          playlist.push(r.value);
+        }
+      }
+    }
+
+    console.log(`[DJ Bot] Playlist generada con éxito: ${playlist.length} canciones.`);
+    res.json({ success: true, count: playlist.length, playlist });
+  } catch (err) {
+    console.error('[DJ Bot] Error generando playlist:', err);
+    res.status(500).json({ error: 'Error al generar playlist con DJ Bot' });
   }
 });
 
@@ -584,6 +639,80 @@ io.on('connection', (socket) => {
     io.to(code).emit('team-size-updated', { maxPlayersPerTeam: res.maxPlayersPerTeam });
     console.log(`[TeamSize] Room ${code} limit set to ${res.maxPlayersPerTeam} per team`);
     callback?.({ success: true, maxPlayersPerTeam: res.maxPlayersPerTeam });
+  });
+
+  // ── HOST: Set Team Selection Mode ('auto' vs 'manual') ──────
+  socket.on('set-team-selection-mode', ({ roomCode, mode }, callback) => {
+    const code = String(roomCode || '').trim().toUpperCase();
+    const res = gm.setTeamSelectionMode(code, mode);
+    if (res.error) return callback?.({ error: res.error });
+
+    const roomState = gm.getRoomState(code);
+    io.to(code).emit('team-selection-mode-updated', {
+      teamSelectionMode: roomState.teamSelectionMode,
+      teams: roomState.teams,
+      allTeamsReady: roomState.allTeamsReady,
+    });
+    io.to(code).emit('teams-assigned', {
+      teams: roomState.teams,
+      allTeamsReady: roomState.allTeamsReady,
+    });
+    broadcastPlayerStates(code);
+    console.log(`[Mode] Room ${code} team selection mode set to ${roomState.teamSelectionMode}`);
+    callback?.({ success: true, teamSelectionMode: roomState.teamSelectionMode, teams: roomState.teams });
+  });
+
+  // ── HOST: Initialize Manual Teams ───────────────────────────
+  socket.on('init-manual-teams', ({ roomCode, count }, callback) => {
+    const code = String(roomCode || '').trim().toUpperCase();
+    const res = gm.initManualTeams(code, count);
+    if (res.error) return callback?.({ error: res.error });
+
+    const roomState = gm.getRoomState(code);
+    io.to(code).emit('teams-assigned', {
+      teams: roomState.teams,
+      allTeamsReady: roomState.allTeamsReady,
+    });
+    broadcastPlayerStates(code);
+    console.log(`[Teams] Initialized ${count} manual teams in room ${code}`);
+    callback?.({ success: true, teams: roomState.teams });
+  });
+
+  // ── PLAYER / HOST: Choose Team Directly (Manual Mode) ───────
+  socket.on('player-choose-team', ({ roomCode, playerId, teamIndex }, callback) => {
+    const code = String(roomCode || '').trim().toUpperCase();
+    const room = gm.getRoom(code);
+    if (!room) return callback?.({ error: 'Sala no encontrada' });
+
+    let pid = playerId;
+    if (!pid) {
+      pid = room.socketToPlayerId.get(socket.id);
+    }
+    if (!pid) return callback?.({ error: 'Jugador no identificado' });
+
+    const res = gm.movePlayerToTeam(code, pid, teamIndex);
+    if (res.error) return callback?.({ error: res.error });
+
+    const roomState = gm.getRoomState(code);
+    io.to(code).emit('teams-assigned', {
+      teams: roomState.teams,
+      allTeamsReady: roomState.allTeamsReady,
+    });
+    broadcastPlayerStates(code);
+    console.log(`[Teams] Player ${pid} chose team ${teamIndex} in room ${code}`);
+    callback?.({ success: true, teams: roomState.teams });
+  });
+
+  // ── HOST: Set Auto-Host (Todos Juegan) ───────────────────────
+  socket.on('set-auto-host', ({ roomCode, enabled }, callback) => {
+    const code = String(roomCode || '').trim().toUpperCase();
+    const res = gm.setAutoHost(code, enabled);
+    if (res.error) return callback?.({ error: res.error });
+
+    io.to(code).emit('auto-host-updated', { autoHostEnabled: res.autoHostEnabled });
+    broadcastPlayerStates(code);
+    console.log(`[AutoHost] Room ${code} auto-host set to ${res.autoHostEnabled}`);
+    callback?.({ success: true, autoHostEnabled: res.autoHostEnabled });
   });
 
   // ── HOST: Start Game (Transition from Lobby to Game) ────────

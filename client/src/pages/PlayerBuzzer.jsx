@@ -116,6 +116,18 @@ export default function PlayerBuzzer() {
     });
   };
 
+  const handleChooseTeam = (teamIndex) => {
+    socket.emit('player-choose-team', { roomCode, playerId, teamIndex }, (res) => {
+      if (res?.error) {
+        setRoundNotification({
+          type: 'warning',
+          message: res.error,
+        });
+        setTimeout(() => setRoundNotification(null), 3000);
+      }
+    });
+  };
+
   // ── Sync & Reconnection Logic ──────────────────────────────
   const syncSession = useCallback(
     (isSilent = false) => {
@@ -404,6 +416,25 @@ export default function PlayerBuzzer() {
         setStatusMessage(computeStatusMessage(updated));
         return updated;
       });
+    }
+  });
+
+  useSocketEvent('team-selection-mode-updated', (data) => {
+    if (data?.teamSelectionMode) {
+      setPlayerState((prev) => ({
+        ...prev,
+        teamSelectionMode: data.teamSelectionMode,
+        teams: data.teams || prev.teams,
+      }));
+    }
+  });
+
+  useSocketEvent('auto-host-updated', (data) => {
+    if (typeof data?.autoHostEnabled === 'boolean') {
+      setPlayerState((prev) => ({
+        ...prev,
+        autoHostEnabled: data.autoHostEnabled,
+      }));
     }
   });
 
@@ -768,7 +799,161 @@ export default function PlayerBuzzer() {
 
       {/* ── MIDDLE: Player info & Circular Arcade Buzzer OR Team Setup Card ── */}
       {playerState.gameState === 'TEAMS_ASSIGNED' && (!playerState.roundNumber || playerState.roundNumber === 0) ? (
-        playerState.teamName ? (
+        playerState.teamSelectionMode === 'manual' ? (
+          <div className="flex flex-col items-center justify-center my-auto py-2 w-full max-w-sm mx-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="party-card w-full p-5 shadow-xl border-2 border-[#E0D9CB] relative overflow-hidden rounded-[2.2rem] bg-white"
+            >
+              <div className="text-center mb-4">
+                <span className="badge-tag text-[#FF5722] mb-1 font-extrabold uppercase tracking-wider text-[11px]">
+                  ELECCIÓN MANUAL DE EQUIPO
+                </span>
+                <h3 className="font-display text-lg font-black text-[#181226]">
+                  {playerState.teamName ? 'Tu equipo asignado' : 'Elegí a qué equipo unirte'}
+                </h3>
+                <p className="text-xs text-[#574F6B] font-medium mt-0.5">
+                  Tocá &quot;Unirme&quot; en el equipo que prefieras jugar.
+                </p>
+              </div>
+
+              {/* Teams list */}
+              <div className="space-y-3 mb-4 max-h-[50vh] overflow-y-auto pr-1">
+                {playerState.teams?.map((t, idx) => {
+                  const isMyTeam = playerState.teamIndex === idx || t.players?.some(
+                    (p) => p.id === playerId || (p.name && p.name.toLowerCase() === playerName.toLowerCase())
+                  );
+                  const maxLimit = playerState.maxPlayersPerTeam || 4;
+                  const isFull = (t.players?.length || 0) >= maxLimit;
+
+                  return (
+                    <div
+                      key={t.name + idx}
+                      className={`p-3.5 rounded-2xl border-2 transition-all ${
+                        isMyTeam
+                          ? 'bg-[#FFF8F5] shadow-xs'
+                          : 'bg-[#FBF9F5] border-[#E8E1D5]'
+                      }`}
+                      style={{ borderColor: isMyTeam ? (t.color || '#FF5722') : undefined }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="w-3.5 h-3.5 rounded-full shrink-0"
+                            style={{ backgroundColor: t.color || '#FF5722' }}
+                          />
+                          <span className="font-display font-black text-sm text-[#181226] truncate max-w-[150px]">
+                            {t.name}
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-black px-2 py-0.5 rounded-lg bg-white border border-[#E0D9CB] text-[#746B8A]">
+                          {t.players?.length || 0}/{maxLimit}
+                        </span>
+                      </div>
+
+                      {/* Team player tags */}
+                      <div className="flex flex-wrap gap-1.5 mb-2.5">
+                        {t.players && t.players.length > 0 ? (
+                          t.players.map((p) => {
+                            const pName = p.name || p;
+                            const isMe = pName.toLowerCase() === playerName.toLowerCase();
+                            return (
+                              <span
+                                key={p.id || pName}
+                                className={`text-[11px] px-2.5 py-0.5 rounded-lg font-bold ${
+                                  isMe
+                                    ? 'bg-[#FF5722] text-white font-black'
+                                    : 'bg-white text-[#574F6B] border border-[#E0D9CB]'
+                                }`}
+                              >
+                                {pName} {isMe ? '(Vos)' : ''}
+                              </span>
+                            );
+                          })
+                        ) : (
+                          <span className="text-[11px] text-[#A098AE] italic">Sin jugadores todavía</span>
+                        )}
+                      </div>
+
+                      {/* Button: Already here or Join */}
+                      {isMyTeam ? (
+                        <div className="flex items-center justify-between pt-1.5 border-t border-[#E8E1D5]/70">
+                          <span className="text-[11px] font-black text-[#059669] flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            ¡Estás en este equipo!
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCustomTeamName(t.name);
+                              setIsEditingTeamName(true);
+                            }}
+                            className="text-[11px] font-bold text-[#E11D48] hover:underline cursor-pointer"
+                          >
+                            Renombrar
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isFull}
+                          onClick={() => handleChooseTeam(idx)}
+                          className={`w-full py-2 px-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                            isFull
+                              ? 'bg-[#E5DFD5] text-[#8C8275] cursor-not-allowed'
+                              : 'arcade-btn-primary active:scale-98'
+                          }`}
+                        >
+                          {isFull ? 'Equipo completo' : 'Unirme a este equipo'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Ready status / toggle if player has picked a team */}
+              {playerState.teamName ? (
+                myTeam?.isReady ? (
+                  <div className="p-3.5 rounded-2xl bg-[#E6F9F0] border-2 border-[#059669] text-center shadow-xs">
+                    <div className="flex items-center justify-center gap-1.5 text-[#059669] font-black text-xs mb-1">
+                      <svg className="w-4 h-4 text-[#059669]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      ¡Tu equipo está LISTO!
+                    </div>
+                    <p className="text-[11px] text-[#047857] font-semibold">
+                      Esperando que el anfitrión inicie la partida...
+                    </p>
+                    <button
+                      onClick={handleToggleReady}
+                      className="text-[11px] font-bold text-[#746B8A] hover:text-[#181226] underline mt-1.5 cursor-pointer block mx-auto"
+                    >
+                      Desmarcar listo
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleToggleReady}
+                    className="arcade-btn-mint w-full py-3 px-4 rounded-xl font-black text-sm active:scale-98 flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    ¡Estamos Listos!
+                  </button>
+                )
+              ) : (
+                <p className="text-[11px] text-[#746B8A] text-center font-medium">
+                  Elegí un equipo arriba para que quede confirmado tu lugar.
+                </p>
+              )}
+            </motion.div>
+          </div>
+        ) : playerState.teamName ? (
           <div className="flex flex-col items-center justify-center my-auto py-2 w-full max-w-sm mx-auto">
             {/* Team Confirmation & Setup Card */}
             <motion.div
