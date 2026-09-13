@@ -1285,8 +1285,8 @@ export default function HostLobby() {
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1">
-                  <div className="flex items-center justify-between mb-2 px-1">
+                <div className="flex-1 min-h-0 flex flex-col space-y-2 pr-1">
+                  <div className="flex items-center justify-between shrink-0 mb-1 px-1">
                     <span className="mono text-[11px] font-black text-[#6B6280]">
                       PISTAS CARGADAS ({playlist.length})
                     </span>
@@ -1332,7 +1332,7 @@ export default function HostLobby() {
                     </div>
                   </div>
 
-                  <div className="console-inset p-3 rounded-2xl max-h-52 overflow-y-auto space-y-2">
+                  <div className="console-inset p-2.5 sm:p-3 rounded-2xl flex-1 min-h-0 overflow-y-auto space-y-2">
                     {playlist.map((track, idx) => {
                       const isLocal = typeof track === 'object' && track.type === 'local';
                       const title = getTrackTitle(track);
