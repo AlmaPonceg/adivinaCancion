@@ -1531,7 +1531,7 @@ export default function HostLobby() {
               </div>
 
               {/* Center Arena / Stage */}
-              <div className="flex-1 min-h-0 overflow-y-auto pr-1 my-2 space-y-2">
+              <div className="flex-1 min-h-0 flex flex-col my-2">
                 {!hasAssignedTeams ? (
                   players.length === 0 ? (
                     <div className="h-full flex-1 flex flex-col items-center justify-center text-center p-5 bg-gradient-to-b from-[#FAF7F2] to-white rounded-2xl border-2 border-dashed border-[#DDD5C5] shadow-inner my-auto">
@@ -1575,8 +1575,8 @@ export default function HostLobby() {
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                    <div className="h-full flex-1 flex flex-col min-h-0 space-y-2.5">
+                      <div className="flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-2">
                           <span className="font-display font-black text-xs sm:text-sm text-[#181226] tracking-tight">
                             Participantes Conectados
@@ -1591,11 +1591,11 @@ export default function HostLobby() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
+                      <div className="flex-1 min-h-0 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-2 content-start">
                         {players.map((player) => (
                           <div
                             key={player.id}
-                            className="flex items-center justify-between px-3 py-2 rounded-xl bg-white border border-[#EAE3D5] shadow-2xs animate-fade-in"
+                            className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#FAF7F2] hover:bg-white border border-[#EAE3D5] shadow-2xs hover:shadow-xs transition-all animate-fade-in"
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <span className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
@@ -1633,15 +1633,15 @@ export default function HostLobby() {
                       </div>
 
                       {teamSelectionMode === 'manual' && teams && teams.length > 0 && (
-                        <div className="p-3 bg-white border border-[#EAE3D5] rounded-2xl shadow-2xs">
-                          <p className="text-[11px] font-bold text-[#6B6280] mb-1.5">
+                        <div className="p-2.5 bg-[#FAF7F2] border border-[#EAE3D5] rounded-xl shadow-2xs shrink-0">
+                          <p className="text-[11px] font-bold text-[#6B6280] mb-1">
                             Equipos disponibles para elegir desde el celular ({teams.length}):
                           </p>
                           <div className="flex flex-wrap gap-1.5">
                             {teams.map((t, idx) => (
                               <span
                                 key={idx}
-                                className="text-xs px-2.5 py-1 rounded-xl font-bold flex items-center gap-1.5 border shadow-2xs"
+                                className="text-xs px-2.5 py-1 rounded-xl font-bold flex items-center gap-1.5 border shadow-2xs bg-white"
                                 style={{
                                   backgroundColor: `${t.color}15`,
                                   borderColor: `${t.color}40`,
@@ -1658,7 +1658,7 @@ export default function HostLobby() {
                     </div>
                   )
                 ) : (
-                  <div className="space-y-3">
+                  <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-3">
                     {/* Newly arrived players waiting for team assignment */}
                     {unassignedPlayers.length > 0 && (
                       <div className="p-3 bg-[#FFF8F5] border-2 border-[#FF5722]/30 rounded-2xl shadow-xs animate-fade-in">
