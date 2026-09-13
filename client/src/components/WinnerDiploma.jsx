@@ -75,8 +75,9 @@ export default function WinnerDiploma({ winner, isOpen = true, onClose }) {
       doc.circle(148.5, 30, 5, 'FD');
 
       doc.setTextColor(184, 134, 11);
-      doc.setFontSize(10);
-      doc.text('★', 148.5, 32.2, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('1', 148.5, 33.5, { align: 'center' });
 
       // 7. Eyebrow Tag
       doc.setFont('helvetica', 'bold');

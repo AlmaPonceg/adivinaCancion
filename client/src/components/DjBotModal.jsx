@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const GENRES = [
-  { id: 'all', label: '🪩 Variado Fiesta (Mezcla)', desc: 'Un poco de todo lo más conocido y bailable' },
-  { id: 'rock_nacional', label: '🎸 Rock Nacional', desc: 'Charly, Soda, Fito, Los Piojos, Redondos, Cerati' },
-  { id: 'cumbia_cuarteto', label: '🪗 Cumbia & Cuarteto', desc: 'Rodrigo, Los Palmeras, La K\'onga, Ke Personajes' },
-  { id: 'pop_latino', label: '🎤 Pop & Urbano Latino', desc: 'Miranda, Shakira, Duki, Emilia, TINI, Chayanne' },
-  { id: 'reggaeton_2000', label: '🔥 Reggaetón 2000s', desc: 'Daddy Yankee, Don Omar, Wisin & Yandel' },
-  { id: 'internacional_80_90', label: '⚡ 80s/90s Internacional', desc: 'Queen, Michael Jackson, ABBA, Madonna' },
+  { id: 'all', label: 'Variado Fiesta (Mezcla)', desc: 'Un poco de todo lo más conocido y bailable' },
+  { id: 'rock_nacional', label: 'Rock Nacional', desc: 'Charly, Soda, Fito, Los Piojos, Redondos, Cerati' },
+  { id: 'cumbia_cuarteto', label: 'Cumbia & Cuarteto', desc: 'Rodrigo, Los Palmeras, La K\'onga, Ke Personajes' },
+  { id: 'pop_latino', label: 'Pop & Urbano Latino', desc: 'Miranda, Shakira, Duki, Emilia, TINI, Chayanne' },
+  { id: 'reggaeton_2000', label: 'Reggaetón 2000s', desc: 'Daddy Yankee, Don Omar, Wisin & Yandel' },
+  { id: 'internacional_80_90', label: '80s/90s Internacional', desc: 'Queen, Michael Jackson, ABBA, Madonna' },
 ];
 
 const DECADES = [
@@ -91,8 +91,10 @@ export default function DjBotModal({ isOpen, onClose, onPlaylistGenerated, serve
 
           {/* Header */}
           <div className="flex items-center gap-3 mb-5 pr-8">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white flex items-center justify-center text-2xl shadow-md shrink-0">
-              🎧
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white flex items-center justify-center shadow-md shrink-0">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+              </svg>
             </div>
             <div>
               <h3 className="font-display text-lg sm:text-xl font-black text-[#181226]">
@@ -125,7 +127,9 @@ export default function DjBotModal({ isOpen, onClose, onPlaylistGenerated, serve
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black text-[#181226]">{g.label}</span>
                       {selectedGenre === g.id && (
-                        <span className="text-[#FF5722] font-black text-xs">✓</span>
+                        <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
                       )}
                     </div>
                     <p className="text-[10px] text-[#6B6280] truncate mt-0.5">{g.desc}</p>
@@ -205,7 +209,11 @@ export default function DjBotModal({ isOpen, onClose, onPlaylistGenerated, serve
 
             {/* Anti-spoiler protection note */}
             <div className="p-3 rounded-xl bg-[#FFFBEB] border border-[#F59E0B]/30 flex items-start gap-2 text-[#B45309]">
-              <span className="text-sm shrink-0">🛡️</span>
+              <span className="shrink-0 mt-0.5">
+                <svg className="w-4 h-4 text-[#B45309]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </span>
               <p className="text-[11px] leading-tight">
                 <strong>Protegido con Anti-Spoiler:</strong> Los títulos se cargarán ocultos automáticamente para que nadie pueda verlos de antemano y todos puedan jugar en igualdad de condiciones.
               </p>
@@ -234,7 +242,7 @@ export default function DjBotModal({ isOpen, onClose, onPlaylistGenerated, serve
                   </>
                 ) : (
                   <>
-                    <span>🎧 Generar Playlist ({songCount} canciones)</span>
+                    <span>Generar Playlist ({songCount} canciones)</span>
                   </>
                 )}
               </button>

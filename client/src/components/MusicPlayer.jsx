@@ -978,7 +978,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
             }`}
             title={antiSpoiler ? 'Modo Anti-Spoiler activo (oculta títulos de pistas)' : 'Activar Modo Anti-Spoiler'}
           >
-            <span>{antiSpoiler ? '🙈 Anti-Spoiler' : '👁️ Títulos'}</span>
+            <span>{antiSpoiler ? 'Anti-Spoiler' : 'Ver Títulos'}</span>
           </button>
 
           {hasPlaylist && (

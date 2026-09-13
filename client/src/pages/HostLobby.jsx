@@ -787,7 +787,7 @@ export default function HostLobby() {
                     className="px-3 py-1 rounded-xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white text-xs font-black shadow-xs hover:scale-105 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
                     title="Generar playlist automática por género y época"
                   >
-                    <span>🎧 DJ Bot</span>
+                    <span>DJ Bot</span>
                   </button>
 
                   <button
@@ -952,7 +952,7 @@ export default function HostLobby() {
                                       : 'arcade-btn-primary text-white shadow-xs'
                                   }`}
                                 >
-                                  {wasJustAdded ? '¡Agregada! ✓' : isAdded ? '+ Agregar otra vez' : '+ Agregar'}
+                                  {wasJustAdded ? '¡Agregada!' : isAdded ? '+ Agregar otra vez' : '+ Agregar'}
                                 </button>
                               </div>
                             );
@@ -1174,7 +1174,7 @@ export default function HostLobby() {
                         : 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5] hover:text-[#181226]'
                     }`}
                   >
-                    <span>{autoHostEnabled ? '🤖 Modo Todos Juegan: ACTIVO' : '🎙️ Con Host Dedicado'}</span>
+                    <span>{autoHostEnabled ? 'Modo Todos Juegan: ACTIVO' : 'Con Host Dedicado'}</span>
                   </button>
                 </div>
 
@@ -1192,7 +1192,7 @@ export default function HostLobby() {
                         : 'text-[#6B6280] hover:text-[#181226]'
                     }`}
                   >
-                    <span>🎲 Sorteo Automático</span>
+                    <span>Sorteo Automático</span>
                   </button>
 
                   <button
@@ -1207,7 +1207,7 @@ export default function HostLobby() {
                         : 'text-[#6B6280] hover:text-[#181226]'
                     }`}
                   >
-                    <span>👆 Elección Manual</span>
+                    <span>Elección Manual</span>
                   </button>
 
                   <button
@@ -1221,7 +1221,7 @@ export default function HostLobby() {
                         : 'text-[#6B6280] hover:text-[#181226]'
                     }`}
                   >
-                    <span>👤 Individual</span>
+                    <span>Individual</span>
                   </button>
                 </div>
               </div>
@@ -1230,7 +1230,9 @@ export default function HostLobby() {
               {autoHostEnabled && (
                 <div className="p-3 bg-[#E6F9F0] border border-[#059669]/30 rounded-2xl mb-5 flex items-center gap-2.5 text-[#065F46]">
                   <span className="w-8 h-8 rounded-xl bg-[#059669] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
-                    🤖
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
                   </span>
                   <p className="text-xs font-bold leading-tight">
                     <strong>Modo Todos Juegan:</strong> La pantalla conduce automáticamente la ronda y revela la canción al cabo de 5 segundos. ¡El anfitrión también puede unirse a jugar desde su teléfono!
@@ -1293,8 +1295,10 @@ export default function HostLobby() {
 
               {gameMode === 'individual' && (
                 <div className="p-3 bg-[#FFF0EB]/70 border border-[#FF5722]/20 rounded-2xl mb-5 flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-xl bg-[#FF5722] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
-                    ★
+                  <div className="w-7 h-7 rounded-xl bg-[#FF5722] text-white flex items-center justify-center text-xs shrink-0 shadow-xs">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                   </div>
                   <p className="text-xs font-bold text-[#181226]">
                     Modo Individual: Todos contra todos. Cada jugador suma sus propios puntos con su propio pulsador buzzer.

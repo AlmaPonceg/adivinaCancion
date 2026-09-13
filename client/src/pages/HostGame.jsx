@@ -610,7 +610,7 @@ export default function HostGame() {
                         onClick={() => setIsAutoAdvancePaused((prev) => !prev)}
                         className="arcade-btn py-2.5 px-4 rounded-xl text-xs font-black text-[#181226] border border-[#EAE3D5] shadow-2xs cursor-pointer"
                       >
-                        {isAutoAdvancePaused ? '▶️ Reanudar' : '⏸️ Pausar'}
+                        {isAutoAdvancePaused ? 'Reanudar' : 'Pausar'}
                       </button>
                     </div>
                   </div>
@@ -626,7 +626,7 @@ export default function HostGame() {
                       </svg>
                       <span>
                         {roundNumber === 0
-                          ? (autoHostEnabled ? '🚀 Iniciar Partida (Auto-Host) →' : 'Iniciar 1ª Canción y Ronda →')
+                          ? (autoHostEnabled ? 'Iniciar Partida (Auto-Host) →' : 'Iniciar 1ª Canción y Ronda →')
                           : `Iniciar Siguiente Ronda (${roundNumber + 1}${playlist.length > 0 ? `/${playlist.length}` : ''}) →`}
                       </span>
                     </button>
