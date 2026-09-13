@@ -378,18 +378,20 @@ class GameManager {
     const room = this.rooms.get(roomCode);
     if (!room) return { error: 'Sala no encontrada' };
     const parsed = parseInt(max, 10);
-    room.maxPlayersPerTeam = (!isNaN(parsed) && parsed >= 2) ? parsed : 4;
+    // 0 means unlimited. Any integer >= 1 sets that specific capacity limit.
+    room.maxPlayersPerTeam = (!isNaN(parsed) && parsed >= 0) ? parsed : 4;
     return { success: true, maxPlayersPerTeam: room.maxPlayersPerTeam };
   }
 
   setTeamSelectionMode(roomCode, mode) {
     const room = this.rooms.get(roomCode);
     if (!room) return { error: 'Sala no encontrada' };
+    const switchingToManual = mode === 'manual' && room.teamSelectionMode !== 'manual';
     room.teamSelectionMode = mode === 'manual' ? 'manual' : 'auto';
 
-    // If manual and no teams exist yet, initialize 2 default teams
-    if (room.teamSelectionMode === 'manual' && room.teams.length === 0 && room.gameMode !== 'individual') {
-      this.initManualTeams(roomCode, 2);
+    if (room.teamSelectionMode === 'manual') {
+      const teamCount = room.teams.length >= 2 ? room.teams.length : 2;
+      this.initManualTeams(roomCode, teamCount, switchingToManual);
     }
     return {
       success: true,
@@ -398,12 +400,12 @@ class GameManager {
     };
   }
 
-  initManualTeams(roomCode, count = 2) {
+  initManualTeams(roomCode, count = 2, resetAssignments = false) {
     const room = this.rooms.get(roomCode);
     if (!room) return { error: 'Sala no encontrada' };
-    const targetCount = Math.max(2, Math.min(8, Number(count) || 2));
+    // Allow anywhere from 2 up to 24 teams dynamically
+    const targetCount = Math.max(2, Math.min(24, Number(count) || 2));
 
-    // Preserve existing players by re-distributing or keeping current teams if already present
     const existingTeams = room.teams || [];
     room.teams = [];
     for (let i = 0; i < targetCount; i++) {
@@ -414,18 +416,38 @@ class GameManager {
         color: prev?.color || meta.color,
         bg: prev?.bg || meta.bg,
         score: prev?.score || 0,
-        players: prev?.players || [],
+        players: resetAssignments ? [] : (prev?.players || []),
         isReady: false,
       });
+    }
+
+    if (resetAssignments) {
+      for (const [, p] of room.players) {
+        p.teamIndex = -1;
+      }
+    } else {
+      // If targetCount was less than previous teams, move orphaned players into team 0
+      for (let i = targetCount; i < existingTeams.length; i++) {
+        const orphanedPlayers = existingTeams[i]?.players || [];
+        orphanedPlayers.forEach(p => {
+          p.teamIndex = 0;
+          const playerObj = room.players.get(p.id);
+          if (playerObj) playerObj.teamIndex = 0;
+          room.teams[0].players.push(p);
+        });
+      }
     }
 
     room.state = GAME_STATES.TEAMS_ASSIGNED;
     return { success: true, teams: room.teams };
   }
 
-  createCustomTeam(roomCode, teamName) {
+  addManualTeam(roomCode, teamName) {
     const room = this.rooms.get(roomCode);
     if (!room) return { error: 'Sala no encontrada' };
+    if (room.teams.length >= 24) {
+      return { error: 'Límite máximo de 24 equipos alcanzado' };
+    }
     const idx = room.teams.length;
     const meta = getTeamMeta(idx);
     const newTeam = {
@@ -439,6 +461,45 @@ class GameManager {
     room.teams.push(newTeam);
     room.state = GAME_STATES.TEAMS_ASSIGNED;
     return { success: true, teams: room.teams, newTeam };
+  }
+
+  removeManualTeam(roomCode, teamIndex) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return { error: 'Sala no encontrada' };
+    if (!room.teams || room.teams.length <= 2) {
+      return { error: 'Debe haber al menos 2 equipos' };
+    }
+    const idx = Number(teamIndex);
+    if (isNaN(idx) || idx < 0 || idx >= room.teams.length) {
+      return { error: 'Equipo no encontrado' };
+    }
+
+    // Reassign players from removed team to the previous or first team
+    const fallbackIdx = idx === 0 ? 1 : 0;
+    const removedPlayers = room.teams[idx].players || [];
+    removedPlayers.forEach(p => {
+      p.teamIndex = fallbackIdx;
+      const playerObj = room.players.get(p.id);
+      if (playerObj) playerObj.teamIndex = fallbackIdx;
+      room.teams[fallbackIdx].players.push(p);
+    });
+
+    room.teams.splice(idx, 1);
+
+    // Reindex remaining teams' player teamIndex
+    room.teams.forEach((t, newIdx) => {
+      t.players.forEach(p => {
+        p.teamIndex = newIdx;
+        const playerObj = room.players.get(p.id);
+        if (playerObj) playerObj.teamIndex = newIdx;
+      });
+    });
+
+    return { success: true, teams: room.teams };
+  }
+
+  createCustomTeam(roomCode, teamName) {
+    return this.addManualTeam(roomCode, teamName);
   }
 
   setAutoHost(roomCode, enabled) {
@@ -459,10 +520,15 @@ class GameManager {
       return { error: 'Equipo de destino inválido' };
     }
 
-    const targetTeam = room.teams[targetTeamIndex];
-    const maxLimit = room.maxPlayersPerTeam || 4;
+    if (player.teamIndex === targetTeamIndex) {
+      return { success: true, teams: room.teams, player };
+    }
 
-    if (targetTeam.players.length >= maxLimit) {
+    const targetTeam = room.teams[targetTeamIndex];
+    const maxLimit = room.maxPlayersPerTeam;
+
+    // Only enforce limit if maxLimit is configured and > 0 (0 means unlimited)
+    if (maxLimit && maxLimit > 0 && targetTeam.players.length >= maxLimit) {
       return { error: `El equipo destino ya alcanzó el máximo de ${maxLimit} integrantes` };
     }
 
@@ -838,6 +904,7 @@ class GameManager {
       allTeamsReady,
       gameMode: room.gameMode || 'teams',
       teamSelectionMode: room.teamSelectionMode || 'auto',
+      maxPlayersPerTeam: room.maxPlayersPerTeam ?? 4,
       autoHostEnabled: !!room.autoHostEnabled,
       gameState: room.state,
       canBuzz:

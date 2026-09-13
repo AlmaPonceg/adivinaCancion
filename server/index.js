@@ -631,15 +631,26 @@ io.on('connection', (socket) => {
     callback?.({ success: true, gameMode: roomState.gameMode, teams: roomState.teams });
   });
 
-  // ── HOST: Set Team Size Limit (e.g. 2, 3, 4, 5, 6) ────────
+  // ── HOST: Set Team Size Limit (e.g. 1, 2, 3, 4, 5, 6, 8, 10... or 0 for unlimited) ──
   socket.on('set-team-size', ({ roomCode, maxPlayersPerTeam }, callback) => {
     const code = String(roomCode || '').trim().toUpperCase();
     const res = gm.setMaxPlayersPerTeam(code, maxPlayersPerTeam);
     if (res.error) return callback?.({ error: res.error });
 
+    const room = gm.getRoom(code);
+    if (room && room.state === 'TEAMS_ASSIGNED' && room.gameMode === 'teams' && room.teamSelectionMode === 'auto') {
+      gm.shuffleTeams(code);
+    }
+
+    const roomState = gm.getRoomState(code);
+    io.to(code).emit('teams-assigned', {
+      teams: roomState.teams,
+      allTeamsReady: roomState.allTeamsReady,
+    });
     io.to(code).emit('team-size-updated', { maxPlayersPerTeam: res.maxPlayersPerTeam });
+    broadcastPlayerStates(code);
     console.log(`[TeamSize] Room ${code} limit set to ${res.maxPlayersPerTeam} per team`);
-    callback?.({ success: true, maxPlayersPerTeam: res.maxPlayersPerTeam });
+    callback?.({ success: true, maxPlayersPerTeam: res.maxPlayersPerTeam, teams: roomState.teams });
   });
 
   // ── HOST: Set Team Selection Mode ('auto' vs 'manual') ──────
@@ -676,6 +687,38 @@ io.on('connection', (socket) => {
     });
     broadcastPlayerStates(code);
     console.log(`[Teams] Initialized ${count} manual teams in room ${code}`);
+    callback?.({ success: true, teams: roomState.teams });
+  });
+
+  // ── HOST: Add a Single Manual Team ───────────────────────────
+  socket.on('add-manual-team', ({ roomCode, teamName }, callback) => {
+    const code = String(roomCode || '').trim().toUpperCase();
+    const res = gm.addManualTeam(code, teamName);
+    if (res.error) return callback?.({ error: res.error });
+
+    const roomState = gm.getRoomState(code);
+    io.to(code).emit('teams-assigned', {
+      teams: roomState.teams,
+      allTeamsReady: roomState.allTeamsReady,
+    });
+    broadcastPlayerStates(code);
+    console.log(`[Teams] Added team "${res.newTeam?.name}" in room ${code} (total: ${roomState.teams.length})`);
+    callback?.({ success: true, teams: roomState.teams, newTeam: res.newTeam });
+  });
+
+  // ── HOST: Remove a Manual Team ───────────────────────────────
+  socket.on('remove-manual-team', ({ roomCode, teamIndex }, callback) => {
+    const code = String(roomCode || '').trim().toUpperCase();
+    const res = gm.removeManualTeam(code, teamIndex);
+    if (res.error) return callback?.({ error: res.error });
+
+    const roomState = gm.getRoomState(code);
+    io.to(code).emit('teams-assigned', {
+      teams: roomState.teams,
+      allTeamsReady: roomState.allTeamsReady,
+    });
+    broadcastPlayerStates(code);
+    console.log(`[Teams] Removed team ${teamIndex} in room ${code} (remaining: ${roomState.teams.length})`);
     callback?.({ success: true, teams: roomState.teams });
   });
 

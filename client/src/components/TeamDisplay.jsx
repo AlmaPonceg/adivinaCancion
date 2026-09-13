@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam }) {
+export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam, onRemoveTeam, maxPlayersPerTeam = 4 }) {
   const [editingIdx, setEditingIdx] = useState(null);
   const [editName, setEditName] = useState('');
 
   if (!teams || teams.length === 0) return null;
+
+  const hasLimit = typeof maxPlayersPerTeam === 'number' && maxPlayersPerTeam > 0;
 
   const startEdit = (idx, currentName) => {
     setEditingIdx(idx);
@@ -109,13 +111,27 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam }) {
 
                 <span
                   className={`mono text-xs font-bold px-2.5 py-1 rounded-lg border shrink-0 ${
-                    team.players.length >= 4
+                    hasLimit && team.players.length >= maxPlayersPerTeam
                       ? 'bg-[#FFF0EB] text-[#FF5722] border-[#FF5722]/30'
                       : 'bg-white border-[#EAE3D5] text-[#6B6280]'
                   }`}
                 >
-                  {team.players.length}/4
+                  {team.players.length}{hasLimit ? `/${maxPlayersPerTeam}` : ' jug.'}
                 </span>
+
+                {onRemoveTeam && teams.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveTeam(teamIdx)}
+                    className="p-1 rounded-lg text-[#A098AE] hover:text-[#E11D48] hover:bg-[#FFF0F3] transition-colors cursor-pointer"
+                    title={`Eliminar ${team.name}`}
+                    aria-label={`Eliminar ${team.name}`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -162,15 +178,20 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam }) {
                           className="text-[11px] font-bold py-1 px-2.5 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] text-[#181226] cursor-pointer shadow-2xs hover:border-[#FF5722]/50"
                           title="Mover jugador a otro equipo"
                         >
-                          {teams.map((t, idx) => (
-                            <option
-                              key={t.name}
-                              value={idx}
-                              disabled={idx !== teamIdx && t.players.length >= 4}
-                            >
-                              {idx === teamIdx ? 'En este equipo' : `Mover a ${t.name} (${t.players.length}/4)`}
-                            </option>
-                          ))}
+                          {teams.map((t, idx) => {
+                            const isTargetFull = hasLimit && idx !== teamIdx && t.players.length >= maxPlayersPerTeam;
+                            return (
+                              <option
+                                key={t.name}
+                                value={idx}
+                                disabled={isTargetFull}
+                              >
+                                {idx === teamIdx
+                                  ? 'En este equipo'
+                                  : `Mover a ${t.name} (${t.players.length}${hasLimit ? `/${maxPlayersPerTeam}` : ''})`}
+                              </option>
+                            );
+                          })}
                         </select>
                       </div>
                     )}

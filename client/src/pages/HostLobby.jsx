@@ -253,14 +253,32 @@ export default function HostLobby() {
   };
 
   const handleInitManualTeams = (count) => {
-    socket.emit('init-manual-teams', { roomCode, count }, (res) => {
+    const val = typeof count === 'number' ? count : parseInt(count, 10);
+    const sanitized = isNaN(val) ? 2 : Math.max(2, Math.min(24, val));
+    socket.emit('init-manual-teams', { roomCode, count: sanitized }, (res) => {
+      if (res?.teams) setTeams(res.teams);
+    });
+  };
+
+  const handleAddManualTeam = (teamName) => {
+    socket.emit('add-manual-team', { roomCode, teamName }, (res) => {
+      if (res?.teams) setTeams(res.teams);
+    });
+  };
+
+  const handleRemoveManualTeam = (teamIndex) => {
+    socket.emit('remove-manual-team', { roomCode, teamIndex }, (res) => {
       if (res?.teams) setTeams(res.teams);
     });
   };
 
   const handleChangeTeamSize = (size) => {
-    setMaxPlayersPerTeam(size);
-    socket.emit('set-team-size', { roomCode, maxPlayersPerTeam: size });
+    const val = typeof size === 'number' ? size : parseInt(size, 10);
+    const sanitized = isNaN(val) ? 4 : Math.max(0, Math.min(50, val));
+    setMaxPlayersPerTeam(sanitized);
+    socket.emit('set-team-size', { roomCode, maxPlayersPerTeam: sanitized }, (res) => {
+      if (res?.teams) setTeams(res.teams);
+    });
   };
 
   const handleDjBotGenerated = (generatedPlaylist) => {
@@ -1241,23 +1259,125 @@ export default function HostLobby() {
               )}
 
               {gameMode === 'teams' && teamSelectionMode === 'manual' && (
-                <div className="p-3.5 bg-[#FAF7F2] border border-[#EAE3D5] rounded-2xl mb-5 space-y-2.5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="p-4 bg-[#FAF7F2] border border-[#EAE3D5] rounded-2xl mb-5 space-y-3.5">
+                  {/* Fila 1: Cantidad de Equipos */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-[#EAE3D5]/80">
                     <div>
-                      <p className="text-xs font-black text-[#181226]">Elección Manual de Equipos</p>
+                      <p className="text-xs font-black text-[#181226]">
+                        Cantidad de Equipos:{' '}
+                        <span className="text-[#FF5722]">{teams?.length || 2} equipos</span>
+                      </p>
                       <p className="text-[11px] text-[#6B6280]">
-                        Los participantes eligen su equipo desde su teléfono. Podés generar los grupos acá:
+                        Elegí cuántos grupos crear para que los participantes se unan libremente:
                       </p>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
-                      {[2, 3, 4].map((count) => (
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Stepper + Input */}
+                      <div className="flex items-center bg-white border border-[#EAE3D5] rounded-xl p-0.5 shadow-2xs">
                         <button
-                          key={count}
                           type="button"
-                          onClick={() => handleInitManualTeams(count)}
-                          className="px-2.5 py-1 rounded-lg text-xs font-black bg-white border border-[#EAE3D5] hover:border-[#FF5722] text-[#181226] cursor-pointer shadow-2xs"
+                          onClick={() => handleInitManualTeams(Math.max(2, (teams?.length || 2) - 1))}
+                          disabled={(teams?.length || 2) <= 2}
+                          className="w-7 h-7 rounded-lg text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer transition-colors"
+                          title="Menos equipos"
                         >
-                          {count} Equipos
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min="2"
+                          max="24"
+                          value={teams?.length || 2}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val) && val >= 2 && val <= 24) handleInitManualTeams(val);
+                          }}
+                          className="w-10 text-center font-black text-xs text-[#181226] border-none focus:outline-none bg-transparent p-0"
+                          title="Escribí la cantidad exacta de equipos"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleInitManualTeams(Math.min(24, (teams?.length || 2) + 1))}
+                          disabled={(teams?.length || 2) >= 24}
+                          className="w-7 h-7 rounded-lg text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer transition-colors"
+                          title="Más equipos"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      {/* Botón rápido + 1 equipo */}
+                      <button
+                        type="button"
+                        onClick={() => handleAddManualTeam()}
+                        className="px-2.5 py-1.5 rounded-xl text-[11px] font-black bg-white border border-[#EAE3D5] hover:border-[#FF5722] hover:text-[#FF5722] text-[#181226] cursor-pointer shadow-2xs shrink-0 transition-colors"
+                        title="Sumar un equipo más al listado"
+                      >
+                        + 1 Equipo
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Chips rápidos de cantidad de equipos */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] uppercase font-bold text-[#8E869E] mr-1">Equipos:</span>
+                    {[2, 3, 4, 5, 6, 8, 10, 12, 16].map((count) => (
+                      <button
+                        key={count}
+                        type="button"
+                        onClick={() => handleInitManualTeams(count)}
+                        className={`px-2 py-0.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                          (teams?.length || 2) === count
+                            ? 'bg-[#FF5722] text-white shadow-2xs font-black'
+                            : 'bg-white border border-[#EAE3D5] text-[#6B6280] hover:border-[#FF5722]/50 hover:text-[#181226]'
+                        }`}
+                      >
+                        {count} eq.
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Fila 2: Límite de Jugadores por Equipo */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-[#EAE3D5]/80">
+                    <div>
+                      <p className="text-xs font-black text-[#181226]">
+                        Cupo por Equipo:{' '}
+                        <span className="text-[#FF5722]">
+                          {maxPlayersPerTeam === 0 ? 'Sin límite (Libre)' : `${maxPlayersPerTeam} personas`}
+                        </span>
+                      </p>
+                      <p className="text-[11px] text-[#6B6280]">
+                        {maxPlayersPerTeam === 0
+                          ? 'Cualquier cantidad de jugadores puede unirse al mismo equipo.'
+                          : `Si un equipo llega a ${maxPlayersPerTeam} integrantes, se bloquea el ingreso en los teléfonos.`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleChangeTeamSize(0)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                          maxPlayersPerTeam === 0
+                            ? 'bg-[#059669] text-white shadow-2xs'
+                            : 'bg-white text-[#6B6280] border border-[#EAE3D5] hover:border-[#059669]/50 hover:text-[#181226]'
+                        }`}
+                        title="Sin límite de participantes por equipo"
+                      >
+                        Sin límite
+                      </button>
+                      {[2, 3, 4, 5, 6, 8, 10].map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => handleChangeTeamSize(size)}
+                          className={`w-7 h-7 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                            maxPlayersPerTeam === size
+                              ? 'bg-[#FF5722] text-white shadow-2xs'
+                              : 'bg-white text-[#6B6280] border border-[#EAE3D5] hover:border-[#FF5722]/50 hover:text-[#181226]'
+                          }`}
+                          title={`${size} jugadores por equipo`}
+                        >
+                          {size}
                         </button>
                       ))}
                     </div>
@@ -1266,22 +1386,66 @@ export default function HostLobby() {
               )}
 
               {gameMode === 'teams' && teamSelectionMode === 'auto' && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-[#FAF7F2] border border-[#EAE3D5] rounded-2xl mb-5">
-                  <div className="min-w-0">
-                    <p className="text-xs font-extrabold text-[#181226]">Integrantes por equipo:</p>
-                    <p className="text-[11px] text-[#6B6280]">
-                      Los participantes se balancearán automáticamente (máx. {maxPlayersPerTeam} por equipo)
-                    </p>
+                <div className="p-4 bg-[#FAF7F2] border border-[#EAE3D5] rounded-2xl mb-5 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-[#181226]">
+                        Integrantes por equipo:{' '}
+                        <span className="text-[#FF5722]">{maxPlayersPerTeam} personas</span>
+                      </p>
+                      <p className="text-[11px] text-[#6B6280]">
+                        {players.length > 0
+                          ? `Para ${players.length} participante${players.length === 1 ? '' : 's'}, se formarán aprox. ${Math.max(players.length > 1 ? 2 : 1, Math.ceil(players.length / (maxPlayersPerTeam || 1)))} equipos.`
+                          : `Los participantes se balancearán automáticamente (máx. ${maxPlayersPerTeam} por equipo).`}
+                      </p>
+                    </div>
+
+                    {/* Stepper + Custom Number Input */}
+                    <div className="flex items-center bg-white border border-[#EAE3D5] rounded-xl p-0.5 shadow-2xs shrink-0 self-start sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => handleChangeTeamSize(Math.max(1, (maxPlayersPerTeam || 4) - 1))}
+                        disabled={(maxPlayersPerTeam || 4) <= 1}
+                        className="w-8 h-8 rounded-lg text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer transition-colors"
+                        title="Menos jugadores por equipo"
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        min="1"
+                        max="50"
+                        value={maxPlayersPerTeam || 4}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          if (!isNaN(val) && val >= 1 && val <= 50) handleChangeTeamSize(val);
+                        }}
+                        className="w-12 text-center font-black text-xs text-[#181226] border-none focus:outline-none bg-transparent p-0"
+                        title="Escribí cualquier cantidad de integrantes por equipo"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleChangeTeamSize(Math.min(50, (maxPlayersPerTeam || 4) + 1))}
+                        disabled={(maxPlayersPerTeam || 4) >= 50}
+                        className="w-8 h-8 rounded-lg text-xs font-black text-[#6B6280] hover:text-[#181226] hover:bg-[#FAF7F2] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer transition-colors"
+                        title="Más jugadores por equipo"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
-                    {[2, 3, 4, 5, 6].map((size) => (
+
+                  {/* Quick Chips Presets */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-[#EAE3D5]/80">
+                    <span className="text-[10px] uppercase font-bold text-[#8E869E] mr-1">Rápidos:</span>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12].map((size) => (
                       <button
                         key={size}
                         type="button"
                         onClick={() => handleChangeTeamSize(size)}
-                        className={`w-8 h-8 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                        className={`w-7 h-7 rounded-lg text-xs font-black transition-all cursor-pointer ${
                           maxPlayersPerTeam === size
-                            ? 'bg-[#FF5722] text-white shadow-xs scale-105'
+                            ? 'bg-[#FF5722] text-white shadow-2xs'
                             : 'bg-white text-[#6B6280] border border-[#EAE3D5] hover:border-[#FF5722]/50 hover:text-[#181226]'
                         }`}
                         title={`${size} jugadores por equipo`}
@@ -1381,16 +1545,26 @@ export default function HostLobby() {
                     <p className="badge-tag text-[#6B6280]">
                       {gameMode === 'individual'
                         ? `Jugadores individuales (${teams.length})`
+                        : teamSelectionMode === 'manual'
+                        ? `Equipos habilitados (${teams.length}) · ${maxPlayersPerTeam > 0 ? `Máx. ${maxPlayersPerTeam} c/u` : 'Sin límite de cupo'}`
                         : `Equipos asignados (balanceados, máx. ${maxPlayersPerTeam} c/u)`}
                     </p>
                     <span className="text-xs text-[#6B6280]">
                       {gameMode === 'individual'
                         ? 'Cada jugador tiene su propio equipo'
+                        : teamSelectionMode === 'manual'
+                        ? 'Los jugadores eligen equipo desde su teléfono'
                         : 'Podés reasignar jugadores usando el selector'}
                     </span>
                   </div>
 
-                  <TeamDisplay teams={teams} onMovePlayer={handleMovePlayer} onRenameTeam={handleRenameTeam} />
+                  <TeamDisplay
+                    teams={teams}
+                    onMovePlayer={handleMovePlayer}
+                    onRenameTeam={handleRenameTeam}
+                    onRemoveTeam={teamSelectionMode === 'manual' ? handleRemoveManualTeam : undefined}
+                    maxPlayersPerTeam={maxPlayersPerTeam}
+                  />
                 </div>
               )}
 

@@ -429,6 +429,15 @@ export default function PlayerBuzzer() {
     }
   });
 
+  useSocketEvent('team-size-updated', (data) => {
+    if (typeof data?.maxPlayersPerTeam !== 'undefined') {
+      setPlayerState((prev) => ({
+        ...prev,
+        maxPlayersPerTeam: data.maxPlayersPerTeam,
+      }));
+    }
+  });
+
   useSocketEvent('auto-host-updated', (data) => {
     if (typeof data?.autoHostEnabled === 'boolean') {
       setPlayerState((prev) => ({
@@ -824,8 +833,9 @@ export default function PlayerBuzzer() {
                   const isMyTeam = playerState.teamIndex === idx || t.players?.some(
                     (p) => p.id === playerId || (p.name && p.name.toLowerCase() === playerName.toLowerCase())
                   );
-                  const maxLimit = playerState.maxPlayersPerTeam || 4;
-                  const isFull = (t.players?.length || 0) >= maxLimit;
+                  const maxLimit = typeof playerState.maxPlayersPerTeam === 'number' ? playerState.maxPlayersPerTeam : 4;
+                  const hasLimit = maxLimit > 0;
+                  const isFull = hasLimit && (t.players?.length || 0) >= maxLimit;
 
                   return (
                     <div
@@ -848,7 +858,7 @@ export default function PlayerBuzzer() {
                           </span>
                         </div>
                         <span className="text-[11px] font-black px-2 py-0.5 rounded-lg bg-white border border-[#E0D9CB] text-[#746B8A]">
-                          {t.players?.length || 0}/{maxLimit}
+                          {hasLimit ? `${t.players?.length || 0}/${maxLimit}` : `${t.players?.length || 0} jug.`}
                         </span>
                       </div>
 
