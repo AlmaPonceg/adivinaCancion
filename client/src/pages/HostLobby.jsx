@@ -350,27 +350,67 @@ export default function HostLobby() {
     }
   };
 
-  // ── Interactive Song Search ──────────────────────────────────
-  const handleSearchSongs = async (e) => {
-    e?.preventDefault();
-    const q = searchQuery.trim();
-    if (!q || q.length < 2) return;
+  // ── Interactive Song Search with Live Debounced Suggestions ──
+  const executeSearch = async (query, signal) => {
+    const q = (query || '').trim();
+    if (!q || q.length < 2) {
+      setSearchResults([]);
+      setSearchError('');
+      setIsSearching(false);
+      return;
+    }
+
     setIsSearching(true);
     setSearchError('');
+
     try {
       const serverEndpoint = SERVER_URL || socket.io?.uri || window.location.origin;
-      const res = await fetch(`${serverEndpoint}/api/search-songs?q=${encodeURIComponent(q)}`);
+      const res = await fetch(`${serverEndpoint}/api/search-songs?q=${encodeURIComponent(q)}`, {
+        signal,
+      });
       const data = await res.json();
       if (data.success && Array.isArray(data.results)) {
         setSearchResults(data.results);
       } else {
-        setSearchError(data.error || 'No se encontraron resultados');
+        setSearchResults([]);
+        setSearchError(data.error || 'No se encontraron sugerencias para esta búsqueda');
       }
     } catch (err) {
-      setSearchError('Error de red al conectar con el servidor para buscar canciones');
+      if (err.name !== 'AbortError') {
+        console.error('Search error:', err);
+        setSearchError('Error de red al conectar con el servidor para buscar canciones');
+      }
     } finally {
-      setIsSearching(false);
+      if (!signal?.aborted) {
+        setIsSearching(false);
+      }
     }
+  };
+
+  // Live search effect: automatically triggers search after 350ms of inactivity
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q || q.length < 2) {
+      setSearchResults([]);
+      setSearchError('');
+      setIsSearching(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      executeSearch(q, controller.signal);
+    }, 350);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [searchQuery]);
+
+  const handleSearchSongs = (e) => {
+    e?.preventDefault();
+    executeSearch(searchQuery);
   };
 
   const handleAddSearchResult = (song) => {
@@ -1025,7 +1065,7 @@ export default function HostLobby() {
                     </button>
                   </div>
 
-                  {/* Tab 1: Buscador interactivo de canciones con YouTube */}
+                  {/* Tab 1: Buscador interactivo de canciones con sugerencias en tiempo real */}
                   {playlistTab === 'search' && (
                     <div className="space-y-3">
                       <form onSubmit={handleSearchSongs} className="flex gap-2">
@@ -1034,12 +1074,36 @@ export default function HostLobby() {
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Buscá por canción o artista (ej. Crimen, Shake It Off...)"
-                            className="w-full bg-white border border-[#E0D9CB] rounded-xl pl-9 pr-3 py-2.5 text-xs sm:text-sm font-semibold text-[#181226] focus:border-[#FF5722] focus:ring-1 focus:ring-[#FF5722] outline-none shadow-inner"
+                            placeholder="Escribí una canción o artista (ej. De Música Ligera, Charly...)"
+                            className="w-full bg-white border border-[#E0D9CB] rounded-xl pl-9 pr-9 py-2.5 text-xs sm:text-sm font-semibold text-[#181226] focus:border-[#FF5722] focus:ring-1 focus:ring-[#FF5722] outline-none shadow-inner"
                           />
                           <svg className="w-4 h-4 text-[#8E869E] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                           </svg>
+
+                          {/* Loading indicator or clear button */}
+                          {isSearching ? (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                              <svg className="w-4 h-4 text-[#FF5722] animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                            </div>
+                          ) : searchQuery ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSearchQuery('');
+                                setSearchResults([]);
+                                setSearchError('');
+                              }}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8E869E] hover:text-[#181226] p-0.5 rounded-full hover:bg-[#FAF7F2] cursor-pointer"
+                              title="Limpiar búsqueda"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          ) : null}
                         </div>
                         <button
                           type="submit"
@@ -1059,10 +1123,25 @@ export default function HostLobby() {
                         </button>
                       </form>
 
+                      {/* Header de sugerencias si hay resultados */}
+                      {searchResults.length > 0 && (
+                        <div className="flex items-center justify-between text-xs font-bold text-[#6B6280] px-1">
+                          <span>Sugerencias en tiempo real ({searchResults.length})</span>
+                          <span className="text-[10px] text-[#8E869E]">Hacé clic en + para sumar a la playlist</span>
+                        </div>
+                      )}
+
                       {searchError && (
                         <p className="text-xs text-[#E11D48] font-bold bg-[#FFF0F3] p-2.5 rounded-xl border border-[#E11D48]/30">
                           {searchError}
                         </p>
+                      )}
+
+                      {!isSearching && searchQuery.trim().length >= 2 && searchResults.length === 0 && !searchError && (
+                        <div className="p-4 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] text-center">
+                          <p className="text-xs font-bold text-[#181226]">No se encontraron canciones para "{searchQuery}"</p>
+                          <p className="text-[11px] text-[#6B6280] mt-0.5">Probá con otro término, artista o pegá el link directo</p>
+                        </div>
                       )}
 
                       {/* Lista de resultados encontrados */}
