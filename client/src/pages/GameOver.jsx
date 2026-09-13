@@ -88,7 +88,7 @@ export default function GameOver() {
 
             <button
               onClick={() => setShowDiploma(true)}
-              className="w-full mt-4 py-3 sm:py-3.5 px-4 rounded-xl font-tactical font-black text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-[#FFC837] via-[#FFE082] to-[#FFB300] text-[#0E0A16] shadow-lg shadow-amber-500/20 hover:brightness-105 active:scale-98 transition-all"
+              className="w-full mt-4 py-3 sm:py-3.5 px-4 rounded-xl font-tactical font-black text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer bg-[#F59E0B] text-[#0E0A16] shadow-lg shadow-amber-500/20 hover:brightness-110 active:scale-98 transition-all"
             >
               <svg className="w-4 h-4 text-[#0E0A16]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

@@ -100,7 +100,7 @@ export default function DjBotModal({ isOpen, onClose, onPlaylistGenerated, exist
 
           {/* Header */}
           <div className="flex items-center gap-3 mb-5 pr-8">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white flex items-center justify-center shadow-md shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-[#FF5722] text-white flex items-center justify-center shadow-md shrink-0">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
               </svg>

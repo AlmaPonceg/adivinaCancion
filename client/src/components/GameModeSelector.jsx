@@ -231,10 +231,7 @@ export default function GameModeSelector({
                           boxShadow: `0 4px 0 ${mode.colorDark}`,
                         }}
                       >
-                        <span>Entrar a la Sala con {mode.shortName}</span>
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
+                        <span>Continuar con {mode.shortName} →</span>
                       </button>
                     </div>
                   </motion.div>

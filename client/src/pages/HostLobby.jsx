@@ -1,24 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import socket, { SERVER_URL } from '../socket';
 import { useSocketEvent, useSocketEmit } from '../hooks/useSocket';
 import QRDisplay from '../components/QRDisplay';
 import TeamDisplay from '../components/TeamDisplay';
 import LobbyAudio from '../components/LobbyAudio';
-import DjBotModal from '../components/DjBotModal';
-import PlaylistLoadingModal from '../components/PlaylistLoadingModal';
+import PlaylistSetup from '../components/PlaylistSetup';
 import GameModeSelector, { GAME_MODES } from '../components/GameModeSelector';
 import { lobbyAudioManager } from '../utils/lobbyAudio';
 import {
-  saveAudioFile,
   deleteAudioFile,
-  clearAudioFiles,
-  createTrackObjectUrl,
   revokeTrackObjectUrl,
   hydratePlaylistTracks,
 } from '../utils/audioStorage';
-import { normalizeTrack, getTrackTitle } from '../utils/trackHelper';
+import { getTrackTitle } from '../utils/trackHelper';
 
 export default function HostLobby() {
   const navigate = useNavigate();
@@ -29,6 +24,9 @@ export default function HostLobby() {
   const [isShuffling, setIsShuffling] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(socket.connected ? 'connected' : 'connecting');
 
+  // ── Step State: 'mode' | 'playlist' | 'lobby' ───────────────
+  const [setupStep, setSetupStep] = useState('mode');
+
   // ── Playlist State ──────────────────────────────────────────
   const [playlist, setPlaylist] = useState(() => {
     try {
@@ -38,28 +36,21 @@ export default function HostLobby() {
       return [];
     }
   });
-  const [playlistInput, setPlaylistInput] = useState('');
-  const [showPlaylistDrawer, setShowPlaylistDrawer] = useState(false);
-  const [playlistTab, setPlaylistTab] = useState('search'); // 'search' | 'local' | 'urls'
-  const [isLoadingPlaylist, setIsLoadingPlaylist] = useState(false);
   const [antiSpoiler, setAntiSpoiler] = useState(() => {
     return localStorage.getItem('trivia_anti_spoiler') === 'true';
   });
-  const [showClearPlaylistConfirm, setShowClearPlaylistConfirm] = useState(false);
 
   // ── Mode & Team Sizing ──────────────────────────────────────
   const [gameMode, setGameMode] = useState('teams'); // 'teams' | 'individual'
   const [maxPlayersPerTeam, setMaxPlayersPerTeam] = useState(4);
   const [teamSelectionMode, setTeamSelectionMode] = useState('auto'); // 'auto' | 'manual'
   const [autoHostEnabled, setAutoHostEnabled] = useState(false);
-  const [isDjBotOpen, setIsDjBotOpen] = useState(false);
-  const [isModeConfirmed, setIsModeConfirmed] = useState(false);
 
   const currentTheme = useMemo(() => {
-    if (autoHostEnabled) return GAME_MODES.find(m => m.id === 'autohost') || GAME_MODES[0];
-    if (gameMode === 'individual') return GAME_MODES.find(m => m.id === 'individual') || GAME_MODES[2];
-    if (teamSelectionMode === 'manual') return GAME_MODES.find(m => m.id === 'manual') || GAME_MODES[1];
-    return GAME_MODES.find(m => m.id === 'auto') || GAME_MODES[0];
+    if (autoHostEnabled) return GAME_MODES.find((m) => m.id === 'autohost') || GAME_MODES[0];
+    if (gameMode === 'individual') return GAME_MODES.find((m) => m.id === 'individual') || GAME_MODES[2];
+    if (teamSelectionMode === 'manual') return GAME_MODES.find((m) => m.id === 'manual') || GAME_MODES[1];
+    return GAME_MODES.find((m) => m.id === 'auto') || GAME_MODES[0];
   }, [autoHostEnabled, gameMode, teamSelectionMode]);
 
   const assignedPlayerIds = useMemo(() => {
@@ -75,7 +66,6 @@ export default function HostLobby() {
   }, [teams]);
 
   const hasAssignedTeams = totalAssignedPlayers > 0;
-
 
   const handleConfirmGameModeFromSelector = (params) => {
     if (params.gameMode) {
@@ -105,15 +95,9 @@ export default function HostLobby() {
         if (res?.teams) setTeams(res.teams);
       });
     }
-    setIsModeConfirmed(true);
+    // Advance to step 2 (Playlist Setup)
+    setSetupStep('playlist');
   };
-
-  // ── Song Search API State ───────────────────────────────────
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchError, setSearchError] = useState('');
-  const [recentlyAddedId, setRecentlyAddedId] = useState(null);
 
   // Hydrate local tracks from IndexedDB with active Object URLs on mount
   useEffect(() => {
@@ -136,7 +120,6 @@ export default function HostLobby() {
   const [showManualInput, setShowManualInput] = useState(false);
 
   // ── URL & Sharing State ─────────────────────────────────────
-  // Default to Render URL so QR codes and WhatsApp links NEVER contain localhost or local ports
   const DEFAULT_RENDER_URL = 'https://advinacancion.onrender.com';
 
   const [baseUrl, setBaseUrl] = useState(() => {
@@ -238,7 +221,6 @@ export default function HostLobby() {
       socket.connect();
     }
 
-    // Active retry timer if roomCode remains null
     const retryInterval = setInterval(() => {
       if (!mounted) return;
       setRoomCode((curr) => {
@@ -289,27 +271,7 @@ export default function HostLobby() {
     if (typeof data.autoHostEnabled === 'boolean') setAutoHostEnabled(data.autoHostEnabled);
   });
 
-  // ── Mode Switch & Team Size Sizing Handlers ──────────────────
-  const handleSwitchGameMode = (mode) => {
-    setGameMode(mode);
-    socket.emit('set-game-mode', { roomCode, gameMode: mode }, (res) => {
-      if (res?.teams) setTeams(res.teams);
-    });
-  };
-
-  const handleSwitchTeamSelectionMode = (mode) => {
-    setTeamSelectionMode(mode);
-    socket.emit('set-team-selection-mode', { roomCode, mode }, (res) => {
-      if (res?.teams) setTeams(res.teams);
-    });
-  };
-
-  const handleToggleAutoHost = () => {
-    const next = !autoHostEnabled;
-    setAutoHostEnabled(next);
-    socket.emit('set-auto-host', { roomCode, enabled: next });
-  };
-
+  // ── Mode Switch & Team Size Handlers ────────────────────────
   const handleInitManualTeams = (count) => {
     const val = typeof count === 'number' ? count : parseInt(count, 10);
     const sanitized = isNaN(val) ? 2 : Math.max(2, Math.min(24, val));
@@ -318,8 +280,8 @@ export default function HostLobby() {
     });
   };
 
-  const handleAddManualTeam = (teamName) => {
-    socket.emit('add-manual-team', { roomCode, teamName }, (res) => {
+  const handleAddManualTeam = () => {
+    socket.emit('add-manual-team', { roomCode, teamName: `Equipo ${(teams?.length || 0) + 1}` }, (res) => {
       if (res?.teams) setTeams(res.teams);
     });
   };
@@ -339,101 +301,7 @@ export default function HostLobby() {
     });
   };
 
-  const handleDjBotGenerated = (generatedPlaylist) => {
-    const updated = [...playlist, ...generatedPlaylist];
-    setPlaylist(updated);
-    savePlaylistToStorage(updated);
-    setAntiSpoiler(true);
-    try {
-      localStorage.setItem('trivia_anti_spoiler', 'true');
-    } catch {
-      /* ignore */
-    }
-  };
-
-  // ── Interactive Song Search with Live Debounced Suggestions ──
-  const executeSearch = async (query, signal) => {
-    const q = (query || '').trim();
-    if (!q || q.length < 2) {
-      setSearchResults([]);
-      setSearchError('');
-      setIsSearching(false);
-      return;
-    }
-
-    setIsSearching(true);
-    setSearchError('');
-
-    try {
-      const serverEndpoint = SERVER_URL || socket.io?.uri || window.location.origin;
-      const res = await fetch(`${serverEndpoint}/api/search-songs?q=${encodeURIComponent(q)}`, {
-        signal,
-      });
-      const data = await res.json();
-      if (data.success && Array.isArray(data.results)) {
-        setSearchResults(data.results);
-      } else {
-        setSearchResults([]);
-        setSearchError(data.error || 'No se encontraron sugerencias para esta búsqueda');
-      }
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('Search error:', err);
-        setSearchError('Error de red al conectar con el servidor para buscar canciones');
-      }
-    } finally {
-      if (!signal?.aborted) {
-        setIsSearching(false);
-      }
-    }
-  };
-
-  // Live search effect: automatically triggers search after 350ms of inactivity
-  useEffect(() => {
-    const q = searchQuery.trim();
-    if (!q || q.length < 2) {
-      setSearchResults([]);
-      setSearchError('');
-      setIsSearching(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => {
-      executeSearch(q, controller.signal);
-    }, 350);
-
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [searchQuery]);
-
-  const handleSearchSongs = (e) => {
-    e?.preventDefault();
-    executeSearch(searchQuery);
-  };
-
-  const handleAddSearchResult = (song) => {
-    const track = {
-      type: 'youtube',
-      id: song.id,
-      name: song.title,
-      url: song.url,
-      thumbnail: song.thumbnail,
-      duration: song.duration,
-      author: song.author,
-    };
-    const updated = [...playlist, track];
-    setPlaylist(updated);
-    savePlaylistToStorage(updated);
-    setRecentlyAddedId(song.id);
-    setTimeout(() => {
-      setRecentlyAddedId((curr) => (curr === song.id ? null : curr));
-    }, 2000);
-  };
-
-  // ── Shuffle Teams (Max per team or Individual) ──────────────
+  // ── Shuffle Teams ───────────────────────────────────────────
   const handleShuffle = async () => {
     if (players.length < 2 && gameMode !== 'individual') return;
     setIsShuffling(true);
@@ -481,7 +349,7 @@ export default function HostLobby() {
     socket.emit('remove-manual-player', { roomCode, playerId });
   };
 
-  // ── Playlist Management (Offline Local Audio + Web URLs) ────
+  // ── Playlist Storage Helper ─────────────────────────────────
   const savePlaylistToStorage = (tracks) => {
     const persistable = tracks.map((t) => {
       if (typeof t === 'object') {
@@ -494,104 +362,13 @@ export default function HostLobby() {
           url: t.type === 'local' ? '' : t.url,
           size: t.size,
           fileId: t.fileId || t.id,
+          thumbnail: t.thumbnail,
+          duration: t.duration,
         };
       }
       return t;
     });
     localStorage.setItem('trivia_playlist', JSON.stringify(persistable));
-  };
-
-  const handleAddPlaylistUrls = async () => {
-    const rawInput = playlistInput.trim();
-    if (!rawInput) return;
-    const lines = rawInput
-      .split(/[\n,]+/)
-      .map((s) => s.trim().replace(/^["']|["']$/g, ''))
-      .filter((s) => s.length > 3);
-
-    if (lines.length === 0) return;
-
-    // Check if it's a playlist URL or a list of song names
-    const isSinglePlaylistUrl = lines.length === 1 && (
-      lines[0].includes('list=') ||
-      lines[0].includes('/playlist') ||
-      /^[a-zA-Z0-9_-]{18,}$/.test(lines[0])
-    );
-    const isTextList = !isSinglePlaylistUrl && !lines.some(l => l.startsWith('http://') || l.startsWith('https://'));
-
-    if (isSinglePlaylistUrl || isTextList) {
-      setIsLoadingPlaylist(true);
-      try {
-        const serverEndpoint = SERVER_URL || socket.io?.uri || window.location.origin;
-        const bodyData = isSinglePlaylistUrl ? { url: lines[0] } : { queries: lines };
-        
-        const res = await fetch(`${serverEndpoint}/api/playlist`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(bodyData)
-        });
-        const data = await res.json();
-        
-        if (data.success && data.videos && data.videos.length > 0) {
-          const newTracks = data.videos.map(v => ({
-            type: 'youtube',
-            id: v.id,
-            name: v.title,
-            url: v.url
-          }));
-          const updated = [...playlist, ...newTracks];
-          setPlaylist(updated);
-          savePlaylistToStorage(updated);
-          setPlaylistInput('');
-
-          // Automatically enable Anti-Spoiler mode so the host doesn't see the song titles
-          if (isSinglePlaylistUrl) {
-            setAntiSpoiler(true);
-            localStorage.setItem('trivia_anti_spoiler', 'true');
-          }
-        } else {
-          alert(data.error || 'No se pudieron cargar las canciones de la playlist.');
-        }
-      } catch (e) {
-        alert('Error de red al conectar con el servidor para procesar las canciones');
-      } finally {
-        setIsLoadingPlaylist(false);
-      }
-      return;
-    }
-
-    // Default behavior for normal YouTube links
-    const newTracks = lines.map((url) => normalizeTrack(url));
-    const updated = [...playlist, ...newTracks];
-    setPlaylist(updated);
-    savePlaylistToStorage(updated);
-    setPlaylistInput('');
-  };
-
-  const handleUploadLocalFiles = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (!files || files.length === 0) return;
-
-    const newTracks = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const fileId = `local_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`;
-      await saveAudioFile(fileId, file);
-      const url = createTrackObjectUrl(fileId, file);
-      newTracks.push({
-        id: fileId,
-        type: 'local',
-        name: file.name,
-        url,
-        size: file.size,
-        fileId,
-      });
-    }
-
-    const updated = [...playlist, ...newTracks];
-    setPlaylist(updated);
-    savePlaylistToStorage(updated);
-    e.target.value = '';
   };
 
   const handleRemovePlaylistItem = async (index) => {
@@ -603,16 +380,6 @@ export default function HostLobby() {
     const updated = playlist.filter((_, idx) => idx !== index);
     setPlaylist(updated);
     savePlaylistToStorage(updated);
-  };
-
-  const handleClearPlaylist = () => {
-    setPlaylist([]);
-    try {
-      localStorage.removeItem('trivia_playlist');
-    } catch {
-      /* ignore */
-    }
-    clearAudioFiles().catch((e) => console.warn('Error clearing audio files:', e));
   };
 
   // ── Start Game Navigation ───────────────────────────────────
@@ -685,10 +452,10 @@ export default function HostLobby() {
     });
   };
 
-  if (!isModeConfirmed) {
+  // ── STEP 1: Game Mode Selector ──────────────────────────────
+  if (setupStep === 'mode') {
     return (
       <div className="h-screen max-h-screen p-3 sm:p-4 md:p-6 flex items-center justify-center relative overflow-hidden text-[var(--color-text-primary)]">
-        {/* Dynamic ambient color glow matching the current preview/mode */}
         <div
           className="absolute -top-12 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-20 pointer-events-none transition-all duration-700"
           style={{ backgroundColor: currentTheme.color }}
@@ -710,9 +477,27 @@ export default function HostLobby() {
     );
   }
 
+  // ── STEP 2: Dedicated Playlist Setup View ───────────────────
+  if (setupStep === 'playlist') {
+    return (
+      <PlaylistSetup
+        playlist={playlist}
+        setPlaylist={setPlaylist}
+        savePlaylistToStorage={savePlaylistToStorage}
+        antiSpoiler={antiSpoiler}
+        setAntiSpoiler={setAntiSpoiler}
+        currentTheme={currentTheme}
+        roomCode={roomCode}
+        onBack={() => setSetupStep('mode')}
+        onContinue={() => setSetupStep('lobby')}
+      />
+    );
+  }
+
+  // ── STEP 3: Clean Host Lobby View ───────────────────────────
   return (
     <div className="h-screen max-h-screen p-3 sm:p-4 flex flex-col text-[var(--color-text-primary)] relative overflow-hidden">
-      {/* Ambient background glow tailored to the active mode color */}
+      {/* Ambient background glow tailored to active mode color */}
       <div
         className="absolute top-[-10%] left-[20%] w-96 h-96 rounded-full blur-3xl pointer-events-none opacity-15 transition-all duration-700"
         style={{ backgroundColor: currentTheme.color }}
@@ -733,7 +518,7 @@ export default function HostLobby() {
             </button>
 
             <h1 className="font-display font-black text-sm sm:text-base text-[#181226] tracking-tight">
-              Lobby de Equipos
+              Lobby de Espera
             </h1>
 
             <div className="px-2.5 py-1 rounded-xl bg-white border border-[#DDD5C5] font-mono text-xs font-black text-[#181226] shadow-2xs flex items-center gap-1.5">
@@ -741,9 +526,10 @@ export default function HostLobby() {
               <span>{roomCode ? `SALA ${roomCode}` : 'CONECTANDO...'}</span>
             </div>
 
+            {/* Quick Button to Change Mode */}
             <button
               type="button"
-              onClick={() => setIsModeConfirmed(false)}
+              onClick={() => setSetupStep('mode')}
               className="px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs hover:brightness-95"
               style={{
                 backgroundColor: currentTheme.colorLight,
@@ -754,7 +540,21 @@ export default function HostLobby() {
             >
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentTheme.color }} />
               <span>Modo: {currentTheme.shortName || currentTheme.name}</span>
-              <span className="text-[10px] underline ml-0.5">Cambiar</span>
+              <span className="text-[10px] underline ml-0.5 font-black">Cambiar</span>
+            </button>
+
+            {/* Quick Button to Change / View Playlist */}
+            <button
+              type="button"
+              onClick={() => setSetupStep('playlist')}
+              className="px-2.5 py-1 rounded-xl text-xs font-bold border border-[#FF5722]/30 bg-[#FFF0EB] text-[#FF5722] hover:bg-[#FFE5DC] transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              title="Ver o cambiar la playlist de canciones"
+            >
+              <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+              </svg>
+              <span>Playlist: {playlist.length} {playlist.length === 1 ? 'canción' : 'canciones'}</span>
+              <span className="text-[10px] underline ml-0.5 font-black">Editar</span>
             </button>
           </div>
 
@@ -775,9 +575,9 @@ export default function HostLobby() {
           </div>
         </div>
 
-        {/* ── Main 2-Column Console Layout (Zero Scroll Grid) ────── */}
+        {/* ── Main 2-Column Console Layout (Clean & Zero Scroll) ─── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-0 items-stretch overflow-hidden">
-          {/* LEFT COLUMN: QR & Playlist (5 cols) */}
+          {/* LEFT COLUMN: QR Card + Mini Playlist Summary (5 cols) */}
           <div className="lg:col-span-5 flex flex-col h-full min-h-0 gap-2.5">
             {/* Upper Card: Room Access & QR Code */}
             <div className="party-card p-3 sm:p-3.5 rounded-2xl flex flex-col items-center justify-between shrink-0 shadow-sm">
@@ -868,7 +668,6 @@ export default function HostLobby() {
                     </button>
                   </div>
 
-                  {/* Editor de IP / Host manual */}
                   {isEditingUrl && (
                     <div className="w-full mt-2 pt-2 border-t border-[#EAE3D5] flex gap-2">
                       <input
@@ -903,7 +702,7 @@ export default function HostLobby() {
               )}
             </div>
 
-            {/* Lower Card: Playlist Console */}
+            {/* Lower Card: Clean Playlist Summary (Uncontaminated) */}
             <div className="party-card p-3 sm:p-3.5 rounded-2xl flex-1 flex flex-col min-h-0 overflow-hidden shadow-sm">
               <div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-[#EAE3D5] shrink-0">
                 <div className="flex items-center gap-1.5 min-w-0">
@@ -911,483 +710,127 @@ export default function HostLobby() {
                     Playlist
                   </span>
                   <span className="mono text-[10px] font-black px-2 py-0.5 rounded-full bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 shrink-0">
-                    {playlist.length}
+                    {playlist.length} {playlist.length === 1 ? 'canción' : 'canciones'}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {playlist.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setShowClearPlaylistConfirm(true)}
-                      className="h-7 px-2 rounded-lg text-[10px] font-bold text-[#E11D48] hover:bg-[#FFF0F3] border border-[#E11D48]/30 transition-all cursor-pointer inline-flex items-center gap-1"
-                      title="Borrar todas las canciones"
-                    >
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      <span>Vaciar</span>
-                    </button>
-                  )}
-
                   <button
                     type="button"
-                    onClick={() => setIsDjBotOpen(true)}
-                    className="h-7 px-2.5 rounded-lg bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white text-[11px] font-black shadow-2xs hover:brightness-105 active:scale-98 transition-all inline-flex items-center gap-1 cursor-pointer"
+                    onClick={() => {
+                      const next = !antiSpoiler;
+                      setAntiSpoiler(next);
+                      localStorage.setItem('trivia_anti_spoiler', next ? 'true' : 'false');
+                    }}
+                    className={`h-7 px-2 rounded-lg text-[10px] font-black border transition-all flex items-center gap-1 cursor-pointer ${
+                      antiSpoiler
+                        ? 'bg-[#FFF0EB] text-[#FF5722] border-[#FF5722]/40 shadow-xs'
+                        : 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5] hover:text-[#181226]'
+                    }`}
+                    title={antiSpoiler ? 'Anti-Spoiler activo' : 'Ocultar títulos'}
                   >
-                    <span>DJ Bot</span>
+                    <span>Anti-Spoiler</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setShowPlaylistDrawer(!showPlaylistDrawer)}
-                    className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 border ${
-                      showPlaylistDrawer
-                        ? 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5]'
-                        : 'bg-[#FFF0EB] text-[#FF5722] border-[#FF5722]/30 hover:bg-[#FFE5DC]'
-                    }`}
+                    onClick={() => setSetupStep('playlist')}
+                    className="h-7 px-2.5 rounded-lg bg-[#FF5722] hover:bg-[#E64A19] text-white text-[11px] font-black shadow-xs active:scale-98 transition-all inline-flex items-center gap-1 cursor-pointer"
                   >
-                    <span>{showPlaylistDrawer ? 'Cerrar' : '+ Agregar'}</span>
+                    <span>Editar Playlist</span>
                   </button>
                 </div>
               </div>
 
-              {/* Drawer Content or Tracks Roster */}
-              {showPlaylistDrawer ? (
-                <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
-                  {showPlaylistDrawer && (
-                <div className="space-y-3 pt-2">
-                  {/* Selector de modo: Buscar vs Archivos vs URLs */}
-                  <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#FAF7F2] rounded-xl border border-[#EAE3D5]">
-                    <button
-                      type="button"
-                      onClick={() => setPlaylistTab('search')}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                        playlistTab === 'search'
-                          ? 'bg-[#FF5722] text-white shadow-xs'
-                          : 'text-[#6B6280] hover:text-[#181226]'
-                      }`}
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      <span className="truncate">Buscar Canciones</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPlaylistTab('local')}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                        playlistTab === 'local'
-                          ? 'bg-[#059669] text-white shadow-xs'
-                          : 'text-[#6B6280] hover:text-[#181226]'
-                      }`}
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                      </svg>
-                      <span className="truncate">Sin Internet (Local)</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPlaylistTab('urls')}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                        playlistTab === 'urls'
-                          ? 'bg-[#181226] text-white shadow-xs'
-                          : 'text-[#6B6280] hover:text-[#181226]'
-                      }`}
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                      </svg>
-                      <span className="truncate">Pegar Links</span>
-                    </button>
+              {playlist.length === 0 ? (
+                <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-3 bg-gradient-to-b from-[#FAF7F2] to-white rounded-xl border border-[#EAE3D5] shadow-inner my-auto">
+                  <div className="w-12 h-12 rounded-full bg-[#181226] border-2 border-[#2E2445] shadow-sm flex items-center justify-center mb-2">
+                    <div className="w-4 h-4 rounded-full bg-[#FF5722] flex items-center justify-center shadow-inner">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                    </div>
                   </div>
-
-                  {/* Tab 1: Buscador interactivo de canciones con sugerencias en tiempo real */}
-                  {playlistTab === 'search' && (
-                    <div className="space-y-3">
-                      <form onSubmit={handleSearchSongs} className="flex gap-2">
-                        <div className="relative flex-1">
-                          <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Escribí una canción o artista (ej. De Música Ligera, Charly...)"
-                            className="w-full bg-white border border-[#E0D9CB] rounded-xl pl-9 pr-9 py-2.5 text-xs sm:text-sm font-semibold text-[#181226] focus:border-[#FF5722] focus:ring-1 focus:ring-[#FF5722] outline-none shadow-inner"
-                          />
-                          <svg className="w-4 h-4 text-[#8E869E] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
-
-                          {/* Loading indicator or clear button */}
-                          {isSearching ? (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                              <svg className="w-4 h-4 text-[#FF5722] animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                              </svg>
-                            </div>
-                          ) : searchQuery ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSearchQuery('');
-                                setSearchResults([]);
-                                setSearchError('');
-                              }}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8E869E] hover:text-[#181226] p-0.5 rounded-full hover:bg-[#FAF7F2] cursor-pointer"
-                              title="Limpiar búsqueda"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          ) : null}
-                        </div>
-                        <button
-                          type="submit"
-                          disabled={!searchQuery.trim() || isSearching}
-                          className="arcade-btn-primary px-4 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
-                        >
-                          {isSearching ? (
-                            <>
-                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                              </svg>
-                              <span>Buscando...</span>
-                            </>
-                          ) : (
-                            <span>Buscar</span>
-                          )}
-                        </button>
-                      </form>
-
-                      {/* Header de sugerencias si hay resultados */}
-                      {searchResults.length > 0 && (
-                        <div className="flex items-center justify-between text-xs font-bold text-[#6B6280] px-1">
-                          <span>Sugerencias en tiempo real ({searchResults.length})</span>
-                          <span className="text-[10px] text-[#8E869E]">Hacé clic en + para sumar a la playlist</span>
-                        </div>
-                      )}
-
-                      {searchError && (
-                        <p className="text-xs text-[#E11D48] font-bold bg-[#FFF0F3] p-2.5 rounded-xl border border-[#E11D48]/30">
-                          {searchError}
-                        </p>
-                      )}
-
-                      {!isSearching && searchQuery.trim().length >= 2 && searchResults.length === 0 && !searchError && (
-                        <div className="p-4 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] text-center">
-                          <p className="text-xs font-bold text-[#181226]">No se encontraron canciones para "{searchQuery}"</p>
-                          <p className="text-[11px] text-[#6B6280] mt-0.5">Probá con otro término, artista o pegá el link directo</p>
-                        </div>
-                      )}
-
-                      {/* Lista de resultados encontrados */}
-                      {searchResults.length > 0 && (
-                        <div className="console-inset p-2.5 rounded-2xl max-h-64 overflow-y-auto space-y-2">
-                          {searchResults.map((song) => {
-                            const isAdded = playlist.some(
-                              (p) => (typeof p === 'object' && p.id === song.id) || (typeof p === 'string' && p.includes(song.id))
-                            );
-                            const wasJustAdded = recentlyAddedId === song.id;
-
-                            return (
-                              <div
-                                key={song.id}
-                                className="flex items-center justify-between gap-3 p-2 rounded-xl bg-white border border-[#EAE3D5] hover:border-[#FF5722]/50 transition-all shadow-2xs"
-                              >
-                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                  {song.thumbnail ? (
-                                    <div className="relative w-12 h-9 rounded-lg overflow-hidden shrink-0 bg-black/10">
-                                      <img
-                                        src={song.thumbnail}
-                                        alt={song.title}
-                                        className="w-full h-full object-cover"
-                                        loading="lazy"
-                                      />
-                                      {song.duration > 0 && (
-                                        <span className="absolute bottom-0.5 right-0.5 bg-black/80 text-white text-[9px] font-bold px-1 rounded">
-                                          {Math.floor(song.duration / 60)}:{String(song.duration % 60).padStart(2, '0')}
-                                        </span>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div className="w-10 h-9 rounded-lg bg-[#FFF0EB] flex items-center justify-center text-[#FF5722] shrink-0">
-                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                                      </svg>
-                                    </div>
-                                  )}
-
-                                  <div className="min-w-0 flex-1">
-                                    <p className="font-bold text-xs text-[#181226] truncate leading-tight" title={song.title}>
-                                      {song.title}
-                                    </p>
-                                    <p className="text-[11px] text-[#6B6280] truncate mt-0.5">
-                                      {song.author || 'YouTube'}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleAddSearchResult(song)}
-                                  disabled={wasJustAdded}
-                                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all shrink-0 cursor-pointer ${
-                                    wasJustAdded
-                                      ? 'bg-[#E6F9F0] text-[#059669] border border-[#059669]/30'
-                                      : isAdded
-                                      ? 'bg-[#FAF7F2] text-[#6B6280] border border-[#EAE3D5] hover:bg-[#FFF0EB] hover:text-[#FF5722]'
-                                      : 'arcade-btn-primary text-white shadow-xs'
-                                  }`}
-                                >
-                                  {wasJustAdded ? '¡Agregada!' : isAdded ? '+ Agregar otra vez' : '+ Agregar'}
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Tab 2: Subir archivos de audio locales */}
-                  {playlistTab === 'local' && (
-                    <div className="space-y-2">
-                      <label className="border-2 border-dashed border-[#DDD5C5] hover:border-[#059669] bg-[#FAF7F2] hover:bg-[#F3EFE6] p-4 sm:p-5 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all text-center group">
-                        <div className="w-11 h-11 rounded-xl bg-[#E6F9F0] border border-[#059669]/30 flex items-center justify-center text-[#059669] mb-2 group-hover:scale-105 transition-transform shadow-xs">
-                          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                          </svg>
-                        </div>
-                        <p className="font-display text-xs sm:text-sm font-black text-[#181226] mb-0.5">
-                          Hacé clic para seleccionar tus canciones (.mp3, .wav, .m4a)
-                        </p>
-                        <p className="text-[11px] text-[#6B6280] max-w-sm leading-tight">
-                          Podés elegir varios archivos juntos desde tu computadora. Sonarán directamente desde tu disco sin consumir datos.
-                        </p>
-                        <input
-                          type="file"
-                          multiple
-                          accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac"
-                          onChange={handleUploadLocalFiles}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-                  )}
-
-                  {/* Tab 3: Pegar URLs de YouTube / Spotify */}
-                  {playlistTab === 'urls' && (
-                    <div className="space-y-2">
-                      <textarea
-                        value={playlistInput}
-                        onChange={(e) => setPlaylistInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleAddPlaylistUrls();
-                          }
-                        }}
-                        placeholder="Pegá un link de YouTube acá (ej. una canción o una playlist entera)"
-                        className="w-full bg-white border border-[#E0D9CB] rounded-xl px-4 py-3 text-sm font-semibold text-[#181226] focus:border-[#FF5722] focus:ring-1 focus:ring-[#FF5722] outline-none shadow-inner resize-none mb-3"
-                        rows={3}
-                      />
-                      <button
-                        onClick={handleAddPlaylistUrls}
-                        disabled={!playlistInput.trim() || isLoadingPlaylist}
-                        className="w-full arcade-btn-primary py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                      >
-                        {isLoadingPlaylist ? (
-                          <>
-                            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            <span>Buscando canciones originales...</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            <span>Agregar Links a la Cola</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-
-                  {playlist.length > 0 && (
-                    <div className="flex justify-between items-center pt-1">
-                      <button
-                        onClick={handleClearPlaylist}
-                        className="text-xs text-[#E11D48] hover:underline cursor-pointer font-bold"
-                      >
-                        Vaciar toda la lista
-                      </button>
-                      <span className="text-[11px] text-[#6B6280] font-medium">
-                        {playlist.filter((t) => typeof t === 'object' && t.type === 'local').length} locales · {playlist.filter((t) => (typeof t === 'string' ? true : t.type !== 'local')).length} web
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Playlist items list preview */}
-                </div>
-              ) : playlist.length === 0 ? (
-                <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-3 sm:p-4 bg-gradient-to-b from-[#FAF7F2] to-white rounded-xl border border-[#EAE3D5] shadow-inner my-auto">
-                  {/* Stylized Vinyl Record Graphic */}
-                  <div className="relative mb-2.5 flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-full bg-[#181226] border-4 border-[#2E2445] shadow-md flex items-center justify-center relative overflow-hidden">
-                      {/* Vinyl groove rings */}
-                      <div className="absolute inset-1.5 rounded-full border border-white/10" />
-                      <div className="absolute inset-3 rounded-full border border-white/10" />
-                      {/* Center label */}
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#FF5722] to-[#E11D48] flex items-center justify-center shadow-inner">
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                        </svg>
-                      </div>
-                    </div>
-                    {/* Tonearm needle */}
-                    <div className="absolute -top-1 -right-1.5 w-6 h-1 bg-[#8E869E] rounded-full rotate-45 origin-left" />
-                  </div>
-
-                  <h4 className="font-display font-black text-sm text-[#181226] mb-0.5">
-                    Tocadiscos en silencio
+                  <h4 className="font-display font-black text-xs sm:text-sm text-[#181226] mb-0.5">
+                    Sin canciones cargadas
                   </h4>
-                  <p className="text-[11px] text-[#6B6280] max-w-xs mb-3 leading-snug">
-                    Generá una lista en 5 segundos con el DJ Bot o agregá canciones con el buscador.
+                  <p className="text-[11px] text-[#6B6280] max-w-xs mb-2.5 leading-snug">
+                    Cargá tus canciones antes de iniciar la partida.
                   </p>
-
-                  <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xs">
-                    <button
-                      type="button"
-                      onClick={() => setIsDjBotOpen(true)}
-                      className="flex-1 py-1.5 px-3 rounded-xl bg-gradient-to-r from-[#FF5722] to-[#E11D48] text-white text-xs font-black shadow-sm hover:brightness-105 active:scale-98 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      <span>Crear con DJ Bot</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowPlaylistDrawer(true)}
-                      className="flex-1 py-1.5 px-3 rounded-xl bg-white border border-[#DDD5C5] hover:border-[#FF5722] text-[#181226] text-xs font-bold shadow-2xs hover:bg-[#FAF7F2] transition-all flex items-center justify-center gap-1 cursor-pointer"
-                    >
-                      <span>+ Buscar Canciones</span>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSetupStep('playlist')}
+                    className="py-1.5 px-3 rounded-xl bg-[#FF5722] hover:bg-[#E64A19] text-white text-xs font-black shadow-xs cursor-pointer active:scale-98 transition-all"
+                  >
+                    + Cargar Playlist →
+                  </button>
                 </div>
               ) : (
-                <div className="flex-1 min-h-0 flex flex-col space-y-2 pr-1">
-                  <div className="flex items-center justify-between shrink-0 mb-1 px-1">
-                    <span className="mono text-[11px] font-black text-[#6B6280]">
-                      PISTAS CARGADAS ({playlist.length})
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowClearPlaylistConfirm(true)}
-                        className="text-xs font-bold text-[#E11D48] hover:underline cursor-pointer flex items-center gap-1"
-                      >
-                        Vaciar Lista
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = !antiSpoiler;
-                          setAntiSpoiler(next);
-                          localStorage.setItem('trivia_anti_spoiler', next ? 'true' : 'false');
-                        }}
-                        className={`text-xs font-black px-2.5 py-1 rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
-                          antiSpoiler
-                            ? 'bg-[#FFF0EB] text-[#FF5722] border-[#FF5722]/40 shadow-xs'
-                            : 'bg-[#FAF7F2] text-[#6B6280] border-[#EAE3D5] hover:text-[#181226]'
-                        }`}
-                        title={antiSpoiler ? 'Hacé clic para ver los títulos reales' : 'Ocultar títulos para evitar spoilers (no hacer trampa)'}
-                      >
-                        {antiSpoiler ? (
-                          <>
-                            <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-                            </svg>
-                            <span>Modo Anti-Spoiler (Activo)</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            <span>Ocultar Títulos</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="console-inset p-2.5 sm:p-3 rounded-2xl flex-1 min-h-0 overflow-y-auto space-y-2">
+                <div className="flex-1 min-h-0 flex flex-col space-y-1.5 overflow-hidden">
+                  <div className="console-inset p-2 rounded-xl flex-1 min-h-0 overflow-y-auto space-y-1.5 custom-scrollbar">
                     {playlist.map((track, idx) => {
                       const isLocal = typeof track === 'object' && track.type === 'local';
                       const title = getTrackTitle(track);
-                      const sizeTxt =
-                        typeof track === 'object' && track.size
-                          ? ` (${(track.size / (1024 * 1024)).toFixed(1)} MB)`
-                          : '';
 
                       return (
                         <div
                           key={track.id || idx}
-                          className="flex items-center justify-between text-xs py-2 px-3 rounded-xl bg-white border border-[#EAE3D5] shadow-2xs gap-2"
+                          className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-white border border-[#EAE3D5] shadow-2xs gap-2"
                         >
                           <div className="flex items-center gap-2 min-w-0 flex-1">
                             <span className="mono text-[10px] font-black text-[#6B6280] shrink-0">
                               #{idx + 1}
                             </span>
-
                             {isLocal ? (
-                              <span className="badge-tag bg-[#E6F9F0] text-[#059669] border border-[#059669]/40 px-1.5 py-0.5 rounded text-[9px] shrink-0">
+                              <span className="badge-tag bg-[#E6F9F0] text-[#059669] border border-[#059669]/40 px-1 py-0.2 rounded text-[8px] shrink-0 font-black">
                                 LOCAL
                               </span>
                             ) : (
-                              <span className="badge-tag bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 px-1.5 py-0.5 rounded text-[9px] shrink-0">
-                                URL
+                              <span className="badge-tag bg-[#FFF0EB] text-[#FF5722] border border-[#FF5722]/30 px-1 py-0.2 rounded text-[8px] shrink-0 font-black">
+                                WEB
                               </span>
                             )}
-
                             <span
                               className={`truncate font-bold text-xs ${
                                 antiSpoiler
                                   ? 'filter blur-[5px] select-none hover:blur-none transition-all duration-200 cursor-pointer text-[#8E869E]'
                                   : 'text-[#181226]'
                               }`}
-                              title={antiSpoiler ? 'Pista protegida contra spoilers. Posá el cursor o hacé clic en el botón para ver.' : title}
+                              title={
+                                antiSpoiler
+                                  ? 'Pista protegida contra spoilers'
+                                  : title
+                              }
                             >
                               {antiSpoiler ? `•••••••••••••••••••• (Pista #${idx + 1})` : title}
-                              {!antiSpoiler && sizeTxt && <span className="mono text-[10px] text-[#6B6280] font-normal">{sizeTxt}</span>}
                             </span>
                           </div>
 
                           <button
                             type="button"
                             onClick={() => handleRemovePlaylistItem(idx)}
-                            className="text-[#8E869E] hover:text-[#E11D48] hover:bg-[#FFF0F3] p-1.5 rounded-lg shrink-0 cursor-pointer transition-colors"
-                            title="Eliminar canción de la lista"
-                            aria-label="Eliminar canción"
+                            className="text-[#8E869E] hover:text-[#E11D48] hover:bg-[#FFF0F3] p-1 rounded cursor-pointer transition-colors"
+                            title="Quitar canción"
                           >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
                         </div>
                       );
                     })}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-[#6B6280] px-1 shrink-0 pt-0.5">
+                    <span>
+                      {playlist.filter((t) => typeof t === 'object' && t.type === 'local').length} locales ·{' '}
+                      {playlist.filter((t) => (typeof t === 'string' ? true : t.type !== 'local')).length} web
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSetupStep('playlist')}
+                      className="text-[#FF5722] font-black hover:underline cursor-pointer"
+                    >
+                      Gestionar lista completa →
+                    </button>
                   </div>
                 </div>
               )}
@@ -1537,7 +980,7 @@ export default function HostLobby() {
                     <div className="h-full flex-1 flex flex-col items-center justify-center text-center p-5 bg-gradient-to-b from-[#FAF7F2] to-white rounded-2xl border-2 border-dashed border-[#DDD5C5] shadow-inner my-auto">
                       <div className="relative mb-3.5 flex items-center justify-center">
                         <div className="w-20 h-20 rounded-full bg-[#FF5722]/5 border border-[#FF5722]/20 flex items-center justify-center animate-ping pointer-events-none absolute" />
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white flex items-center justify-center shadow-lg relative">
+                        <div className="w-16 h-16 rounded-2xl bg-[#FF5722] text-white flex items-center justify-center shadow-lg relative">
                           <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                           </svg>
@@ -1591,14 +1034,14 @@ export default function HostLobby() {
                         </span>
                       </div>
 
-                      <div className="flex-1 min-h-0 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-2 content-start">
+                      <div className="flex-1 min-h-0 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-2 content-start custom-scrollbar">
                         {players.map((player) => (
                           <div
                             key={player.id}
                             className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#FAF7F2] hover:bg-white border border-[#EAE3D5] shadow-2xs hover:shadow-xs transition-all animate-fade-in"
                           >
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className="w-7 h-7 rounded-xl bg-gradient-to-tr from-[#FF5722] to-[#E11D48] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
+                              <span className="w-7 h-7 rounded-xl bg-[#FF5722] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
                                 {player.name.charAt(0).toUpperCase()}
                               </span>
                               <span className="font-bold text-xs text-[#181226] truncate">{player.name}</span>
@@ -1658,7 +1101,7 @@ export default function HostLobby() {
                     </div>
                   )
                 ) : (
-                  <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-3">
+                  <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-3 custom-scrollbar">
                     {/* Newly arrived players waiting for team assignment */}
                     {unassignedPlayers.length > 0 && (
                       <div className="p-3 bg-[#FFF8F5] border-2 border-[#FF5722]/30 rounded-2xl shadow-xs animate-fade-in">
@@ -1810,70 +1253,6 @@ export default function HostLobby() {
           </div>
         </div>
       </div>
-
-      {/* DJ Bot Modal */}
-      <DjBotModal
-        isOpen={isDjBotOpen}
-        onClose={() => setIsDjBotOpen(false)}
-        onPlaylistGenerated={handleDjBotGenerated}
-        existingPlaylist={playlist}
-        serverUrl={SERVER_URL}
-      />
-
-      {/* Playlist Loading Modal for URL / list imports */}
-      <PlaylistLoadingModal
-        isOpen={isLoadingPlaylist}
-        tag="PROCESANDO PLAYLIST"
-        title="Cargando Canciones"
-        subtitle="Buscando las pistas en YouTube y organizando la lista sin spoilers."
-      />
-
-      {/* Modal de confirmación para Vaciar Playlist */}
-      {showClearPlaylistConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0E0A16]/80 animate-fade-in select-none"
-          onClick={() => setShowClearPlaylistConfirm(false)}
-        >
-          <div
-            className="party-card p-6 sm:p-8 max-w-md w-full rounded-[2rem] bg-white border-2 border-[#EAE3D5] text-center shadow-2xl animate-fade-in text-[#181226]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-14 h-14 rounded-2xl bg-[#FFF0F3] border-2 border-[#E11D48]/30 flex items-center justify-center mx-auto mb-4 text-[#E11D48] shadow-xs">
-              <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </div>
-
-            <p className="badge-tag text-[#E11D48] mb-1">VACIAR PLAYLIST</p>
-            <h3 className="font-display text-xl sm:text-2xl font-black text-[#181226] tracking-tight mb-2">
-              ¿Eliminar todas las canciones?
-            </h3>
-            <p className="text-xs sm:text-sm text-[#6B6280] font-medium leading-relaxed mb-6">
-              Se quitarán las {playlist.length} canciones cargadas actualmente para que puedas armar una lista nueva desde cero.
-            </p>
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setShowClearPlaylistConfirm(false)}
-                className="flex-1 py-3 px-4 rounded-xl border border-[#EAE3D5] text-xs sm:text-sm font-bold text-[#6B6280] hover:bg-[#FAF7F2] transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  handleClearPlaylist();
-                  setShowClearPlaylistConfirm(false);
-                }}
-                className="flex-1 py-3 px-4 rounded-xl bg-[#E11D48] hover:bg-[#BE123C] text-white text-xs sm:text-sm font-black transition-all cursor-pointer shadow-xs"
-              >
-                Sí, borrar todas
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

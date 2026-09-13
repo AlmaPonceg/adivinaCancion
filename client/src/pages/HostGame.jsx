@@ -871,7 +871,7 @@ export default function HostGame() {
               </button>
               <button
                 onClick={confirmEndGame}
-                className="py-3 px-4 rounded-xl text-xs font-black text-white bg-gradient-to-r from-[#E11D48] to-[#BE123C] hover:brightness-110 cursor-pointer shadow-md active:scale-98 transition-all"
+                className="py-3 px-4 rounded-xl text-xs font-black text-white bg-[#E11D48] hover:brightness-110 cursor-pointer shadow-md active:scale-98 transition-all"
               >
                 Sí, Terminar Partida
               </button>

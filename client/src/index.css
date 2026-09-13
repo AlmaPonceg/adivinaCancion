@@ -45,6 +45,51 @@
   box-sizing: border-box;
 }
 
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #FF5722 rgba(241, 236, 227, 0.7);
+  }
+}
+
+/* ── Custom Tactile Arcade Scrollbar ────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F4EFE6;
+  border-radius: 9999px;
+  border: 1px solid #EAE3D5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #FF7A50 0%, #FF5722 100%);
+  border-radius: 9999px;
+  border: 1.5px solid #FFFFFF;
+  box-shadow: 0 2px 4px rgba(255, 87, 34, 0.35);
+  transition: background 0.15s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #FF5722 0%, #E11D48 100%);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #E11D48;
+}
+
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 html {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
@@ -125,13 +170,13 @@ h1, h2, h3, .font-heading, .font-display {
 
 /* Primary Vibrant Coral Button */
 .console-btn-primary, .arcade-btn-primary {
-  background: linear-gradient(135deg, #FF5722 0%, #E60067 100%);
+  background: #FF5722;
   color: #FFFFFF;
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  box-shadow: 0 5px 0 #9E0B42,
-              0 10px 22px -3px rgba(230, 0, 103, 0.35),
-              inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 5px 0 #C62828,
+              0 10px 22px -3px rgba(255, 87, 34, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
   transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.08s ease;
   cursor: pointer;
   font-family: var(--font-tactical);
@@ -141,17 +186,17 @@ h1, h2, h3, .font-heading, .font-display {
 }
 
 .console-btn-primary:hover:not(:disabled), .arcade-btn-primary:hover:not(:disabled) {
-  filter: brightness(1.06);
+  filter: brightness(1.08);
   transform: translateY(-2px);
-  box-shadow: 0 7px 0 #9E0B42,
-              0 14px 28px -2px rgba(230, 0, 103, 0.45),
-              inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  box-shadow: 0 7px 0 #C62828,
+              0 14px 28px -2px rgba(255, 87, 34, 0.45),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .console-btn-primary:active:not(:disabled), .arcade-btn-primary:active:not(:disabled) {
   transform: translateY(3px);
-  box-shadow: 0 1px 0 #9E0B42,
-              0 4px 10px rgba(230, 0, 103, 0.25),
+  box-shadow: 0 1px 0 #C62828,
+              0 4px 10px rgba(255, 87, 34, 0.25),
               inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
 
@@ -194,13 +239,13 @@ h1, h2, h3, .font-heading, .font-display {
 
 /* Daytime Mint / Emerald Button */
 .arcade-btn-mint {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: #059669;
   color: #FFFFFF;
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 5px 0 #064E3B,
               0 10px 20px -3px rgba(5, 150, 105, 0.3),
-              inset 0 1px 0 rgba(255, 255, 255, 0.4);
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
   font-family: var(--font-tactical);
   font-weight: 800;
   cursor: pointer;

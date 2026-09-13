@@ -70,7 +70,7 @@ export default function PlaylistLoadingModal({
                 <div className="absolute inset-8 rounded-full border border-white/15" />
 
                 {/* Center Label */}
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-[#FF5722] to-[#E11D48] flex items-center justify-center shadow-inner">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#FF5722] flex items-center justify-center shadow-inner">
                   <div className="w-3.5 h-3.5 rounded-full bg-[#F7F4EE] border-2 border-[#181226]" />
                 </div>
               </motion.div>
@@ -114,7 +114,7 @@ export default function PlaylistLoadingModal({
               <motion.div
                 animate={{ x: ['-100%', '100%'] }}
                 transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
-                className="w-1/2 h-full bg-gradient-to-r from-[#FF5722] to-[#E11D48] rounded-full"
+                className="w-1/2 h-full bg-[#FF5722] rounded-full"
               />
             </div>
 
