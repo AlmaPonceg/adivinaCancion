@@ -635,10 +635,10 @@ export default function HostLobby() {
                       {roomCode.split('').map((digit, i) => (
                         <div
                           key={i}
-                          className="relative flex flex-col items-center justify-center w-14 h-16 sm:w-16 sm:h-18 bg-white rounded-2xl border-2 border-[#FF5722] shadow-[0_5px_0_#E64A19] overflow-hidden"
+                          className="relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-2xl border-2 border-[#FF5722] shadow-[0_5px_0_#E64A19] overflow-hidden"
                         >
                           <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-[#FFF5F0] to-transparent pointer-events-none" />
-                          <span className="font-display font-black text-3xl sm:text-4xl text-[#FF5722] z-10 leading-none">
+                          <span className="font-tactical font-black text-3xl sm:text-4xl text-[#FF5722] z-10 leading-none -translate-y-0.5 select-none">
                             {digit}
                           </span>
                         </div>
