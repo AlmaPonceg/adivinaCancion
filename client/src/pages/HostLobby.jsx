@@ -664,12 +664,12 @@ export default function HostLobby() {
                     </div>
 
                     {/* Target Framed QR Code */}
-                    <div className="relative p-2.5 rounded-2xl bg-white border-2 border-[#EAE3D5] shadow-xs my-auto group">
-                      <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-[#FF5722] rounded-tl-sm pointer-events-none" />
-                      <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-[#FF5722] rounded-tr-sm pointer-events-none" />
-                      <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-[#FF5722] rounded-bl-sm pointer-events-none" />
-                      <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-[#FF5722] rounded-br-sm pointer-events-none" />
-                      <QRDisplay value={joinUrl} size={145} />
+                    <div className="relative p-3 rounded-2xl bg-white border-2 border-[#EAE3D5] shadow-xs my-1 group">
+                      <div className="absolute top-1 left-1 w-3.5 h-3.5 border-t-2 border-l-2 border-[#FF5722] rounded-tl-sm pointer-events-none" />
+                      <div className="absolute top-1 right-1 w-3.5 h-3.5 border-t-2 border-r-2 border-[#FF5722] rounded-tr-sm pointer-events-none" />
+                      <div className="absolute bottom-1 left-1 w-3.5 h-3.5 border-b-2 border-l-2 border-[#FF5722] rounded-bl-sm pointer-events-none" />
+                      <div className="absolute bottom-1 right-1 w-3.5 h-3.5 border-b-2 border-r-2 border-[#FF5722] rounded-br-sm pointer-events-none" />
+                      <QRDisplay value={joinUrl} size={175} />
                     </div>
                     <p className="text-xs font-bold text-[#6B6280] text-center my-1">
                       Escaneen con la cámara del celular para entrar
@@ -739,20 +739,65 @@ export default function HostLobby() {
                     </div>
                   )}
 
-                  {/* Clean Bottom Strip: Playlist Quick Status & Edit Button */}
-                  <div id="tour-playlist-strip" className="w-full mt-auto pt-3 border-t border-[#EAE3D5] flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-[#FFF0EB] border border-[#FF5722]/30 flex items-center justify-center text-[#FF5722] shrink-0">
+                  {/* 3-Step Guest Quick Join Guide (Fills middle void seamlessly) */}
+                  <div className="w-full my-auto py-2.5 px-3 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] shadow-2xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-tactical font-black text-[11px] uppercase tracking-wider text-[#6B6280] flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#059669]" />
+                        ¿Cómo sumarse desde el celular?
+                      </span>
+                      <span className="text-[10px] font-bold text-[#FF5722] bg-white px-2 py-0.5 rounded-md border border-[#EAE3D5]">
+                        Sin instalar nada
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="p-2 rounded-xl bg-white border border-[#EAE3D5] flex flex-col items-center justify-center gap-0.5 shadow-2xs">
+                        <span className="w-5 h-5 rounded-lg bg-[#FFF0EB] text-[#FF5722] flex items-center justify-center font-black text-xs">
+                          1
+                        </span>
+                        <span className="font-bold text-[11px] text-[#181226] leading-tight">Escanear</span>
+                        <span className="text-[10px] text-[#8E869E] leading-tight">Con la cámara</span>
+                      </div>
+
+                      <div className="p-2 rounded-xl bg-white border border-[#EAE3D5] flex flex-col items-center justify-center gap-0.5 shadow-2xs">
+                        <span className="w-5 h-5 rounded-lg bg-[#FFF0EB] text-[#FF5722] flex items-center justify-center font-black text-xs">
+                          2
+                        </span>
+                        <span className="font-bold text-[11px] text-[#181226] leading-tight">Tu Apodo</span>
+                        <span className="text-[10px] text-[#8E869E] leading-tight">Para la pantalla</span>
+                      </div>
+
+                      <div className="p-2 rounded-xl bg-white border border-[#EAE3D5] flex flex-col items-center justify-center gap-0.5 shadow-2xs">
+                        <span className="w-5 h-5 rounded-lg bg-[#FFF0EB] text-[#FF5722] flex items-center justify-center font-black text-xs">
+                          3
+                        </span>
+                        <span className="font-bold text-[11px] text-[#181226] leading-tight">¡Pulsador!</span>
+                        <span className="text-[10px] text-[#8E869E] leading-tight">Tocá y adiviná</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Elevated Bottom Strip: Playlist Status & Quick Edit Button */}
+                  <div id="tour-playlist-strip" className="w-full mt-auto pt-2.5 border-t border-[#EAE3D5] flex items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-[#FFF0EB] border border-[#FF5722]/30 flex items-center justify-center text-[#FF5722] shrink-0 shadow-2xs">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                         </svg>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-black text-[#181226] truncate">
-                          Playlist de la Partida
-                        </p>
-                        <p className="text-[11px] font-bold text-[#FF5722]">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-black text-[#181226] truncate">
+                            Playlist de la Partida
+                          </p>
+                          <span className="text-[9px] font-bold text-[#059669] bg-[#E6F9F0] px-1.5 py-0.2 rounded border border-[#059669]/30">
+                            Lista
+                          </span>
+                        </div>
+                        <p className="text-[11px] font-bold text-[#FF5722] truncate">
                           {playlist.length} {playlist.length === 1 ? 'canción cargada' : 'canciones cargadas'}
+                          {antiSpoiler ? ' · Incógnito activo' : ''}
                         </p>
                       </div>
                     </div>
@@ -760,7 +805,7 @@ export default function HostLobby() {
                     <button
                       type="button"
                       onClick={() => setSetupStep('playlist')}
-                      className="arcade-btn px-3 py-1.5 rounded-xl text-xs font-black text-[#FF5722] hover:bg-[#FFF0EB] border border-[#FF5722]/30 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all"
+                      className="arcade-btn px-3 py-1.5 rounded-xl text-xs font-black text-[#FF5722] hover:bg-[#FFF0EB] border border-[#FF5722]/30 flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0 transition-all active:scale-95"
                       title="Volver a editar la playlist sin perder la partida ni los participantes"
                     >
                       <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
