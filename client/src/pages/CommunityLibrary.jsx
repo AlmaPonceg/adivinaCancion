@@ -328,18 +328,22 @@ export default function CommunityLibrary() {
                 )}
               </div>
 
-              {/* Genre and sorting pills */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-[#EAE3D5]">
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 custom-scrollbar">
+              {/* Filter Controls: Clean 2-tier layout */}
+              <div className="pt-3 border-t border-[#EAE3D5] space-y-3">
+                {/* Genre Filter Pills: wraps cleanly, no overflow cut-offs or ugly scrollbars */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-black text-[#8E869E] uppercase tracking-wider mr-1">
+                    Género:
+                  </span>
                   {GENRE_FILTERS.map((genre) => (
                     <button
                       key={genre.id}
                       type="button"
                       onClick={() => setSelectedGenre(genre.id)}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         selectedGenre === genre.id
-                          ? 'bg-[#181226] text-white shadow-2xs'
-                          : 'bg-[#FAF7F2] text-[#6B6280] hover:text-[#181226] border border-[#EAE3D5]'
+                          ? 'bg-[#181226] text-white shadow-xs'
+                          : 'bg-[#FAF7F2] text-[#574F6B] hover:text-[#181226] hover:bg-[#EAE3D5] border border-[#EAE3D5]'
                       }`}
                     >
                       {genre.label}
@@ -347,25 +351,32 @@ export default function CommunityLibrary() {
                   ))}
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                  <span className="text-[11px] font-bold text-[#8E869E] uppercase tracking-wider">
-                    Ordenar:
+                {/* Sub-bar: Results count on left, Sort on right */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-[#F0EBE1]">
+                  <span className="text-xs font-bold text-[#6B6280]">
+                    {games.length} {games.length === 1 ? 'partida pública encontrada' : 'partidas públicas encontradas'}
                   </span>
-                  <div className="flex items-center gap-1 bg-[#FAF7F2] p-0.5 rounded-lg border border-[#EAE3D5]">
-                    {SORT_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => setSelectedSort(opt.id)}
-                        className={`px-2 py-0.5 rounded-md text-xs font-bold cursor-pointer transition-colors ${
-                          selectedSort === opt.id
-                            ? 'bg-white text-[#181226] shadow-2xs'
-                            : 'text-[#6B6280] hover:text-[#181226]'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
+
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <span className="text-[11px] font-bold text-[#8E869E] uppercase tracking-wider">
+                      Ordenar por:
+                    </span>
+                    <div className="flex items-center gap-1 bg-[#FAF7F2] p-1 rounded-xl border border-[#EAE3D5]">
+                      {SORT_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setSelectedSort(opt.id)}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                            selectedSort === opt.id
+                              ? 'bg-white text-[#181226] shadow-2xs font-black'
+                              : 'text-[#6B6280] hover:text-[#181226]'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
