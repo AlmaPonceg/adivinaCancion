@@ -20,7 +20,15 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState(null);
-  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' | 'catalog' | 'profiles' | 'events'
+  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' | 'catalog' | 'profiles' | 'plans' | 'events'
+
+  // Plans & Users Moderation State
+  const [plans, setPlans] = useState([]);
+  const [usersList, setUsersList] = useState([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+  const [togglingPlanId, setTogglingPlanId] = useState(null);
+  const [updatingUserPlanId, setUpdatingUserPlanId] = useState(null);
 
   // Catalog Filters & Actions State
   const [catalogSearch, setCatalogSearch] = useState('');
@@ -110,20 +118,87 @@ export default function AdminDashboard() {
     }
   }, [token]);
 
+  // ── Plans & Users Moderation Logic ─────────────────────────
+  const fetchPlansAndUsers = useCallback(async () => {
+    if (!token) return;
+    setPlansLoading(true);
+    try {
+      const [plansRes, usersRes] = await Promise.all([
+        fetch(`${API_BASE}/api/admin/plans`, { headers: { 'x-admin-token': token } }),
+        fetch(`${API_BASE}/api/admin/users`, { headers: { 'x-admin-token': token } }),
+      ]);
+      const [pData, uData] = await Promise.all([plansRes.json(), usersRes.json()]);
+      if (pData.success) setPlans(pData.plans);
+      if (uData.success) setUsersList(uData.users);
+    } catch (err) {
+      console.error('[Admin] Error fetching plans/users:', err);
+    } finally {
+      setPlansLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     if (token) {
       fetchDashboardData();
+      fetchPlansAndUsers();
     }
-  }, [token, fetchDashboardData]);
+  }, [token, fetchDashboardData, fetchPlansAndUsers]);
 
   // Auto-refresh interval (every 6 seconds)
   useEffect(() => {
     if (!token || !autoRefresh) return;
     const interval = setInterval(() => {
       fetchDashboardData();
+      if (activeTab === 'plans') {
+        fetchPlansAndUsers();
+      }
     }, 6000);
     return () => clearInterval(interval);
-  }, [token, autoRefresh, fetchDashboardData]);
+  }, [token, autoRefresh, activeTab, fetchDashboardData, fetchPlansAndUsers]);
+
+  const handleTogglePlan = async (planId, planName) => {
+    setTogglingPlanId(planId);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/plans/${planId}/toggle`, {
+        method: 'PUT',
+        headers: { 'x-admin-token': token },
+      });
+      const resData = await res.json();
+      if (!res.ok || !resData.success) {
+        throw new Error(resData.error || 'Error al modificar plan');
+      }
+      showBanner(`Plan "${planName}" ${resData.plan.enabled ? 'HABILITADO' : 'DESHABILITADO'}.`);
+      fetchPlansAndUsers();
+    } catch (err) {
+      showBanner(err.message || 'Error al modificar plan', 'error');
+    } finally {
+      setTogglingPlanId(null);
+    }
+  };
+
+  const handleAssignUserPlan = async (userIdOrUsername, newPlanId, username) => {
+    setUpdatingUserPlanId(userIdOrUsername);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/users/${encodeURIComponent(userIdOrUsername)}/plan`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token,
+        },
+        body: JSON.stringify({ planId: newPlanId }),
+      });
+      const resData = await res.json();
+      if (!res.ok || !resData.success) {
+        throw new Error(resData.error || 'Error al asignar plan');
+      }
+      showBanner(`Plan de "${username}" actualizado a "${resData.plan.name}".`);
+      fetchPlansAndUsers();
+    } catch (err) {
+      showBanner(err.message || 'Error al asignar plan', 'error');
+    } finally {
+      setUpdatingUserPlanId(null);
+    }
+  };
 
   // ── Moderation Actions ──────────────────────────────────────
 
@@ -349,6 +424,17 @@ export default function AdminDashboard() {
       (catalogVisibilityFilter === 'private' && !g.isPublic);
 
     return matchesQuery && matchesVisibility;
+  });
+
+  const filteredUsers = usersList.filter((u) => {
+    if (!userSearch) return true;
+    const q = userSearch.toLowerCase();
+    return (
+      (u.username || '').toLowerCase().includes(q) ||
+      (u.id || '').toLowerCase().includes(q) ||
+      (u.planName || '').toLowerCase().includes(q) ||
+      (u.role || '').toLowerCase().includes(q)
+    );
   });
 
   return (
@@ -626,6 +712,20 @@ export default function AdminDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
             </svg>
             <span>Perfiles & Creadores ({profiles.totalCreators})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('plans')}
+            className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider rounded-t-xl transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === 'plans'
+                ? 'bg-white text-[#FF5722] border-t-2 border-x-2 border-[#EAE3D5] shadow-xs'
+                : 'text-[#64748B] hover:text-[#181226] bg-transparent'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Planes & Suscripciones ({plans.length})</span>
           </button>
 
           <button
@@ -993,7 +1093,220 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* ── TAB 4: Audit Event Stream ───────────────────────────── */}
+        {/* ── TAB 4: Plans & Subscriptions ───────────────────────── */}
+        {activeTab === 'plans' && (
+          <div className="space-y-6">
+            {/* Header & Refresh */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-black text-[#181226]">Control de Planes & Asignación a Usuarios</h2>
+                <p className="text-xs text-[#64748B]">Habilitá o pausá los planes disponibles para suscripción y gestioná el plan de cada usuario o creador.</p>
+              </div>
+              <button
+                type="button"
+                onClick={fetchPlansAndUsers}
+                disabled={plansLoading}
+                className="px-3.5 py-2 rounded-xl bg-white border-2 border-[#EAE3D5] text-xs font-bold text-[#181226] hover:bg-[#F3EFE6] transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+              >
+                <svg className={`w-3.5 h-3.5 ${plansLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Actualizar Datos</span>
+              </button>
+            </div>
+
+            {/* Block 1: Plans Grid & Enable/Disable Toggle */}
+            <div className="bg-white p-5 rounded-2xl border-2 border-[#EAE3D5] shadow-xs space-y-4">
+              <div>
+                <h3 className="text-sm font-black text-[#181226] uppercase tracking-wider">
+                  Disponibilidad de Planes ({plans.length})
+                </h3>
+                <p className="text-xs text-[#64748B]">Los planes deshabilitados no pueden ser contratados ni seleccionados por usuarios en la pantalla pública de precios.</p>
+              </div>
+
+              {plans.length === 0 ? (
+                <div className="py-8 text-center text-xs text-[#94A3B8]">Cargando planes...</div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {plans.map((p) => {
+                    const isToggling = togglingPlanId === p.id;
+                    return (
+                      <div
+                        key={p.id}
+                        className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between ${
+                          p.enabled ? 'bg-white border-[#EAE3D5] shadow-xs' : 'bg-[#FAF8F5] border-[#E2DCD2] opacity-75'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <span
+                              className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white"
+                              style={{ backgroundColor: p.accentColor || '#46178F' }}
+                            >
+                              {p.name}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${
+                              p.enabled ? 'bg-[#ECFDF5] text-[#059669]' : 'bg-[#F1F5F9] text-[#64748B]'
+                            }`}>
+                              {p.enabled ? 'Disponible' : 'Pausado'}
+                            </span>
+                          </div>
+
+                          <div className="text-xl font-black text-[#181226] mb-1">
+                            {p.priceMonthly === 0 ? 'Gratis' : `$${p.priceMonthly} / mes`}
+                          </div>
+                          <div className="text-[11px] text-[#64748B] mb-3 line-clamp-2">
+                            {p.tagline}
+                          </div>
+
+                          <div className="space-y-1.5 text-[11px] text-[#181226] font-semibold border-t border-[#EAE3D5] pt-2 mb-4">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[#059669] font-bold">✓</span>
+                              <span>Hasta {p.maxPlayers >= 1000 ? 'Ilimitados' : `${p.maxPlayers} jugadores`}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className={p.limits?.canUseDjBot ? 'text-[#059669] font-bold' : 'text-[#94A3B8]'}>
+                                {p.limits?.canUseDjBot ? '✓' : '✗'}
+                              </span>
+                              <span className={p.limits?.canUseDjBot ? '' : 'text-[#94A3B8]'}>DJ Bot con IA</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className={p.limits?.canCustomTheme ? 'text-[#059669] font-bold' : 'text-[#94A3B8]'}>
+                                {p.limits?.canCustomTheme ? '✓' : '✗'}
+                              </span>
+                              <span className={p.limits?.canCustomTheme ? '' : 'text-[#94A3B8]'}>Temática personalizada</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={isToggling}
+                          onClick={() => handleTogglePlan(p.id, p.name)}
+                          className={`w-full py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                            p.enabled
+                              ? 'bg-[#FEE2E2] hover:bg-[#FCA5A5] text-[#B91C1C]'
+                              : 'bg-[#DCFCE7] hover:bg-[#86EFAC] text-[#15803D]'
+                          }`}
+                        >
+                          {isToggling ? (
+                            <span className="inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          ) : p.enabled ? (
+                            <span>Deshabilitar Plan</span>
+                          ) : (
+                            <span>Habilitar Plan</span>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Block 2: User Plan Management Table */}
+            <div className="bg-white p-5 rounded-2xl border-2 border-[#EAE3D5] shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-black text-[#181226] uppercase tracking-wider">
+                    Gestión de Planes por Usuario ({filteredUsers.length})
+                  </h3>
+                  <p className="text-xs text-[#64748B]">Asigná o cambiá el plan de cualquier usuario, creador o sesión en tiempo real.</p>
+                </div>
+                <div className="w-full sm:w-64">
+                  <input
+                    type="text"
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    placeholder="Buscar usuario o rol..."
+                    className="w-full px-3 py-1.5 text-xs rounded-xl border-2 border-[#EAE3D5] focus:border-[#46178F] outline-none font-bold placeholder:text-[#94A3B8]"
+                  />
+                </div>
+              </div>
+
+              {filteredUsers.length === 0 ? (
+                <div className="py-8 text-center text-xs text-[#94A3B8]">No se encontraron usuarios que coincidan con la búsqueda.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b-2 border-[#EAE3D5] text-[#64748B] uppercase text-[10px] tracking-wider">
+                        <th className="pb-2 font-black">Usuario / Identificador</th>
+                        <th className="pb-2 font-black">Rol / Origen</th>
+                        <th className="pb-2 font-black">Plan Asignado</th>
+                        <th className="pb-2 font-black">Modificar Plan</th>
+                        <th className="pb-2 font-black">Detalles</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#EAE3D5]">
+                      {filteredUsers.map((u) => {
+                        const isUpdating = updatingUserPlanId === u.id;
+                        return (
+                          <tr key={u.id} className="hover:bg-[#FAF8F5] transition-colors">
+                            <td className="py-3 font-bold text-[#181226]">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-xl bg-[#46178F] text-white flex items-center justify-center font-black text-xs shadow-xs">
+                                  {u.username.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="font-black text-sm">{u.username}</div>
+                                  <div className="text-[10px] text-[#94A3B8] font-mono">{u.id}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                                u.role === 'admin'
+                                  ? 'bg-[#EDE9FE] text-[#7C3AED]'
+                                  : u.role === 'creator'
+                                  ? 'bg-[#FEF3C7] text-[#D97706]'
+                                  : 'bg-[#F1F5F9] text-[#64748B]'
+                              }`}>
+                                {u.role === 'admin' ? 'Moderador' : u.role === 'creator' ? 'Creador' : 'Jugador'}
+                              </span>
+                            </td>
+                            <td className="py-3">
+                              <span
+                                className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black text-white shadow-xs"
+                                style={{ backgroundColor: u.planColor || '#46178F' }}
+                              >
+                                {u.planName}
+                              </span>
+                            </td>
+                            <td className="py-3">
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={u.planId || 'free'}
+                                  disabled={isUpdating}
+                                  onChange={(e) => handleAssignUserPlan(u.id, e.target.value, u.username)}
+                                  className="px-2.5 py-1.5 rounded-xl border-2 border-[#EAE3D5] bg-white text-[#181226] font-black text-xs cursor-pointer focus:border-[#46178F] outline-none disabled:opacity-50"
+                                >
+                                  {plans.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                      {p.name} {p.priceMonthly > 0 ? `($${p.priceMonthly}/m)` : '(Gratis)'} {!p.enabled ? '[Pausado]' : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                                {isUpdating && (
+                                  <span className="w-3.5 h-3.5 border-2 border-[#46178F] border-t-transparent rounded-full animate-spin" />
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 text-[#64748B] text-[11px]">
+                              {u.notes || '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB 5: Audit Event Stream ───────────────────────────── */}
         {activeTab === 'events' && (
           <div className="bg-white p-5 rounded-2xl border-2 border-[#EAE3D5] shadow-xs">
             <div className="flex items-center justify-between mb-4">

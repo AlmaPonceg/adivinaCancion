@@ -1,0 +1,100 @@
+[
+  {
+    "id": "free",
+    "name": "Acústico",
+    "badge": "Para jugar en casa",
+    "tagline": "Ideal para jugar con amigos cercanos y reuniones pequeñas sin costo alguno.",
+    "priceMonthly": 0,
+    "priceYearly": 0,
+    "maxPlayers": 10,
+    "enabled": true,
+    "accentColor": "#46178F",
+    "features": [
+      "Hasta 10 jugadores por sala",
+      "Acceso a todos los packs públicos",
+      "Pulsador web clásico en tiempo real",
+      "Marcador automático de puntuación"
+    ],
+    "limits": {
+      "maxPlayers": 10,
+      "canUseDjBot": false,
+      "canCustomTheme": false,
+      "unlimitedPacks": false
+    }
+  },
+  {
+    "id": "plus",
+    "name": "Party Plus",
+    "badge": "Para particulares y amigos",
+    "tagline": "El kit de herramientas para juntadas, cumpleaños y diversión musical sin trabas.",
+    "priceMonthly": 3,
+    "priceYearly": 29,
+    "discountText": "Ahorrá 20% anual",
+    "maxPlayers": 35,
+    "enabled": true,
+    "accentColor": "#E21B3C",
+    "features": [
+      "Hasta 35 jugadores en simultáneo",
+      "Creación de packs personalizados ilimitados",
+      "Efectos de sonido arcade y pulsadores temáticos",
+      "Buscador integrado de canciones con vista previa",
+      "Partidas sin anuncios ni esperas"
+    ],
+    "limits": {
+      "maxPlayers": 35,
+      "canUseDjBot": false,
+      "canCustomTheme": false,
+      "unlimitedPacks": true
+    }
+  },
+  {
+    "id": "pro",
+    "name": "Showtime Pro",
+    "badge": "Más Popular",
+    "tagline": "La experiencia de game-show definitiva para bares, eventos medianos y docentes.",
+    "priceMonthly": 12,
+    "priceYearly": 108,
+    "discountText": "Ahorrá 25% anual",
+    "maxPlayers": 100,
+    "enabled": true,
+    "accentColor": "#46178F",
+    "features": [
+      "Hasta 100 jugadores en simultáneo",
+      "Asistente DJ Bot inteligente con IA para sugerencias en vivo",
+      "Modo Torneo por Equipos con podio interactivo",
+      "Controles avanzados de tiempo y desempates",
+      "Acceso prioritario a novedades y packs exclusivos"
+    ],
+    "limits": {
+      "maxPlayers": 100,
+      "canUseDjBot": true,
+      "canCustomTheme": false,
+      "unlimitedPacks": true
+    }
+  },
+  {
+    "id": "ultra",
+    "name": "Festival 360",
+    "badge": "Para profesionales y eventos",
+    "tagline": "La plataforma total para animadores, salones de fiestas, boliches y grandes eventos.",
+    "priceMonthly": 29,
+    "priceYearly": 249,
+    "discountText": "Ahorrá 30% hasta fin de mes",
+    "maxPlayers": 1000,
+    "enabled": true,
+    "accentColor": "#00E676",
+    "features": [
+      "Jugadores ilimitados (hasta 1.000+ por sala)",
+      "Personalización completa de colores, logo y pantallas",
+      "Panel de control dual para DJ y animador en vivo",
+      "Descarga de reportes y estadísticas en Excel / JSON",
+      "Soporte técnico prioritario 24/7 para tus eventos"
+    ],
+    "limits": {
+      "maxPlayers": 1000,
+      "canUseDjBot": true,
+      "canCustomTheme": true,
+      "unlimitedPacks": true
+    }
+  }
+]

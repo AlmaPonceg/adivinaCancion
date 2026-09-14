@@ -17,6 +17,7 @@ import { Innertube, Log } from 'youtubei.js';
 import { selectDjSongCandidates } from './djCatalog.js';
 import gamesRepository from './gamesRepository.js';
 import analyticsManager from './analyticsManager.js';
+import plansRepository from './plansRepository.js';
 
 // Silence verbose attachment warnings from Innertube's text parser
 Log.setLevel(Log.Level.ERROR);
@@ -413,6 +414,201 @@ app.post('/api/admin/events/clear', requireAdminAuth, (req, res) => {
     message: 'Registro de eventos vaciado por el moderador'
   });
   return res.json({ success: true });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Plans & Subscription API Endpoints
+// ═══════════════════════════════════════════════════════════════
+
+// Public: Get all plans (or only active ones)
+app.get('/api/plans', (req, res) => {
+  try {
+    const activeOnly = req.query.activeOnly === 'true';
+    const plans = plansRepository.getPlans({ includeDisabled: !activeOnly });
+    return res.json({ success: true, plans });
+  } catch (err) {
+    console.error('[API] Error fetching plans:', err);
+    return res.status(500).json({ success: false, error: 'Error al obtener planes' });
+  }
+});
+
+// Public: Get active plan of current user/session
+app.get('/api/user/plan', (req, res) => {
+  try {
+    const username = req.query.username || req.headers['x-user-id'] || 'guest';
+    const data = plansRepository.getUserEffectivePlan(username);
+    return res.json({ success: true, ...data });
+  } catch (err) {
+    console.error('[API] Error fetching user plan:', err);
+    return res.status(500).json({ success: false, error: 'Error al obtener plan del usuario' });
+  }
+});
+
+// Public: User selects/activates an available plan
+app.post('/api/user/plan', (req, res) => {
+  try {
+    const { username, planId } = req.body;
+    if (!username || !planId) {
+      return res.status(400).json({ success: false, error: 'Usuario y ID de plan requeridos' });
+    }
+
+    const plan = plansRepository.getPlanById(planId);
+    if (!plan) {
+      return res.status(404).json({ success: false, error: 'Plan no encontrado' });
+    }
+    if (!plan.enabled) {
+      return res.status(403).json({ success: false, error: 'Este plan se encuentra deshabilitado temporalmente' });
+    }
+
+    const result = plansRepository.setUserPlan(username, planId);
+    analyticsManager.recordEvent({
+      type: 'SUCCESS',
+      category: 'PLAYER',
+      message: `Usuario "${username}" activó el plan [${plan.name}]`,
+      meta: { username, planId },
+    });
+
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[API] Error setting user plan:', err);
+    return res.status(500).json({ success: false, error: 'Error al actualizar plan' });
+  }
+});
+
+// Moderator: Get all plans with management status
+app.get('/api/admin/plans', requireAdminAuth, (req, res) => {
+  try {
+    const plans = plansRepository.getPlans({ includeDisabled: true });
+    return res.json({ success: true, plans });
+  } catch (err) {
+    console.error('[Admin] Error fetching admin plans:', err);
+    return res.status(500).json({ success: false, error: 'Error al obtener planes para moderación' });
+  }
+});
+
+// Moderator: Toggle plan enabled/disabled status
+app.put('/api/admin/plans/:id/toggle', requireAdminAuth, (req, res) => {
+  try {
+    const planId = req.params.id;
+    const plan = plansRepository.togglePlanStatus(planId);
+    if (!plan) {
+      return res.status(404).json({ success: false, error: 'Plan no encontrado' });
+    }
+
+    analyticsManager.registerModAction(
+      plan.enabled ? 'Habilitó plan' : 'Deshabilitó plan',
+      plan.name,
+      `ID: ${plan.id}`
+    );
+
+    return res.json({ success: true, plan });
+  } catch (err) {
+    console.error('[Admin] Error toggling plan:', err);
+    return res.status(500).json({ success: false, error: 'Error al cambiar estado del plan' });
+  }
+});
+
+// Moderator: Get all users, creators and tracked player profiles with assigned plans
+app.get('/api/admin/users', requireAdminAuth, async (req, res) => {
+  try {
+    const registeredUsers = plansRepository.getUsers();
+    const plans = plansRepository.getPlans({ includeDisabled: true });
+    const allGames = await gamesRepository.listAllGames();
+
+    // Map existing registered users by username/id lowercase
+    const userMap = new Map();
+    for (const u of registeredUsers) {
+      userMap.set(u.username.toLowerCase(), {
+        id: u.id,
+        username: u.username,
+        role: u.role || 'user',
+        planId: u.planId || 'free',
+        joinedAt: u.joinedAt || u.createdAt,
+        updatedAt: u.updatedAt,
+        notes: u.notes || '',
+        source: 'registered',
+      });
+    }
+
+    // Merge creators from community games if not registered
+    for (const g of allGames) {
+      const creatorName = (g.creatorName || '').trim();
+      if (!creatorName) continue;
+      const key = creatorName.toLowerCase();
+      if (!userMap.has(key)) {
+        userMap.set(key, {
+          id: `creator_${key}`,
+          username: creatorName,
+          role: 'creator',
+          planId: 'free',
+          joinedAt: g.createdAt,
+          notes: `Creador de "${g.title}"`,
+          source: 'creator',
+        });
+      }
+    }
+
+    // Merge active player sessions if tracked
+    if (analyticsManager?.playerProfiles) {
+      for (const [pId, p] of analyticsManager.playerProfiles.entries()) {
+        const pName = (p.name || '').trim();
+        if (!pName) continue;
+        const key = pName.toLowerCase();
+        if (!userMap.has(key)) {
+          userMap.set(key, {
+            id: pId,
+            username: pName,
+            role: 'player',
+            planId: 'free',
+            joinedAt: p.firstSeen,
+            lastSeen: p.lastSeen,
+            notes: `Sesiones: ${p.joinsCount}`,
+            source: 'session',
+          });
+        }
+      }
+    }
+
+    const usersList = Array.from(userMap.values()).map((u) => {
+      const plan = plans.find((p) => p.id === u.planId) || plans.find((p) => p.id === 'free');
+      return {
+        ...u,
+        planName: plan?.name || 'Acústico',
+        planColor: plan?.accentColor || '#46178F',
+        planEnabled: plan?.enabled ?? true,
+      };
+    });
+
+    return res.json({ success: true, users: usersList, total: usersList.length });
+  } catch (err) {
+    console.error('[Admin] Error fetching users for moderation:', err);
+    return res.status(500).json({ success: false, error: 'Error al listar usuarios' });
+  }
+});
+
+// Moderator: Assign/Change plan for any user or creator
+app.put('/api/admin/users/:id/plan', requireAdminAuth, (req, res) => {
+  try {
+    const userIdOrUsername = req.params.id;
+    const { planId } = req.body;
+
+    if (!planId) {
+      return res.status(400).json({ success: false, error: 'planId requerido' });
+    }
+
+    const result = plansRepository.setUserPlan(userIdOrUsername, planId);
+
+    analyticsManager.registerModAction(
+      'Asignación manual de plan',
+      result.user.username,
+      `Nuevo plan: ${result.plan.name} (${result.plan.id})`
+    );
+
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[Admin] Error assigning user plan:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Error al asignar plan' });
+  }
 });
 
 // YouTube Auto-Karaoke endpoint (Supports Playlist URL or Array of Song Names)

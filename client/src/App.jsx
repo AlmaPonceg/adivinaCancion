@@ -14,6 +14,7 @@ import CommunityLibrary from './pages/CommunityLibrary';
 import GameCreator from './pages/GameCreator';
 import GameDetail from './pages/GameDetail';
 import AdminDashboard from './pages/AdminDashboard';
+import PricingPlans from './pages/PricingPlans';
 
 function AppLayout() {
   const { isAlmaTheme } = useTheme();
@@ -31,6 +32,8 @@ function AppLayout() {
             <Route path="/library" element={<CommunityLibrary />} />
             <Route path="/game/:id" element={<GameDetail />} />
             <Route path="/create" element={<GameCreator />} />
+            <Route path="/planes" element={<PricingPlans />} />
+            <Route path="/precios" element={<PricingPlans />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/moderador" element={<AdminDashboard />} />
             <Route path="/play" element={<PlayerJoin />} />

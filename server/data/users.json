@@ -1,0 +1,43 @@
+[
+  {
+    "id": "user_alma",
+    "username": "Alma Ponce",
+    "role": "admin",
+    "planId": "ultra",
+    "joinedAt": "2026-08-15T19:41:27.026Z",
+    "notes": "Cumpleañera VIP & Host Principal"
+  },
+  {
+    "id": "user_facu",
+    "username": "Facu",
+    "role": "admin",
+    "planId": "ultra",
+    "joinedAt": "2026-08-20T19:41:27.026Z",
+    "notes": "Moderador & Desarrollador"
+  },
+  {
+    "id": "user_djfiesta",
+    "username": "DJ Fiesta",
+    "role": "creator",
+    "planId": "pro",
+    "joinedAt": "2026-09-04T19:41:27.026Z",
+    "notes": "Creador de Packs de Cumbia & Cuarteto"
+  },
+  {
+    "id": "user_comunidad",
+    "username": "Comunidad Trivia",
+    "role": "creator",
+    "planId": "plus",
+    "joinedAt": "2026-09-07T19:41:27.026Z",
+    "notes": "Packs de Rock Nacional"
+  },
+  {
+    "id": "user_invitado_demo",
+    "username": "Invitado Demo",
+    "role": "user",
+    "planId": "pro",
+    "joinedAt": "2026-09-12T19:41:27.026Z",
+    "notes": "Usuario Estándar",
+    "updatedAt": "2026-09-14T19:43:15.168Z"
+  }
+]
