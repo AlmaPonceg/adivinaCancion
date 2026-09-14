@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SERVER_URL } from '../socket';
 import { useTranslation } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import MusicPackCover from '../components/MusicPackCover';
 import AppLogo from '../components/AppLogo';
 import LanguageSelector from '../components/LanguageSelector';
@@ -29,6 +31,8 @@ export default function CommunityLibrary() {
   const navigate = useNavigate();
   const librarySearchId = useId();
   const { t } = useTranslation();
+  const { user, logout } = useAuth();
+  const { openLoginModal } = useTheme();
 
   // ── Library Tab: 'community' | 'my_games' ──────────────────
   const [activeTab, setActiveTab] = useState('community');
@@ -323,6 +327,34 @@ export default function CommunityLibrary() {
 
             <LanguageSelector />
 
+            {user ? (
+              <div className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FAF8F5] border-2 border-[#EAE3D5] shadow-2xs select-none">
+                <div className="w-5 h-5 rounded-full bg-[#46178F] text-white text-[10px] font-black flex items-center justify-center uppercase">
+                  {user.username.slice(0, 2)}
+                </div>
+                <span className="text-xs font-black text-[#181226] max-w-[100px] truncate">{user.username}</span>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="text-[10px] font-bold text-[#8E869E] hover:text-[#E11D48] transition-colors cursor-pointer ml-0.5"
+                  title={t('common.logout', 'Cerrar Sesión')}
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openLoginModal()}
+                className="arcade-btn px-3 py-1.5 rounded-xl text-xs font-bold text-[#181226] bg-white border-2 border-[#EAE3D5] hover:border-[#181226] transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+              >
+                <svg className="w-3.5 h-3.5 text-[#181226]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span>{t('common.login', 'Iniciar Sesión')}</span>
+              </button>
+            )}
+
             <button
               onClick={() => navigate('/planes')}
               className="px-3 py-1.5 rounded-xl border-2 border-amber-300 bg-amber-50 hover:bg-amber-100/80 text-xs font-black text-amber-900 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs"
@@ -335,7 +367,13 @@ export default function CommunityLibrary() {
             </button>
 
             <button
-              onClick={() => navigate('/create')}
+              onClick={() => {
+                if (!user) {
+                  openLoginModal({ initialTab: 'login', reason: 'creator_required' });
+                } else {
+                  navigate('/create');
+                }
+              }}
               className="arcade-btn-ruby py-2 px-3.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-md"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -477,6 +515,7 @@ export default function CommunityLibrary() {
                               {(game.creatorName || 'C').charAt(0).toUpperCase()}
                             </div>
                             <span className="truncate max-w-[120px]">{game.creatorName || 'Comunidad'}</span>
+                            <span className="text-[#46178F] font-black text-[11px]" title="Creador Verificado">✓</span>
                           </div>
 
                           <div className="flex items-center gap-2">
@@ -1008,6 +1047,7 @@ function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onView
             {(game.creatorName || 'C').charAt(0).toUpperCase()}
           </div>
           <span className="truncate max-w-[100px]">{game.creatorName || 'Comunidad'}</span>
+          <span className="text-[#46178F] font-black text-[10px]" title="Creador Verificado">✓</span>
         </div>
 
         <div className="flex items-center gap-2">

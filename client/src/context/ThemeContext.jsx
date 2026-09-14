@@ -24,7 +24,9 @@ export function ThemeProvider({ children }) {
     }
   });
 
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [loginModalConfig, setLoginModalConfig] = useState({ isOpen: false, initialTab: 'login', reason: null });
+
+  const isLoginModalOpen = loginModalConfig.isOpen;
 
   const isAlmaTheme = theme === 'alma';
 
@@ -37,12 +39,16 @@ export function ThemeProvider({ children }) {
     }
   }, [isAlmaTheme]);
 
-  const openLoginModal = useCallback(() => {
-    setIsLoginModalOpen(true);
+  const openLoginModal = useCallback((options = {}) => {
+    setLoginModalConfig({
+      isOpen: true,
+      initialTab: options.initialTab || (typeof options === 'string' ? options : 'login'),
+      reason: options.reason || null,
+    });
   }, []);
 
   const closeLoginModal = useCallback(() => {
-    setIsLoginModalOpen(false);
+    setLoginModalConfig((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
   const unlockAlmaTheme = useCallback(async (code) => {
@@ -100,6 +106,7 @@ export function ThemeProvider({ children }) {
         theme,
         isAlmaTheme,
         isLoginModalOpen,
+        loginModalConfig,
         openLoginModal,
         closeLoginModal,
         unlockAlmaTheme,

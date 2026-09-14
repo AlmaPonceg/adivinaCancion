@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SERVER_URL } from '../socket';
 import { PRESET_PACKS } from '../utils/presetPlaylists';
 import { extractYoutubeId } from '../utils/trackHelper';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const GENRE_OPTIONS = [
   'Rock Argentino',
@@ -24,20 +26,26 @@ export default function GameCreator() {
   const [searchParams] = useSearchParams();
   const editGameId = searchParams.get('id');
 
+  const { user, token, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { openLoginModal } = useTheme();
+
   // ── Game Metadata State ─────────────────────────────────────
   const [gameId, setGameId] = useState(editGameId || null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [genre, setGenre] = useState('General / Variado');
   const [creatorName, setCreatorName] = useState(() => {
-    try {
-      return localStorage.getItem('trivia_creator_name') || '';
-    } catch {
-      return '';
-    }
+    return user?.username || localStorage.getItem('trivia_creator_name') || '';
   });
   const [isPublic, setIsPublic] = useState(true);
   const [gameMode, setGameMode] = useState('auto');
+
+  // Keep creatorName locked to verified user
+  useEffect(() => {
+    if (user?.username) {
+      setCreatorName(user.username);
+    }
+  }, [user]);
 
   // ── Tracks List State ───────────────────────────────────────
   const [tracks, setTracks] = useState([]);
@@ -235,6 +243,12 @@ export default function GameCreator() {
   const handleSaveGame = async (andLaunch = false) => {
     setSaveError('');
 
+    if (!isAuthenticated || !token) {
+      setSaveError('Debés iniciar sesión o crear una cuenta para guardar y publicar tu partida.');
+      openLoginModal({ initialTab: 'login', reason: 'creator_required' });
+      return;
+    }
+
     if (!title.trim()) {
       setSaveError('Por favor ingresá un nombre para tu partida');
       return;
@@ -248,7 +262,7 @@ export default function GameCreator() {
     setIsSaving(true);
     try {
       const baseUrl = SERVER_URL || window.location.origin;
-      const cleanCreator = creatorName.trim() || 'Anónimo';
+      const cleanCreator = (user?.username || creatorName || '').trim() || 'Anónimo';
 
       try {
         localStorage.setItem('trivia_creator_name', cleanCreator);
@@ -270,25 +284,39 @@ export default function GameCreator() {
         })),
       };
 
+      const authHeaders = {
+        'Content-Type': 'application/json',
+        'x-auth-token': token,
+        Authorization: `Bearer ${token}`,
+      };
+
       let resultGame;
       if (gameId) {
         // Update existing
         const res = await fetch(`${baseUrl}/api/games/${gameId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders,
           body: JSON.stringify(payload),
         });
         const data = await res.json();
+        if (res.status === 401) {
+          openLoginModal({ initialTab: 'login', reason: 'creator_required' });
+          throw new Error('Tu sesión expiró. Por favor volvé a iniciar sesión.');
+        }
         if (!data.success) throw new Error(data.error || 'Error al actualizar');
         resultGame = data.game;
       } else {
         // Create new
         const res = await fetch(`${baseUrl}/api/games`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders,
           body: JSON.stringify(payload),
         });
         const data = await res.json();
+        if (res.status === 401) {
+          openLoginModal({ initialTab: 'login', reason: 'creator_required' });
+          throw new Error('Tu sesión expiró o se requiere cuenta para crear partidas.');
+        }
         if (!data.success) throw new Error(data.error || 'Error al crear');
         resultGame = data.game;
         setGameId(resultGame.id);
@@ -362,13 +390,70 @@ export default function GameCreator() {
     return extractYoutubeId(previewTrack.url);
   }, [previewTrack]);
 
-  if (isLoadingExisting) {
+  if (isLoadingExisting || isAuthLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-[#F5F2EB]">
         <div className="party-card bg-white p-8 rounded-3xl border-2 border-[#EAE3D5] text-center max-w-sm w-full">
           <div className="w-8 h-8 rounded-full border-3 border-[#FF5722] border-t-transparent animate-spin mx-auto mb-3" />
-          <p className="font-black text-sm text-[#181226]">Cargando partida para editar...</p>
+          <p className="font-black text-sm text-[#181226]">Cargando creador de partidas...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#F5F2EB] flex flex-col items-center justify-center p-4 sm:p-6 text-[#181226]">
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="party-card bg-white p-8 sm:p-10 rounded-[2.2rem] max-w-lg w-full text-center border-2 border-[#EAE3D5] shadow-xl"
+        >
+          <div className="w-16 h-16 rounded-3xl bg-[#FFF3EE] border-2 border-[#FFCCBA] text-[#FF5722] mx-auto flex items-center justify-center mb-5 shadow-inner">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+
+          <span className="badge-tag text-[#FF5722] font-black tracking-widest text-[11px] mb-2 inline-block">
+            IDENTIDAD VERIFICADA REQUERIDA
+          </span>
+
+          <h2 className="font-display font-black text-2xl sm:text-3xl text-[#181226] mb-3 leading-snug">
+            Iniciá sesión para crear partidas
+          </h2>
+
+          <p className="text-xs sm:text-sm text-[#574F6B] font-semibold leading-relaxed mb-6">
+            En Hitpop!, las partidas de la biblioteca comunitaria están firmadas por cuentas de creadores reales. Creá tu cuenta gratis en 10 segundos o iniciá sesión para empezar a componer.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => openLoginModal({ initialTab: 'register', reason: 'creator_required' })}
+              className="flex-1 arcade-btn-ruby py-3.5 px-5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md"
+            >
+              Crear Cuenta Gratis
+            </button>
+            <button
+              type="button"
+              onClick={() => openLoginModal({ initialTab: 'login', reason: 'creator_required' })}
+              className="flex-1 arcade-btn py-3.5 px-5 rounded-xl text-xs font-black uppercase tracking-wider text-[#181226] bg-[#FAF8F5] border-2 border-[#EAE3D5] hover:border-[#181226] flex items-center justify-center gap-2 cursor-pointer"
+            >
+              Iniciar Sesión
+            </button>
+          </div>
+
+          <div className="mt-6 pt-5 border-t border-[#EAE3D5]">
+            <button
+              type="button"
+              onClick={() => navigate('/library')}
+              className="text-xs font-bold text-[#8E869E] hover:text-[#181226] transition-colors cursor-pointer"
+            >
+              ← Volver a la Biblioteca de Música
+            </button>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -534,17 +619,26 @@ export default function GameCreator() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-black text-[#574F6B] uppercase tracking-wider mb-1.5">
-                      Tu Nombre / Apodo
+                    <label className="block text-xs font-black text-[#574F6B] uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                      <span>Tu Identidad de Creador</span>
+                      <span className="text-[10px] text-emerald-600 font-extrabold flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Cuenta Verificada
+                      </span>
                     </label>
-                    <input
-                      type="text"
-                      value={creatorName}
-                      onChange={(e) => setCreatorName(e.target.value)}
-                      placeholder="Ej: Facu, DJ Rock..."
-                      className="w-full px-3 py-2 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] text-xs font-bold text-[#181226] placeholder-[#8E869E] focus:bg-white focus:border-[#FF5722] outline-none"
-                      maxLength={30}
-                    />
+                    <div className="w-full px-3 py-2 rounded-xl bg-purple-50/70 border-2 border-purple-200 text-xs font-black text-[#181226] flex items-center justify-between shadow-2xs select-none">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-[#46178F] text-white text-[10px] font-black flex items-center justify-center uppercase">
+                          {(user?.username || creatorName || 'CR').slice(0, 2)}
+                        </div>
+                        <span className="font-display font-black text-sm">{user?.username || creatorName}</span>
+                      </div>
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-[#46178F] text-white tracking-wider">
+                        Creador
+                      </span>
+                    </div>
                   </div>
                 </div>
 

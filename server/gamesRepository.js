@@ -211,6 +211,8 @@ class GamesRepository {
         description: g.description,
         genre: g.genre || 'General',
         creatorName: g.creatorName || 'Comunidad',
+        creatorId: g.creatorId || null,
+        isVerifiedCreator: Boolean(g.creatorId || g.isVerifiedCreator || g.creatorName),
         isPublic: g.isPublic,
         gameMode: g.gameMode || 'auto',
         trackCount: Array.isArray(g.tracks) ? g.tracks.length : 0,
@@ -235,7 +237,7 @@ class GamesRepository {
   /**
    * Create a new saved game
    */
-  async createGame({ title, description = '', creatorName = 'Anónimo', isPublic = false, gameMode = 'auto', tracks = [], genre = 'General' }) {
+  async createGame({ title, description = '', creatorName = 'Anónimo', creatorId = null, isPublic = false, gameMode = 'auto', tracks = [], genre = 'General' }) {
     if (!title || typeof title !== 'string' || !title.trim()) {
       throw new Error('El título de la partida es obligatorio');
     }
@@ -249,6 +251,8 @@ class GamesRepository {
       title: title.trim(),
       description: description.trim(),
       creatorName: creatorName.trim() || 'Anónimo',
+      creatorId: creatorId || null,
+      isVerifiedCreator: true,
       isPublic: Boolean(isPublic),
       gameMode: gameMode || 'auto',
       genre: genre.trim() || 'General',

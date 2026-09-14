@@ -188,10 +188,33 @@ app.get('/api/games/:id', async (req, res) => {
   }
 });
 
-// Create & publish a game
-app.post('/api/games', async (req, res) => {
+// ── Creator Authentication Middleware ─────────────────────────
+function getAuthenticatedUser(req) {
+  const token =
+    req.headers['x-auth-token'] ||
+    (req.headers['authorization']?.startsWith('Bearer ')
+      ? req.headers['authorization'].slice(7).trim()
+      : null);
+  if (!token) return null;
+  return plansRepository.getUserByToken(token);
+}
+
+function requireCreatorAuth(req, res, next) {
+  const user = getAuthenticatedUser(req);
+  if (!user) {
+    return res.status(401).json({
+      success: false,
+      error: 'Debés iniciar sesión o crear una cuenta para crear y publicar partidas.'
+    });
+  }
+  req.user = user;
+  next();
+}
+
+// Create & publish a game (Requires registered creator account)
+app.post('/api/games', requireCreatorAuth, async (req, res) => {
   try {
-    const { title, description, creatorName, isPublic, gameMode, tracks, genre } = req.body || {};
+    const { title, description, isPublic, gameMode, tracks, genre } = req.body || {};
     if (!title || !tracks || !Array.isArray(tracks) || tracks.length === 0) {
       return res.status(400).json({
         success: false,
@@ -199,22 +222,27 @@ app.post('/api/games', async (req, res) => {
       });
     }
 
+    // Force verified identity from authenticated creator
+    const creatorName = req.user.username;
+    const creatorId = req.user.id;
+
     const newGame = await gamesRepository.createGame({
       title,
       description,
       creatorName,
+      creatorId,
       isPublic: Boolean(isPublic),
       gameMode,
       tracks,
       genre
     });
 
-    console.log(`[API] Nueva partida creada: "${newGame.title}" (${newGame.isPublic ? 'PÚBLICA' : 'PRIVADA'}) con ${newGame.tracks.length} canciones`);
+    console.log(`[API] Nueva partida creada: "${newGame.title}" (${newGame.isPublic ? 'PÚBLICA' : 'PRIVADA'}) por ${creatorName} (${creatorId})`);
     analyticsManager.recordEvent({
       type: 'SUCCESS',
       category: 'GAME',
-      message: `Nueva partida creada: "${newGame.title}" (${newGame.isPublic ? 'Pública' : 'Privada'}) por ${newGame.creatorName}`,
-      meta: { id: newGame.id, title: newGame.title }
+      message: `Nueva partida creada: "${newGame.title}" (${newGame.isPublic ? 'Pública' : 'Privada'}) por ${creatorName}`,
+      meta: { id: newGame.id, title: newGame.title, creatorName, creatorId }
     });
     return res.status(201).json({ success: true, game: newGame });
   } catch (err) {
@@ -237,10 +265,33 @@ app.post('/api/games/:id/play', async (req, res) => {
   }
 });
 
-// Update a saved game
-app.put('/api/games/:id', async (req, res) => {
+// Update a saved game (Requires creator or moderator)
+app.put('/api/games/:id', requireCreatorAuth, async (req, res) => {
   try {
-    const updated = await gamesRepository.updateGame(req.params.id, req.body || {});
+    const existing = await gamesRepository.getGameById(req.params.id);
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Partida no encontrada' });
+    }
+
+    const isOwner =
+      (existing.creatorId && existing.creatorId === req.user.id) ||
+      (existing.creatorName && existing.creatorName.toLowerCase() === req.user.username.toLowerCase());
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: 'No tenés permisos para editar esta partida.'
+      });
+    }
+
+    const updates = { ...(req.body || {}) };
+    if (!isAdmin) {
+      updates.creatorName = req.user.username;
+      updates.creatorId = req.user.id;
+    }
+
+    const updated = await gamesRepository.updateGame(req.params.id, updates);
     return res.json({ success: true, game: updated });
   } catch (err) {
     console.error('[API] Error updating game:', err);
@@ -248,9 +299,30 @@ app.put('/api/games/:id', async (req, res) => {
   }
 });
 
-// Delete a saved game
+// Delete a saved game (Requires owner creator or moderator)
 app.delete('/api/games/:id', async (req, res) => {
   try {
+    const user = getAuthenticatedUser(req);
+    const existing = await gamesRepository.getGameById(req.params.id);
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Partida no encontrada o ya eliminada' });
+    }
+
+    const isOwner = user && (
+      (existing.creatorId && existing.creatorId === user.id) ||
+      (existing.creatorName && existing.creatorName.toLowerCase() === user.username.toLowerCase())
+    );
+    const isAdmin = user && user.role === 'admin';
+
+    const authHeader = req.headers['authorization'] || '';
+    const tokenHeader = req.headers['x-admin-token'] || req.headers['x-admin-key'] || '';
+    const providedAdmin = tokenHeader || (authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : '');
+    const isLegacyAdmin = providedAdmin === ADMIN_PASSKEY || providedAdmin === generateAdminToken();
+
+    if (!isOwner && !isAdmin && !isLegacyAdmin) {
+      return res.status(403).json({ success: false, error: 'No autorizado para eliminar esta partida' });
+    }
+
     const deleted = await gamesRepository.deleteGame(req.params.id);
     if (!deleted) {
       return res.status(404).json({ success: false, error: 'Partida no encontrada o ya eliminada' });
@@ -413,6 +485,74 @@ app.post('/api/admin/events/clear', requireAdminAuth, (req, res) => {
     category: 'MOD',
     message: 'Registro de eventos vaciado por el moderador'
   });
+  return res.json({ success: true });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Creator Authentication & Profile API Endpoints
+// ═══════════════════════════════════════════════════════════════
+
+// Register new creator account
+app.post('/api/auth/register', (req, res) => {
+  try {
+    const { username, password, email } = req.body || {};
+    const result = plansRepository.registerUser({ username, password, email });
+
+    console.log(`[Auth] Nuevo creador registrado: "${result.user.username}" (${result.user.id})`);
+    analyticsManager.recordEvent({
+      type: 'SUCCESS',
+      category: 'PLAYER',
+      message: `Nuevo creador registrado: "${result.user.username}"`,
+      meta: { username: result.user.username, id: result.user.id }
+    });
+
+    return res.status(201).json({ success: true, ...result });
+  } catch (err) {
+    return res.status(400).json({ success: false, error: err.message || 'Error al registrar creador' });
+  }
+});
+
+// Login creator
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    const result = plansRepository.authenticateUser(username, password);
+
+    analyticsManager.recordEvent({
+      type: 'INFO',
+      category: 'PLAYER',
+      message: `Sesión iniciada: "${result.user.username}"`
+    });
+
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    return res.status(401).json({ success: false, error: err.message || 'Credenciales inválidas' });
+  }
+});
+
+// Get currently authenticated creator profile
+app.get('/api/auth/me', (req, res) => {
+  try {
+    const user = getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'No autenticado o sesión expirada' });
+    }
+    return res.json({ success: true, user });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'Error al obtener perfil' });
+  }
+});
+
+// Logout creator session
+app.post('/api/auth/logout', (req, res) => {
+  const token =
+    req.headers['x-auth-token'] ||
+    (req.headers['authorization']?.startsWith('Bearer ')
+      ? req.headers['authorization'].slice(7).trim()
+      : null);
+  if (token) {
+    plansRepository.destroySession(token);
+  }
   return res.json({ success: true });
 });
 

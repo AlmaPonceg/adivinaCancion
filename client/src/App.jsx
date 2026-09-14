@@ -5,6 +5,7 @@ import LoginModal from './components/LoginModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { AuthProvider } from './context/AuthContext';
 import HostLobby from './pages/HostLobby';
 import HostGame from './pages/HostGame';
 import PlayerJoin from './pages/PlayerJoin';
@@ -55,9 +56,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <LanguageProvider>
-        <ThemeProvider>
-          <AppLayout />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <AppLayout />
+          </ThemeProvider>
+        </AuthProvider>
       </LanguageProvider>
     </BrowserRouter>
   );

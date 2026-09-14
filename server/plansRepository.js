@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -7,6 +8,7 @@ const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(__dirname, 'data');
 const PLANS_FILE = path.join(DATA_DIR, 'plans.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 
 // Default initial plans
 const DEFAULT_PLANS = [
@@ -159,6 +161,7 @@ class PlansRepository {
     this.ensureDataDir();
     this.ensurePlansFile();
     this.ensureUsersFile();
+    this.readSessions();
   }
 
   ensureDataDir() {
@@ -306,6 +309,147 @@ class PlansRepository {
       user: user || { id: 'guest', username: userIdOrUsername || 'Invitado', planId: 'free', role: 'guest' },
       plan,
     };
+  }
+
+  // ── Authentication & Sessions ──────────────────────────────
+
+  activeSessions = new Map();
+
+  readSessions() {
+    try {
+      if (fs.existsSync(SESSIONS_FILE)) {
+        const raw = fs.readFileSync(SESSIONS_FILE, 'utf-8');
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          this.activeSessions = new Map(list);
+        }
+      }
+    } catch (err) {
+      console.error('[PlansRepo] Error reading sessions.json:', err);
+    }
+  }
+
+  writeSessions() {
+    try {
+      this.ensureDataDir();
+      fs.writeFileSync(SESSIONS_FILE, JSON.stringify([...this.activeSessions.entries()], null, 2), 'utf-8');
+    } catch (err) {
+      console.error('[PlansRepo] Error writing sessions.json:', err);
+    }
+  }
+
+  sanitizeUser(user) {
+    if (!user) return null;
+    const { passwordHash, ...safe } = user;
+    return safe;
+  }
+
+  hashPassword(password) {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+    return `${salt}:${hash}`;
+  }
+
+  verifyPassword(password, stored) {
+    if (!stored || !stored.includes(':')) return false;
+    const [salt, hash] = stored.split(':');
+    const computed = crypto.scryptSync(password, salt, 64).toString('hex');
+    return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(computed, 'hex'));
+  }
+
+  createSession(user) {
+    const token = 'hitpop_usr_' + crypto.randomBytes(24).toString('hex');
+    this.activeSessions.set(token, {
+      userId: user.id,
+      username: user.username,
+      createdAt: new Date().toISOString(),
+    });
+    this.writeSessions();
+    return token;
+  }
+
+  getUserByToken(token) {
+    if (!token) return null;
+    const session = this.activeSessions.get(token);
+    if (!session) return null;
+    const user = this.getUserById(session.userId);
+    return this.sanitizeUser(user);
+  }
+
+  destroySession(token) {
+    if (token && this.activeSessions.has(token)) {
+      this.activeSessions.delete(token);
+      this.writeSessions();
+    }
+  }
+
+  registerUser({ username, password, email }) {
+    const cleanUsername = (username || '').trim();
+    if (!cleanUsername || cleanUsername.length < 2) {
+      throw new Error('El nombre de usuario debe tener al menos 2 caracteres.');
+    }
+    if (!password || password.length < 4) {
+      throw new Error('La contraseña debe tener al menos 4 caracteres.');
+    }
+
+    const users = this.readUsers();
+    const existing = users.find(
+      (u) => u.username.toLowerCase() === cleanUsername.toLowerCase()
+    );
+    if (existing) {
+      throw new Error(`El usuario "${cleanUsername}" ya existe. Elegí otro nombre.`);
+    }
+
+    const now = new Date().toISOString();
+    const newUser = {
+      id: `user_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+      username: cleanUsername,
+      email: email ? email.trim().toLowerCase() : '',
+      passwordHash: this.hashPassword(password),
+      role: 'creator',
+      planId: 'free',
+      joinedAt: now,
+      updatedAt: now,
+      notes: 'Creador Registrado',
+    };
+
+    users.push(newUser);
+    this.writeUsers(users);
+
+    const token = this.createSession(newUser);
+    return { user: this.sanitizeUser(newUser), token };
+  }
+
+  authenticateUser(usernameOrEmail, password) {
+    const query = (usernameOrEmail || '').trim().toLowerCase();
+    if (!query) throw new Error('Ingresá tu usuario o correo.');
+    if (!password) throw new Error('Ingresá tu contraseña.');
+
+    const users = this.readUsers();
+    const user = users.find(
+      (u) =>
+        u.username.toLowerCase() === query ||
+        (u.email && u.email.toLowerCase() === query)
+    );
+
+    if (!user) {
+      throw new Error('Usuario no encontrado.');
+    }
+
+    // If account was created prior to password hash (legacy seeds), set password on first login
+    if (!user.passwordHash) {
+      user.passwordHash = this.hashPassword(password);
+      user.updatedAt = new Date().toISOString();
+      this.writeUsers(users);
+    } else {
+      const isValid = this.verifyPassword(password, user.passwordHash);
+      if (!isValid) {
+        throw new Error('Contraseña incorrecta.');
+      }
+    }
+
+    const token = this.createSession(user);
+    return { user: this.sanitizeUser(user), token };
   }
 }
 

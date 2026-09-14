@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
 import AppLogo from '../components/AppLogo';
 import LanguageSelector from '../components/LanguageSelector';
@@ -9,6 +10,7 @@ import LanguageSelector from '../components/LanguageSelector';
 export default function Landing() {
   const navigate = useNavigate();
   const { isAlmaTheme, openLoginModal, lockTheme } = useTheme();
+  const { user, logout } = useAuth();
   const { t } = useTranslation();
   const [roomCodeInput, setRoomCodeInput] = useState('');
 
@@ -26,7 +28,22 @@ export default function Landing() {
         <div className="flex items-center gap-2">
           <LanguageSelector />
 
-          {isAlmaTheme ? (
+          {user ? (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border-2 border-[#E5DFD5] shadow-2xs select-none">
+              <div className="w-5 h-5 rounded-full bg-[#46178F] text-white text-[10px] font-black flex items-center justify-center uppercase">
+                {user.username.slice(0, 2)}
+              </div>
+              <span className="text-xs font-black text-[#181226] max-w-[120px] truncate">{user.username}</span>
+              <button
+                type="button"
+                onClick={logout}
+                className="text-[10px] font-bold text-[#8E869E] hover:text-[#E11D48] transition-colors cursor-pointer ml-0.5"
+                title={t('common.logout', 'Cerrar Sesión')}
+              >
+                ✕
+              </button>
+            </div>
+          ) : isAlmaTheme ? (
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border-2 border-[#FF5722]/30 text-xs font-bold text-[#FF5722] shadow-xs select-none">
               <span className="w-2 h-2 rounded-full bg-[#FF5722] animate-pulse" />
               <span>{t('nav.editionAlma', 'Edición Alma #24')}</span>
@@ -42,7 +59,7 @@ export default function Landing() {
           ) : (
             <button
               type="button"
-              onClick={openLoginModal}
+              onClick={() => openLoginModal()}
               className="arcade-btn px-4 py-2 rounded-xl text-xs font-black text-[#181226] bg-white border-2 border-[#E5DFD5] hover:border-[#181226] hover:bg-[#FAF8F5] transition-all cursor-pointer flex items-center gap-2 shadow-2xs hover:shadow-xs"
             >
               <svg className="w-3.5 h-3.5 text-[#181226]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -178,7 +195,13 @@ export default function Landing() {
 
           {/* Secondary Action: Create New Game (Kahoot Studio) */}
           <button
-            onClick={() => navigate('/create')}
+            onClick={() => {
+              if (!user) {
+                openLoginModal({ initialTab: 'login', reason: 'creator_required' });
+              } else {
+                navigate('/create');
+              }
+            }}
             className="arcade-btn-purple py-3.5 px-6 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-xs"
           >
             <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
