@@ -107,3 +107,142 @@ export function playHostBuzzerSound() {
     console.warn('Host audio feedback error:', e);
   }
 }
+
+/**
+ * Triumphant Correct Answer Chime:
+ * Bright, ascending 3-note harmonic gameshow chime (C5 -> E5 -> G5) with sparkling resonance.
+ */
+export function playCorrectSound() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    const notes = [
+      { freq: 523.25, time: 0.00, dur: 0.35 }, // C5
+      { freq: 659.25, time: 0.10, dur: 0.35 }, // E5
+      { freq: 783.99, time: 0.20, dur: 0.55 }, // G5
+      { freq: 1046.5, time: 0.25, dur: 0.65 }, // C6 octave sparkle
+    ];
+
+    notes.forEach(({ freq, time, dur }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + time);
+
+      gain.gain.setValueAtTime(0.001, now + time);
+      gain.gain.linearRampToValueAtTime(0.28, now + time + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + time + dur);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now + time);
+      osc.stop(now + time + dur);
+    });
+  } catch (e) {
+    console.warn('Correct SFX error:', e);
+  }
+}
+
+/**
+ * Game Show Error / Incorrect Buzzer:
+ * Low, jarring double buzz that clearly indicates a wrong answer.
+ */
+export function playIncorrectSound() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    // Dual discordant low frequencies
+    const freqs = [146.83, 155.56]; // D3 & D#3 discord
+
+    [0, 0.16].forEach((offset) => {
+      freqs.forEach((freq) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + offset);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.88, now + offset + 0.14);
+
+        gain.gain.setValueAtTime(0.24, now + offset);
+        gain.gain.linearRampToValueAtTime(0.01, now + offset + 0.14);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now + offset);
+        osc.stop(now + offset + 0.14);
+      });
+    });
+  } catch (e) {
+    console.warn('Incorrect SFX error:', e);
+  }
+}
+
+/**
+ * Countdown Clock Tick:
+ * Sharp, crisp woodblock tick for the answer countdown timer.
+ */
+export function playTickSound() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(1100, now);
+    osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
+
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.04);
+  } catch (e) {
+    console.warn('Tick SFX error:', e);
+  }
+}
+
+/**
+ * Answer Time Expired Buzzer:
+ * Louder sustained double horn signal when time runs out for the answering player.
+ */
+export function playTimeoutSound() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    const freqs = [185.0, 220.0];
+
+    freqs.forEach((freq) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, now);
+
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.38);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.38);
+    });
+  } catch (e) {
+    console.warn('Timeout SFX error:', e);
+  }
+}

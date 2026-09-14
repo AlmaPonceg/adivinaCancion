@@ -7,7 +7,14 @@ import Scoreboard from '../components/Scoreboard';
 import MusicPlayer from '../components/MusicPlayer';
 import BuzzQueue from '../components/BuzzQueue';
 import JudgePanel from '../components/JudgePanel';
-import { playHostBuzzerSound } from '../utils/audioEffects';
+import {
+  playHostBuzzerSound,
+  playCorrectSound,
+  playIncorrectSound,
+  playTickSound,
+  playTimeoutSound,
+} from '../utils/audioEffects';
+import { useWakeLock } from '../hooks/useWakeLock';
 import { hydratePlaylistTracks } from '../utils/audioStorage';
 import { lobbyAudioManager } from '../utils/lobbyAudio';
 import { parseSongAndArtist } from '../utils/trackHelper';
@@ -85,6 +92,28 @@ export default function HostGame() {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  // Keep screen awake while host is managing the game
+  useWakeLock(true);
+
+  // Fullscreen toggle state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
   }, []);
 
   const [gameState, setGameState] = useState('TEAMS_ASSIGNED');
@@ -285,6 +314,7 @@ export default function HostGame() {
   }, [roomCode, roundNumber]);
 
   const judgeCorrect = useCallback(async () => {
+    playCorrectSound();
     try {
       await emit('judge-correct', { roomCode, points: currentJudging?.suggestedPoints });
     } catch (err) {
@@ -293,6 +323,7 @@ export default function HostGame() {
   }, [emit, roomCode, currentJudging]);
 
   const judgeIncorrect = useCallback(async () => {
+    playIncorrectSound();
     try {
       await emit('judge-incorrect', { roomCode });
     } catch (err) {
@@ -362,24 +393,27 @@ export default function HostGame() {
     });
   }, [roomCode]);
 
-  // 1. Countdown for speaking when someone buzzes in Auto-Host mode
+  // 1. Countdown for speaking when someone buzzes
   useEffect(() => {
-    if (gameState !== 'BUZZER_LOCKED' || !autoHostEnabled) {
+    if (gameState !== 'BUZZER_LOCKED' || !(currentJudging || buzzQueue[0])) {
       setSpeakCountdown(null);
       return;
     }
     setSpeakCountdown(7);
     const interval = setInterval(() => {
       setSpeakCountdown((prev) => {
-        if (prev === null || prev <= 1) {
+        if (prev === null) return null;
+        if (prev <= 1) {
           clearInterval(interval);
+          playTimeoutSound();
           return 0;
         }
+        playTickSound();
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [gameState, autoHostEnabled, currentJudging?.playerId]);
+  }, [gameState, currentJudging?.playerId, buzzQueue[0]?.playerId]);
 
   // 2. Auto-advance countdown when round ends in Auto-Host mode
   useEffect(() => {
@@ -460,6 +494,24 @@ export default function HostGame() {
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
+            onClick={toggleFullscreen}
+            className="arcade-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-[#6B6280] hover:text-[#181226] flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            title={isFullscreen ? 'Salir de pantalla completa' : 'Ver en pantalla completa'}
+          >
+            {isFullscreen ? (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 9L4 4m0 0l5 0m-5 0l0 5M15 9l5-5m0 0l-5 0m5 0l0 5M9 15l-5 5m0 0l5 0m-5 0l0-5M15 15l5 5m0 0l-5 0m5 0l0-5" />
+              </svg>
+            ) : (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+            )}
+            <span className="hidden sm:inline">{isFullscreen ? 'Ventana' : 'Pantalla Completa'}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setShowTutorial(true)}
             className="arcade-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-[#6B6280] hover:text-[#FF5722] flex items-center gap-1.5 cursor-pointer shadow-2xs"
             title="Ver tutorial guiado de los controles de la partida"
@@ -499,8 +551,8 @@ export default function HostGame() {
 
       {/* Main Content Grid: Audio Deck on Left, Master Round Console on Right */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-5 sm:py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Dedicated Audio Deck (No video, pure audio & visualizer) */}
-        <div id="tour-game-music-player" className="lg:col-span-6 xl:col-span-5 space-y-6">
+        {/* Left Column on Desktop / Bottom on Mobile: Dedicated Audio Deck */}
+        <div id="tour-game-music-player" className="lg:col-span-6 xl:col-span-5 space-y-6 order-2 lg:order-1">
           <MusicPlayer
             ref={musicPlayerRef}
             roomCode={roomCode}
@@ -512,8 +564,8 @@ export default function HostGame() {
           />
         </div>
 
-        {/* Right Column: Unified Master Control Console */}
-        <div className="lg:col-span-6 xl:col-span-7 space-y-5">
+        {/* Right Column on Desktop / Top on Mobile: Unified Master Control Console */}
+        <div className="lg:col-span-6 xl:col-span-7 space-y-5 order-1 lg:order-2">
           {/* Master Round Control Card */}
           <motion.div
             id="tour-game-master-card"
@@ -556,25 +608,11 @@ export default function HostGame() {
             {/* ACTION ZONE BY GAME STATE */}
             {gameState === 'BUZZER_LOCKED' && (currentJudging || buzzQueue[0]) ? (
               <div className="space-y-4">
-                {/* Auto-Host Countdown (Sin spoilers de título en pantalla) */}
-                {autoHostEnabled && speakCountdown !== null && speakCountdown > 0 && (
-                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#FFF0F3] border-2 border-[#E11D48]/30 shadow-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#E11D48] animate-pulse" />
-                      <span className="text-xs font-black text-[#181226]">
-                        Tiempo para responder o cantar en voz alta:
-                      </span>
-                    </div>
-                    <span className="mono text-xs font-black text-[#E11D48] bg-white px-3 py-1 rounded-xl border border-[#E11D48]/30 animate-pulse shadow-2xs">
-                      {speakCountdown}s
-                    </span>
-                  </div>
-                )}
-
                 <JudgePanel
                   currentBuzz={currentJudging || buzzQueue[0]}
                   currentTrack={activeTrack}
                   isAutoHost={autoHostEnabled}
+                  countdown={speakCountdown}
                   onCorrect={judgeCorrect}
                   onIncorrect={judgeIncorrect}
                 />

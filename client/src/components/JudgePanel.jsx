@@ -8,6 +8,7 @@ export default function JudgePanel({
   onCorrect,
   onIncorrect,
   isAutoHost = false,
+  countdown = null,
 }) {
   const [showSolution, setShowSolution] = useState(!isAutoHost);
 
@@ -60,6 +61,48 @@ export default function JudgePanel({
             <span className="text-[#059669] font-extrabold bg-[#E6F9F0] px-2 py-0.5 rounded border border-[#059669]/40">
               +{currentBuzz.suggestedPoints || 1} pts
             </span>
+          </div>
+        )}
+
+        {/* 7s Answer Countdown Bar */}
+        {countdown !== null && (
+          <div className="mt-4 pt-3 border-t border-[#EAE3D5]">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    countdown === 0 ? 'bg-[#E11D48]' : 'bg-[#FF5722] animate-ping'
+                  }`}
+                />
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#181226]">
+                  {countdown === 0 ? '¡Tiempo Agotado!' : 'Tiempo para responder o cantar:'}
+                </span>
+              </div>
+              <span
+                className={`mono text-xs font-black px-2.5 py-0.5 rounded-lg border ${
+                  countdown === 0
+                    ? 'bg-[#FFF0F3] text-[#E11D48] border-[#E11D48]/40 animate-pulse'
+                    : countdown <= 3
+                    ? 'bg-[#FFF7ED] text-[#FF5722] border-[#FF5722]/40 animate-pulse'
+                    : 'bg-white text-[#181226] border-[#DDD5C5]'
+                }`}
+              >
+                {countdown}s
+              </span>
+            </div>
+
+            <div className="w-full h-2 rounded-full bg-[#FAF7F2] border border-[#EAE3D5] overflow-hidden">
+              <div
+                className={`h-full transition-all duration-1000 ease-linear rounded-full ${
+                  countdown === 0
+                    ? 'bg-[#E11D48]'
+                    : countdown <= 3
+                    ? 'bg-[#FF5722]'
+                    : 'bg-[#059669]'
+                }`}
+                style={{ width: `${(Math.max(0, countdown) / 7) * 100}%` }}
+              />
+            </div>
           </div>
         )}
       </motion.div>

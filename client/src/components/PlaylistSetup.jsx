@@ -11,6 +11,7 @@ import {
   hydratePlaylistTracks,
 } from '../utils/audioStorage';
 import { normalizeTrack, getTrackTitle } from '../utils/trackHelper';
+import { PRESET_PACKS } from '../utils/presetPlaylists';
 
 const SAVED_PLAYLISTS_KEY = 'trivia_saved_playlists';
 
@@ -25,16 +26,8 @@ export default function PlaylistSetup({
   onBack,
   onContinue,
 }) {
-  // ── Tabs: 'saved' | 'search' | 'local' | 'urls' ────────────
-  const [activeTab, setActiveTab] = useState(() => {
-    try {
-      const saved = localStorage.getItem(SAVED_PLAYLISTS_KEY);
-      const parsed = saved ? JSON.parse(saved) : [];
-      return parsed.length > 0 ? 'saved' : 'search';
-    } catch {
-      return 'search';
-    }
-  });
+  // ── Tabs: 'presets' | 'saved' | 'search' | 'local' | 'urls' ──
+  const [activeTab, setActiveTab] = useState('presets');
 
   // ── Saved Playlists State ─────────────────────────────────
   const [savedPlaylists, setSavedPlaylists] = useState(() => {
@@ -123,6 +116,15 @@ export default function PlaylistSetup({
     const updated = savedPlaylists.filter((p) => p.id !== id);
     persistSavedPlaylists(updated);
     setPlaylistToDelete(null);
+  };
+
+  const handleLoadPresetPack = async (pack) => {
+    if (!pack || !pack.tracks) return;
+    const hydrated = await hydratePlaylistTracks(pack.tracks);
+    setPlaylist(hydrated);
+    savePlaylistToStorage(hydrated);
+    setSaveSuccessMsg(`¡Pack "${pack.name}" cargado (${hydrated.length} canciones)!`);
+    setTimeout(() => setSaveSuccessMsg(''), 3000);
   };
 
   // ── Live Debounced Search ─────────────────────────────────
@@ -426,11 +428,33 @@ export default function PlaylistSetup({
           {/* LEFT COLUMN: Tools & Tabs (7 cols) */}
           <div className="lg:col-span-7 flex flex-col h-full min-h-0 party-card p-3 sm:p-4 rounded-2xl shadow-sm">
             {/* Tabs Bar */}
-            <div className="grid grid-cols-4 gap-1.5 p-1 bg-[#FAF7F2] rounded-xl border border-[#EAE3D5] shrink-0 mb-3">
+            <div className="flex items-center gap-1.5 p-1 bg-[#FAF7F2] rounded-xl border border-[#EAE3D5] shrink-0 mb-3 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setActiveTab('presets')}
+                className={`py-2 px-3 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 ${
+                  activeTab === 'presets'
+                    ? 'bg-[#4F46E5] text-white shadow-xs'
+                    : 'text-[#6B6280] hover:text-[#181226]'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <span className="truncate">Packs Temáticos</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                    activeTab === 'presets' ? 'bg-white text-[#4F46E5]' : 'bg-[#4F46E5]/15 text-[#4F46E5]'
+                  }`}
+                >
+                  {PRESET_PACKS.length}
+                </span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setActiveTab('saved')}
-                className={`py-2 px-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`py-2 px-2.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 ${
                   activeTab === 'saved'
                     ? 'bg-[#FF5722] text-white shadow-xs'
                     : 'text-[#6B6280] hover:text-[#181226]'
@@ -501,6 +525,79 @@ export default function PlaylistSetup({
 
             {/* TAB CONTENT */}
             <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+              {/* ── TAB 0: Packs Temáticos Listos en 1 Click ──────── */}
+              {activeTab === 'presets' && (
+                <div className="flex-1 min-h-0 flex flex-col space-y-2.5">
+                  <div className="shrink-0 px-1">
+                    <h3 className="font-display font-black text-xs sm:text-sm text-[#181226]">
+                      Packs Temáticos Listos para Jugar
+                    </h3>
+                    <p className="text-[11px] text-[#6B6280]">
+                      Elegí un paquete temático y empezá al instante sin tener que buscar canciones.
+                    </p>
+                  </div>
+
+                  <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2.5 custom-scrollbar">
+                    {PRESET_PACKS.map((pack) => (
+                      <div
+                        key={pack.id}
+                        className="p-3.5 rounded-2xl bg-[#FAF7F2] hover:bg-white border border-[#EAE3D5] hover:border-[#DDD5C5] transition-all shadow-2xs hover:shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span
+                              className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full text-white"
+                              style={{ backgroundColor: pack.color }}
+                            >
+                              {pack.genre}
+                            </span>
+                            <h4 className="font-display font-black text-sm text-[#181226]">
+                              {pack.name}
+                            </h4>
+                            <span className="mono text-[10px] font-bold text-[#6B6280]">
+                              · {pack.badge}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-[#574F6B] font-medium leading-tight mb-2">
+                            {pack.description}
+                          </p>
+
+                          {/* Quick track tags */}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {pack.tracks.slice(0, 4).map((t) => (
+                              <span
+                                key={t.id}
+                                className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white border border-[#EAE3D5] text-[#181226] truncate max-w-[150px]"
+                              >
+                                {t.title}
+                              </span>
+                            ))}
+                            {pack.tracks.length > 4 && (
+                              <span className="text-[10px] font-bold text-[#8E869E]">
+                                +{pack.tracks.length - 4} más
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleLoadPresetPack(pack)}
+                          className="arcade-btn-primary px-3.5 py-2.5 rounded-xl text-xs font-black text-white shrink-0 flex items-center justify-center gap-1.5 cursor-pointer shadow-md hover:brightness-105 active:scale-95 transition-all"
+                          style={{ backgroundColor: pack.color }}
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          </svg>
+                          <span>Cargar este Pack →</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* ── TAB 1: Mis Playlists Guardadas ─────────────────── */}
               {activeTab === 'saved' && (
                 <div className="flex-1 min-h-0 flex flex-col space-y-2.5">

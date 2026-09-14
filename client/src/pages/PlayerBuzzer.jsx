@@ -6,6 +6,7 @@ import { useSocketEvent } from '../hooks/useSocket';
 import BuzzerButton from '../components/BuzzerButton';
 import LobbyAudio from '../components/LobbyAudio';
 import { lobbyAudioManager } from '../utils/lobbyAudio';
+import { useWakeLock } from '../hooks/useWakeLock';
 
 function computeStatusMessage(st) {
   if (!st) return 'Conectando al juego...';
@@ -32,6 +33,9 @@ function computeStatusMessage(st) {
 export default function PlayerBuzzer() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Keep screen awake while player is in game
+  useWakeLock(true);
 
   // Load identity from route state or fallback to localStorage
   const savedSession = (() => {

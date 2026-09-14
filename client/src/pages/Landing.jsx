@@ -32,8 +32,8 @@ export default function Landing() {
               {/* Center Vinyl Label */}
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-[#FF5722] via-[#E11D48] to-[#F59E0B] p-0.5 shadow-md flex items-center justify-center">
                 <div className="w-full h-full rounded-full bg-[#FAF7F2] flex flex-col items-center justify-center text-[7px] font-black uppercase text-[#FF5722] tracking-tighter">
-                  <span>ALMA</span>
-                  <span className="text-[6px] text-[#181226]">#24</span>
+                  <span>TRIVIA</span>
+                  <span className="text-[6px] text-[#181226]">EN VIVO</span>
                 </div>
               </div>
               {/* Spindle hole */}
@@ -55,7 +55,7 @@ export default function Landing() {
         <div className="flex items-center justify-center gap-3 mb-3">
           <span className="h-0.5 w-8 bg-gradient-to-r from-transparent via-[#FF5722]/60 to-[#E11D48]/80" />
           <span className="badge-tag text-[#FF5722] tracking-[0.25em] font-extrabold">
-            CUMPLE DE ALMA · EDICIÓN DE DÍA
+            JUEGO DE MÚSICA EN VIVO · MULTIJUGADOR
           </span>
           <span className="h-0.5 w-8 bg-gradient-to-l from-transparent via-[#FF5722]/60 to-[#E11D48]/80" />
         </div>
@@ -69,7 +69,7 @@ export default function Landing() {
         </h1>
 
         <p className="text-[#574F6B] text-xs sm:text-base mb-6 sm:mb-7 max-w-sm mx-auto leading-relaxed font-semibold">
-          El juego de música en vivo para la fiesta. Cada invitado usa su celular como pulsador de alta velocidad.
+          El juego de música en vivo para reuniones y fiestas. Cada invitado usa su celular como pulsador de alta velocidad.
         </p>
 
         {/* Feature Strip (Daytime Festival Pass) */}
@@ -98,7 +98,7 @@ export default function Landing() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>Crear Sala de Juego (Host / TV)</span>
+            <span>Crear Sala (Host en Celu o TV)</span>
           </button>
 
           <button
