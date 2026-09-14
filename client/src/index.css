@@ -99,11 +99,7 @@ html {
 body {
   margin: 0;
   padding: 0;
-  background-color: #F7F4EE;
-  background-image: 
-    radial-gradient(ellipse 90% 60% at 50% -15%, rgba(255, 87, 34, 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 50% at 85% 90%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 40% at 15% 70%, rgba(225, 29, 72, 0.08) 0%, transparent 50%);
+  background-color: #F5F2EB;
   color: #181226;
   min-height: 100dvh;
   overflow-x: hidden;

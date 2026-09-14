@@ -103,16 +103,9 @@ export default function BackgroundVideo() {
         }}
       />
 
-      {/* ── Soft Daytime Scrim & Glow Overlay ── */}
+      {/* ── Soft Solid Daytime Scrim Overlay ── */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `
-            radial-gradient(ellipse 90% 60% at 50% -15%, rgba(255, 87, 34, 0.08) 0%, transparent 65%),
-            rgba(247, 244, 238, 0.25)
-          `,
-          pointerEvents: 'none',
-        }}
+        className="absolute inset-0 pointer-events-none bg-[#F5F2EB]/30"
       />
     </div>
   );

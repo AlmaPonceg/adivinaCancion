@@ -4,9 +4,9 @@ import { SERVER_URL } from '../socket';
 const ThemeContext = createContext({
   theme: 'neutral',
   isAlmaTheme: false,
-  isUnlockModalOpen: false,
-  openUnlockModal: () => {},
-  closeUnlockModal: () => {},
+  isLoginModalOpen: false,
+  openLoginModal: () => {},
+  closeLoginModal: () => {},
   unlockAlmaTheme: async () => {},
   lockTheme: () => {},
 });
@@ -24,7 +24,7 @@ export function ThemeProvider({ children }) {
     }
   });
 
-  const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const isAlmaTheme = theme === 'alma';
 
@@ -37,12 +37,12 @@ export function ThemeProvider({ children }) {
     }
   }, [isAlmaTheme]);
 
-  const openUnlockModal = useCallback(() => {
-    setIsUnlockModalOpen(true);
+  const openLoginModal = useCallback(() => {
+    setIsLoginModalOpen(true);
   }, []);
 
-  const closeUnlockModal = useCallback(() => {
-    setIsUnlockModalOpen(false);
+  const closeLoginModal = useCallback(() => {
+    setIsLoginModalOpen(false);
   }, []);
 
   const unlockAlmaTheme = useCallback(async (code) => {
@@ -73,7 +73,7 @@ export function ThemeProvider({ children }) {
         console.warn('Could not persist theme to localStorage', e);
       }
 
-      setIsUnlockModalOpen(false);
+      setIsLoginModalOpen(false);
       return { success: true };
     } catch (err) {
       console.error('Error verifying memory code:', err);
@@ -99,9 +99,9 @@ export function ThemeProvider({ children }) {
       value={{
         theme,
         isAlmaTheme,
-        isUnlockModalOpen,
-        openUnlockModal,
-        closeUnlockModal,
+        isLoginModalOpen,
+        openLoginModal,
+        closeLoginModal,
         unlockAlmaTheme,
         lockTheme,
       }}

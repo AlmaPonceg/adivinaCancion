@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import BackgroundVideo from './components/BackgroundVideo';
 import NeutralBackground from './components/NeutralBackground';
-import MemoryCodeModal from './components/MemoryCodeModal';
+import LoginModal from './components/LoginModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import HostLobby from './pages/HostLobby';
@@ -17,7 +17,7 @@ function AppLayout() {
   return (
     <div className="relative min-h-dvh">
       {isAlmaTheme ? <BackgroundVideo /> : <NeutralBackground />}
-      <MemoryCodeModal />
+      <LoginModal />
       <div className="relative z-10">
         <ErrorBoundary>
           <Routes>
