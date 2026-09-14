@@ -9,22 +9,6 @@ import AppLogo from '../components/AppLogo';
 import LanguageSelector from '../components/LanguageSelector';
 import { MOOD_TILES } from '../utils/genreArt';
 
-const GENRE_FILTERS = [
-  { id: 'all', label: 'Todos los Géneros' },
-  { id: 'Rock', label: 'Rock Nacional' },
-  { id: 'Cumbia', label: 'Cumbia & Cuarteto' },
-  { id: 'Pop', label: 'Hits Pop' },
-  { id: 'Reggaeton', label: 'Reggaeton' },
-  { id: 'Trap', label: 'Trap & Urbano' },
-  { id: 'Animé', label: 'Animé & TV' },
-];
-
-const SORT_OPTIONS = [
-  { id: 'popular', label: 'Más Jugadas' },
-  { id: 'recent', label: 'Más Recientes' },
-  { id: 'tracks', label: 'Más Canciones' },
-];
-
 const LOCAL_STORAGE_MY_GAMES = 'trivia_my_created_games';
 
 export default function CommunityLibrary() {
@@ -33,6 +17,23 @@ export default function CommunityLibrary() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const { openLoginModal } = useTheme();
+
+  // ── Dynamic Translated Filters ─────────────────────────────
+  const genreFilters = useMemo(() => [
+    { id: 'all', label: t('library.genres.all', 'Todos los Géneros') },
+    { id: 'Rock', label: t('library.genres.rock', 'Rock Nacional') },
+    { id: 'Cumbia', label: t('library.genres.cumbia', 'Cumbia & Cuarteto') },
+    { id: 'Pop', label: t('library.genres.pop', 'Hits Pop') },
+    { id: 'Reggaeton', label: t('library.genres.reggaeton', 'Reggaeton') },
+    { id: 'Trap', label: t('library.genres.trap', 'Trap & Urbano') },
+    { id: 'Animé', label: t('library.genres.anime', 'Animé & TV') },
+  ], [t]);
+
+  const sortOptions = useMemo(() => [
+    { id: 'popular', label: t('library.sort.popular', 'Más Jugadas') },
+    { id: 'recent', label: t('library.sort.recent', 'Más Recientes') },
+    { id: 'tracks', label: t('library.sort.tracks', 'Más Canciones') },
+  ], [t]);
 
   // ── Library Tab: 'community' | 'my_games' ──────────────────
   const [activeTab, setActiveTab] = useState('community');
@@ -387,7 +388,7 @@ export default function CommunityLibrary() {
         {/* Quick Genre Pills */}
         {activeTab === 'community' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 border-t border-[#EAE3D5] flex items-center gap-2 overflow-x-auto no-scrollbar">
-            {GENRE_FILTERS.map((gf) => {
+            {genreFilters.map((gf) => {
               const isSelected = selectedGenre === gf.id;
               return (
                 <button
@@ -429,37 +430,42 @@ export default function CommunityLibrary() {
                 <section className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#E21B3C]">
-                      EXPLORÁ POR TEMÁTICA
+                      {t('library.sections.exploreTheme', 'EXPLORÁ POR TEMÁTICA')}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
-                    {MOOD_TILES.map((tile) => (
-                      <div
-                        key={tile.id}
-                        onClick={() => setSelectedGenre(tile.id)}
-                        className={`group relative h-28 sm:h-32 rounded-2xl overflow-hidden border-2 ${tile.borderColor} border-b-[6px] border-black/35 shadow-md hover:-translate-y-1 active:translate-y-1 active:border-b-2 cursor-pointer transition-all duration-150 flex flex-col justify-end p-3 select-none`}
-                      >
-                        {/* Background Photo with dark gradient */}
-                        <img
-                          src={tile.image}
-                          alt={tile.title}
-                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 pointer-events-none"
-                        />
-                        <div className={`absolute inset-0 ${tile.bgColor}/75 mix-blend-multiply transition-opacity`} />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+                    {MOOD_TILES.map((tile) => {
+                      const tileKey = tile.id.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                      const title = t(`library.moodTiles.${tileKey}.title`, tile.title);
+                      const subtitle = t(`library.moodTiles.${tileKey}.subtitle`, tile.subtitle);
+                      return (
+                        <div
+                          key={tile.id}
+                          onClick={() => setSelectedGenre(tile.id)}
+                          className={`group relative h-28 sm:h-32 rounded-2xl overflow-hidden border-2 ${tile.borderColor} border-b-[6px] border-black/35 shadow-md hover:-translate-y-1 active:translate-y-1 active:border-b-2 cursor-pointer transition-all duration-150 flex flex-col justify-end p-3 select-none`}
+                        >
+                          {/* Background Photo with dark gradient */}
+                          <img
+                            src={tile.image}
+                            alt={title}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 pointer-events-none"
+                          />
+                          <div className={`absolute inset-0 ${tile.bgColor}/75 mix-blend-multiply transition-opacity`} />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
 
-                        {/* Title & Subtitle */}
-                        <div className="relative z-10">
-                          <h4 className="font-black text-xs sm:text-sm text-white leading-tight drop-shadow-sm">
-                            {tile.title}
-                          </h4>
-                          <p className="text-[10px] text-white/80 font-bold truncate mt-0.5 drop-shadow-xs">
-                            {tile.subtitle}
-                          </p>
+                          {/* Title & Subtitle */}
+                          <div className="relative z-10">
+                            <h4 className="font-black text-xs sm:text-sm text-white leading-tight drop-shadow-sm">
+                              {title}
+                            </h4>
+                            <p className="text-[10px] text-white/80 font-bold truncate mt-0.5 drop-shadow-xs">
+                              {subtitle}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </section>
 
@@ -468,10 +474,10 @@ export default function CommunityLibrary() {
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#E21B3C]">
-                        SELECCIÓN ESPECIAL
+                        {t('library.sections.specialSelection', 'SELECCIÓN ESPECIAL')}
                       </span>
                       <h2 className="text-xl font-black text-[#181226] tracking-tight">
-                        Colecciones Destacadas
+                        {t('library.sections.featuredPicks', 'Colecciones Destacadas')}
                       </h2>
                     </div>
                   </div>
@@ -505,7 +511,7 @@ export default function CommunityLibrary() {
                             {game.title}
                           </h3>
                           <p className="text-xs text-[#64748B] line-clamp-2 leading-relaxed mb-3">
-                            {game.description || 'Partida de música interactiva creada por la comunidad.'}
+                            {game.description || t('library.cards.defaultDesc', 'Partida de música interactiva creada por la comunidad.')}
                           </p>
                         </div>
 
@@ -514,23 +520,24 @@ export default function CommunityLibrary() {
                             <div className="w-5 h-5 rounded-full bg-[#181226] text-white flex items-center justify-center text-[10px] font-black">
                               {(game.creatorName || 'C').charAt(0).toUpperCase()}
                             </div>
-                            <span className="truncate max-w-[120px]">{game.creatorName || 'Comunidad'}</span>
-                            <span className="text-[#46178F] font-black text-[11px]" title="Creador Verificado">✓</span>
+                            <span className="truncate max-w-[120px]">{game.creatorName || t('library.cards.community', 'Comunidad')}</span>
+                            <span className="text-[#46178F] font-black text-[11px]" title={t('library.cards.verifiedBadge', 'Creador Verificado')}>✓</span>
                           </div>
 
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => navigate(`/game/${game.id}`)}
                               className="arcade-btn px-3 py-1.5 text-xs font-bold cursor-pointer"
+                              title={t('library.cards.viewDetails', 'Ver detalles de la partida')}
                             >
-                              Ver
+                              {t('library.cards.viewBtn', 'Ver')}
                             </button>
                             <button
                               onClick={() => handlePlayGame(game)}
                               disabled={launchingId === game.id}
                               className="arcade-btn-ruby px-4 py-1.5 text-xs font-black uppercase tracking-wider cursor-pointer flex items-center gap-1"
                             >
-                              <span>{launchingId === game.id ? 'Iniciando...' : 'Jugar'}</span>
+                              <span>{launchingId === game.id ? t('library.cards.starting', 'Iniciando...') : t('library.cards.playBtn', 'JUGAR')}</span>
                             </button>
                           </div>
                         </div>
@@ -544,10 +551,10 @@ export default function CommunityLibrary() {
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E21B3C]">
-                        PODIUM DE LA COMUNIDAD
+                        {t('library.sections.communityPodium', 'PODIUM DE LA COMUNIDAD')}
                       </span>
                       <h2 className="text-lg font-black text-[#181226] tracking-tight">
-                        Top Partidas Más Populares
+                        {t('library.sections.topPopular', 'Top Partidas Más Populares')}
                       </h2>
                     </div>
                   </div>
@@ -589,21 +596,21 @@ export default function CommunityLibrary() {
                             </div>
 
                             <p className="text-[11px] text-[#64748B] line-clamp-1 mb-3">
-                              Por {game.creatorName || 'Comunidad'}
+                              {t('library.cards.by', 'Por')} {game.creatorName || t('library.cards.community', 'Comunidad')}
                             </p>
                           </div>
 
                           <div className="pt-2 border-t border-[#EAE3D5] flex items-center justify-between">
                             <span className="text-[10px] font-black text-[#E21B3C] flex items-center gap-1 font-mono">
                               <span>▶</span>
-                              <span>{game.playCount || 0} jugadas</span>
+                              <span>{game.playCount || 0} {t('library.cards.plays', 'jugadas')}</span>
                             </span>
 
                             <button
                               onClick={() => navigate(`/game/${game.id}`)}
                               className="arcade-btn-ruby px-3 py-1 text-[11px] font-black uppercase tracking-wider cursor-pointer"
                             >
-                              Jugar
+                              {t('library.cards.playBtn', 'JUGAR')}
                             </button>
                           </div>
                         </div>
@@ -618,10 +625,10 @@ export default function CommunityLibrary() {
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#F43F5E]">
-                          RITMO TROPICAL & BAILE
+                          {t('library.sections.tropicalEyebrow', 'RITMO TROPICAL & BAILE')}
                         </span>
                         <h3 className="text-lg font-black text-[#181226] tracking-tight">
-                          Para la Previa, Cumbias & Boliche
+                          {t('library.sections.tropicalTitle', 'Para la Previa, Cumbias & Boliche')}
                         </h3>
                       </div>
                     </div>
@@ -649,10 +656,10 @@ export default function CommunityLibrary() {
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF5722]">
-                          GUITARRAS & HIMNOS ETERNOS
+                          {t('library.sections.rockEyebrow', 'GUITARRAS & HIMNOS ETERNOS')}
                         </span>
                         <h3 className="text-lg font-black text-[#181226] tracking-tight">
-                          Rock Clásico, Nacional & Pop 2000s
+                          {t('library.sections.rockTitle', 'Rock Clásico, Nacional & Pop 2000s')}
                         </h3>
                       </div>
                     </div>
@@ -680,10 +687,10 @@ export default function CommunityLibrary() {
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#A855F7]">
-                          FLOW, BITS & CULTURA POP
+                          {t('library.sections.urbanEyebrow', 'FLOW, BITS & CULTURA POP')}
                         </span>
                         <h3 className="text-lg font-black text-[#181226] tracking-tight">
-                          Trap Argentino & Animé Nostalgia
+                          {t('library.sections.urbanTitle', 'Trap Argentino & Animé Nostalgia')}
                         </h3>
                       </div>
                     </div>
@@ -713,21 +720,21 @@ export default function CommunityLibrary() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-black text-[#181226]">
-                      Resultados {selectedGenre !== 'all' ? `de ${selectedGenre}` : ''} {searchQuery ? `para "${searchQuery}"` : ''}
+                      {t('library.filter.results', 'Resultados')}{selectedGenre !== 'all' ? ` ${t('library.filter.ofGenre', 'de')} ${genreFilters.find((g) => g.id === selectedGenre)?.label || selectedGenre}` : ''}{searchQuery ? ` ${t('library.filter.forSearch', 'para')} "${searchQuery}"` : ''}
                     </h2>
                     <p className="text-xs text-[#64748B]">
-                      {games.length} {games.length === 1 ? 'partida encontrada' : 'partidas encontradas'}
+                      {games.length} {games.length === 1 ? t('library.filter.oneFound', 'partida encontrada') : t('library.filter.manyFound', 'partidas encontradas')}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[#64748B]">Ordenar:</span>
+                    <span className="text-xs font-bold text-[#64748B]">{t('library.filter.sortBy', 'Ordenar:')}</span>
                     <select
                       value={selectedSort}
                       onChange={(e) => setSelectedSort(e.target.value)}
                       className="px-3 py-1.5 bg-white border border-[#EAE3D5] rounded-xl text-xs font-bold text-[#181226] cursor-pointer"
                     >
-                      {SORT_OPTIONS.map((so) => (
+                      {sortOptions.map((so) => (
                         <option key={so.id} value={so.id}>{so.label}</option>
                       ))}
                     </select>
@@ -736,17 +743,17 @@ export default function CommunityLibrary() {
 
                 {loading ? (
                   <div className="py-16 text-center text-xs font-bold text-[#64748B]">
-                    Cargando catálogo...
+                    {t('library.filter.loadingCatalog', 'Cargando catálogo...')}
                   </div>
                 ) : games.length === 0 ? (
                   <div className="bg-white rounded-3xl p-12 text-center border-2 border-[#EAE3D5]">
-                    <h3 className="text-base font-black text-[#181226] mb-1">No se encontraron partidas</h3>
-                    <p className="text-xs text-[#64748B] mb-4">Intentá con otro término de búsqueda o eliminá el filtro de género.</p>
+                    <h3 className="text-base font-black text-[#181226] mb-1">{t('library.filter.noGames', 'No se encontraron partidas')}</h3>
+                    <p className="text-xs text-[#64748B] mb-4">{t('library.filter.noGamesHint', 'Intentá con otro término de búsqueda o eliminá el filtro de género.')}</p>
                     <button
                       onClick={() => { setSearchQuery(''); setSelectedGenre('all'); }}
-                      className="px-4 py-2 bg-[#FF5722] text-white rounded-xl text-xs font-bold"
+                      className="px-4 py-2 bg-[#FF5722] text-white rounded-xl text-xs font-bold cursor-pointer"
                     >
-                      Restablecer filtros
+                      {t('library.filter.resetFilters', 'Restablecer filtros')}
                     </button>
                   </div>
                 ) : (
@@ -777,9 +784,9 @@ export default function CommunityLibrary() {
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-black text-[#181226]">Mis Partidas Creadas</h2>
+                <h2 className="text-lg font-black text-[#181226]">{t('library.myGames.title', 'Mis Partidas Creadas')}</h2>
                 <p className="text-xs text-[#64748B]">
-                  Partidas que creaste en este navegador. Podés editarlas, eliminarlas o iniciarlas cuando quieras.
+                  {t('library.myGames.desc', 'Partidas que creaste en este navegador. Podés editarlas, eliminarlas o iniciarlas cuando quieras.')}
                 </p>
               </div>
 
@@ -787,13 +794,13 @@ export default function CommunityLibrary() {
                 onClick={() => navigate('/create')}
                 className="px-4 py-2 bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 cursor-pointer"
               >
-                <span>+ Crear Nueva</span>
+                <span>{t('library.myGames.createNew', '+ Crear Nueva')}</span>
               </button>
             </div>
 
             {loadingMyGames ? (
               <div className="py-16 text-center text-xs font-bold text-[#64748B]">
-                Cargando tus partidas...
+                {t('library.myGames.loading', 'Cargando tus partidas...')}
               </div>
             ) : myGames.length === 0 ? (
               <div className="bg-white rounded-3xl p-12 text-center border-2 border-[#EAE3D5] shadow-xs">
@@ -802,15 +809,15 @@ export default function CommunityLibrary() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                 </div>
-                <h3 className="text-base font-black text-[#181226] mb-1">Aún no creaste partidas</h3>
+                <h3 className="text-base font-black text-[#181226] mb-1">{t('library.myGames.emptyTitle', 'Aún no creaste partidas')}</h3>
                 <p className="text-xs text-[#64748B] mb-5 max-w-sm mx-auto">
-                  Armá tu propia playlist de trivia musical con canciones de YouTube, elegí si querés que sea pública o privada y jugala con tus amigos.
+                  {t('library.myGames.emptyDesc', 'Armá tu propia playlist de trivia musical con canciones de YouTube, elegí si querés que sea pública o privada y jugala con tus amigos.')}
                 </p>
                 <button
                   onClick={() => navigate('/create')}
                   className="px-5 py-2.5 bg-[#FF5722] text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md cursor-pointer"
                 >
-                  Crear Mi Primera Partida
+                  {t('library.myGames.createFirst', 'Crear Mi Primera Partida')}
                 </button>
               </div>
             ) : (
@@ -838,7 +845,7 @@ export default function CommunityLibrary() {
                         <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
                           game.isPublic ? 'bg-[#ECFDF5] text-[#059669]' : 'bg-[#F1F5F9] text-[#64748B]'
                         }`}>
-                          {game.isPublic ? 'Pública' : 'Privada'}
+                          {game.isPublic ? t('library.myGames.public', 'Pública') : t('library.myGames.private', 'Privada')}
                         </span>
                         <span className="text-[10px] text-[#94A3B8] font-semibold">
                           {game.genre || 'General'}
@@ -849,7 +856,7 @@ export default function CommunityLibrary() {
                         {game.title}
                       </h3>
                       <p className="text-xs text-[#64748B] line-clamp-2 mb-3">
-                        {game.description || 'Sin descripción'}
+                        {game.description || t('library.cards.defaultDesc', 'Sin descripción')}
                       </p>
                     </div>
 
@@ -858,7 +865,7 @@ export default function CommunityLibrary() {
                         onClick={() => setGameToDelete(game)}
                         className="text-[11px] font-bold text-[#DC2626] hover:underline cursor-pointer"
                       >
-                        Eliminar
+                        {t('library.myGames.delete', 'Eliminar')}
                       </button>
 
                       <div className="flex items-center gap-2">
@@ -866,13 +873,13 @@ export default function CommunityLibrary() {
                           onClick={() => navigate(`/game/${game.id}`)}
                           className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FAF8F5] hover:bg-[#F3EFE6] text-[#181226] border border-[#EAE3D5] cursor-pointer"
                         >
-                          Ver
+                          {t('library.cards.viewBtn', 'Ver')}
                         </button>
                         <button
                           onClick={() => handlePlayGame(game)}
                           className="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase bg-[#FF5722] hover:bg-[#E64A19] text-white shadow-xs cursor-pointer"
                         >
-                          Jugar
+                          {t('library.cards.playBtn', 'JUGAR')}
                         </button>
                       </div>
                     </div>
@@ -891,11 +898,11 @@ export default function CommunityLibrary() {
             <div className="flex items-center justify-between pb-4 border-b border-[#EAE3D5]">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-[#FF5722]">
-                  VISTA PREVIA DE PARTIDA
+                  {t('library.modal.previewEyebrow', 'VISTA PREVIA DE PARTIDA')}
                 </span>
                 <h3 className="text-base font-black text-[#181226]">{inspectingGame.title}</h3>
                 <p className="text-xs text-[#64748B]">
-                  Por {inspectingGame.creatorName || 'Comunidad'} · {inspectingTracks.length} canciones
+                  {t('library.modal.by', 'Por')} {inspectingGame.creatorName || t('library.cards.community', 'Comunidad')} · {inspectingTracks.length} {t('library.modal.tracks', 'canciones')}
                 </p>
               </div>
               <button
@@ -909,29 +916,29 @@ export default function CommunityLibrary() {
             </div>
 
             <div className="py-2.5 flex items-center justify-between bg-[#FAF8F5] px-3 my-3 rounded-xl border border-[#EAE3D5]">
-              <span className="text-xs font-bold text-[#181226]">Modo Anti-Spoilers</span>
+              <span className="text-xs font-bold text-[#181226]">{t('library.modal.antiSpoiler', 'Modo Anti-Spoilers')}</span>
               <button
                 onClick={() => setAntiSpoiler(!antiSpoiler)}
                 className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
                   antiSpoiler ? 'bg-[#181226] text-white' : 'bg-white text-[#64748B] border border-[#EAE3D5]'
                 }`}
               >
-                {antiSpoiler ? 'Ocultar Nombres' : 'Mostrar Nombres'}
+                {antiSpoiler ? t('library.modal.hideNames', 'Ocultar Nombres') : t('library.modal.showNames', 'Mostrar Nombres')}
               </button>
             </div>
 
             <div className="py-2 overflow-y-auto divide-y divide-[#EAE3D5] flex-1">
               {loadingTracks ? (
-                <div className="py-8 text-center text-xs text-[#64748B]">Cargando canciones...</div>
+                <div className="py-8 text-center text-xs text-[#64748B]">{t('library.modal.loadingTracks', 'Cargando canciones...')}</div>
               ) : (
-                inspectingTracks.map((t, idx) => (
-                  <div key={t.id || idx} className="py-2.5 flex items-center justify-between text-xs">
+                inspectingTracks.map((tItem, idx) => (
+                  <div key={tItem.id || idx} className="py-2.5 flex items-center justify-between text-xs">
                     <div>
                       <div className={`font-bold text-[#181226] ${antiSpoiler ? 'blur-xs select-none' : ''}`}>
-                        {idx + 1}. {t.title}
+                        {idx + 1}. {tItem.title}
                       </div>
                       <div className={`text-[11px] text-[#64748B] ${antiSpoiler ? 'blur-xs select-none' : ''}`}>
-                        {t.artist}
+                        {tItem.artist}
                       </div>
                     </div>
                   </div>
@@ -944,7 +951,7 @@ export default function CommunityLibrary() {
                 onClick={() => setInspectingGame(null)}
                 className="px-4 py-2 bg-[#FAF8F5] text-xs font-bold text-[#64748B] rounded-xl cursor-pointer"
               >
-                Cerrar
+                {t('library.modal.close', 'Cerrar')}
               </button>
 
               <button
@@ -955,7 +962,7 @@ export default function CommunityLibrary() {
                 }}
                 className="px-5 py-2 bg-[#FF5722] hover:bg-[#E64A19] text-white text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer shadow-sm"
               >
-                Empezar Partida Ahora
+                {t('library.modal.startNow', 'Empezar Partida Ahora')}
               </button>
             </div>
           </div>
@@ -966,22 +973,22 @@ export default function CommunityLibrary() {
       {gameToDelete && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full border-2 border-[#EAE3D5] shadow-2xl text-center">
-            <h3 className="text-base font-black text-[#181226] mb-2">¿Eliminar Partida?</h3>
+            <h3 className="text-base font-black text-[#181226] mb-2">{t('library.myGames.deleteConfirmTitle', '¿Eliminar Partida?')}</h3>
             <p className="text-xs text-[#64748B] mb-5">
-              Se eliminará <strong>{gameToDelete.title}</strong> de tu lista guardada.
+              {t('library.myGames.deleteConfirmDesc', 'Se eliminará "{title}" de tu lista guardada.').replace('{title}', gameToDelete.title)}
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setGameToDelete(null)}
                 className="flex-1 py-2.5 rounded-xl bg-[#FAF8F5] text-xs font-bold text-[#64748B] cursor-pointer"
               >
-                Cancelar
+                {t('common.cancel', 'Cancelar')}
               </button>
               <button
                 onClick={() => handleDeleteGame(gameToDelete)}
                 className="flex-1 py-2.5 rounded-xl bg-[#DC2626] text-white text-xs font-black uppercase tracking-wider cursor-pointer shadow-xs"
               >
-                Eliminar
+                {t('library.myGames.delete', 'Eliminar')}
               </button>
             </div>
           </div>
@@ -995,6 +1002,7 @@ export default function CommunityLibrary() {
  * GamePackCard Sub-Component for photographic music cards
  */
 function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onViewDetail, onPlay, isLaunching }) {
+  const { t } = useTranslation();
   const isHovered = hoveredCardId === game.id;
 
   return (
@@ -1025,7 +1033,7 @@ function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onView
         </h3>
 
         <p className="text-xs text-[#64748B] line-clamp-2 leading-relaxed mb-3">
-          {game.description || 'Partida de trivia musical interactiva.'}
+          {game.description || t('library.cards.defaultDesc', 'Partida de trivia musical interactiva.')}
         </p>
 
         {/* Sample Tracks Tags */}
@@ -1046,17 +1054,17 @@ function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onView
           <div className="w-5 h-5 rounded-full bg-[#240947] text-white flex items-center justify-center text-[9px] font-black">
             {(game.creatorName || 'C').charAt(0).toUpperCase()}
           </div>
-          <span className="truncate max-w-[100px]">{game.creatorName || 'Comunidad'}</span>
-          <span className="text-[#46178F] font-black text-[10px]" title="Creador Verificado">✓</span>
+          <span className="truncate max-w-[100px]">{game.creatorName || t('library.cards.community', 'Comunidad')}</span>
+          <span className="text-[#46178F] font-black text-[10px]" title={t('library.cards.verifiedBadge', 'Creador Verificado')}>✓</span>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={onViewDetail}
             className="arcade-btn px-3 py-1.5 text-xs font-bold cursor-pointer"
-            title="Ver detalles de la partida"
+            title={t('library.cards.viewDetails', 'Ver detalles de la partida')}
           >
-            Ver
+            {t('library.cards.viewBtn', 'Ver')}
           </button>
 
           <button
@@ -1064,7 +1072,7 @@ function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onView
             disabled={isLaunching}
             className="arcade-btn-ruby px-4 py-1.5 text-xs font-black uppercase tracking-wider cursor-pointer flex items-center gap-1"
           >
-            <span>{isLaunching ? '...' : 'Jugar'}</span>
+            <span>{isLaunching ? '...' : t('library.cards.playBtn', 'JUGAR')}</span>
           </button>
         </div>
       </div>

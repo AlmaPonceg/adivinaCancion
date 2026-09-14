@@ -4,11 +4,14 @@ import { motion } from 'framer-motion';
 import socket from '../socket';
 import { lobbyAudioManager } from '../utils/lobbyAudio';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../context/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 export default function PlayerJoin() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isAlmaTheme } = useTheme();
+  const { t } = useTranslation();
 
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState(searchParams.get('room') || '');
@@ -69,11 +72,11 @@ export default function PlayerJoin() {
     const trimmedCode = roomCode.trim();
 
     if (!trimmedName || !trimmedCode) {
-      setError('Ingresá tu nombre y el código de sala');
+      setError(t('player.enterNameAndCode', 'Ingresá tu nombre y el código de sala'));
       return;
     }
     if (trimmedCode.length !== 4) {
-      setError('El código debe ser de 4 dígitos');
+      setError(t('player.codeLengthError', 'El código debe ser de 4 dígitos'));
       return;
     }
 
@@ -123,6 +126,10 @@ export default function PlayerJoin() {
   // ── Join Form View (Daytime VIP Pass) ────────────────────────
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 text-[var(--color-text-primary)] relative overflow-hidden">
+      <div className="w-full max-w-sm flex justify-end mb-3 z-20">
+        <LanguageSelector />
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -134,27 +141,27 @@ export default function PlayerJoin() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F7F4EE] border border-[#E5DFD5] mb-3">
             <span className="w-2 h-2 rounded-full bg-[#059669] shadow-[0_0_8px_#059669]" />
             <span className="text-xs font-bold text-[#FF5722]">
-              Hitpop! · En Vivo
+              Hitpop! · {t('common.online', 'En Vivo')}
             </span>
           </div>
           <h1 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[#181226] mb-1">
-            Activar Pulsador
+            {t('player.buzzerTitle', 'Activar Pulsador')}
           </h1>
           <p className="text-[#574F6B] text-xs font-semibold">
-            Completá tus datos para jugar en vivo desde tu celular
+            {t('player.buzzerSubtitle', 'Completá tus datos para jugar en vivo desde tu celular')}
           </p>
         </div>
 
         <form onSubmit={handleJoin} className="space-y-5">
           <div>
             <label className="font-tactical text-xs font-bold uppercase tracking-wider text-[#4A425E] block mb-1.5">
-              Tu nombre o apodo
+              {t('player.nameLabel', 'Tu nombre o apodo')}
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ej. Martín"
+              placeholder={t('player.namePlaceholder', 'Ej. Martín')}
               maxLength={20}
               className="w-full px-4 py-3.5 text-sm font-bold rounded-2xl border-2 border-[#DDD5C5] bg-white text-[#181226] placeholder:text-[#A39DB5]"
               autoFocus
@@ -163,13 +170,13 @@ export default function PlayerJoin() {
 
           <div>
             <label className="font-tactical text-xs font-bold uppercase tracking-wider text-[#4A425E] block mb-1.5">
-              Código de sala (4 dígitos)
+              {t('player.roomCodeLabel', 'Código de sala (4 dígitos)')}
             </label>
             <input
               type="text"
               value={roomCode}
               onChange={(e) => setRoomCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
-              placeholder="0000"
+              placeholder={t('player.roomCodePlaceholder', '0000')}
               maxLength={4}
               className="mono w-full px-4 py-3.5 text-3xl font-black tracking-[0.25em] text-center rounded-2xl border-2 border-[#DDD5C5] bg-[#F7F4EE] text-[#FF5722] placeholder:text-[#C5BDB0]"
             />
@@ -189,10 +196,10 @@ export default function PlayerJoin() {
             {isJoining ? (
               <>
                 <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                <span>Conectando al Juego...</span>
+                <span>{t('player.connecting', 'Conectando al Juego...')}</span>
               </>
             ) : (
-              <span>Entrar al Pulsador</span>
+              <span>{t('player.enterBuzzer', 'Entrar al Pulsador')}</span>
             )}
           </button>
 
@@ -204,7 +211,7 @@ export default function PlayerJoin() {
             <svg className="w-3.5 h-3.5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            <span>Volver al Inicio</span>
+            <span>{t('player.backHome', 'Volver al Inicio')}</span>
           </button>
         </form>
       </motion.div>

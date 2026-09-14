@@ -159,6 +159,7 @@ export function getGameCoverTheme(genre = '', title = '', gameId = '') {
 
   return {
     ...theme,
+    key,
     coverImage,
     fallbackImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80',
   };

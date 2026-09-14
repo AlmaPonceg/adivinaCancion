@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { SERVER_URL } from '../socket';
 import { extractYoutubeId } from '../utils/trackHelper';
+import { useTranslation } from '../context/LanguageContext';
 import MusicPackCover from '../components/MusicPackCover';
+import LanguageSelector from '../components/LanguageSelector';
 
 export default function GameDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ export default function GameDetail() {
         if (data.success && data.game) {
           setGame(data.game);
         } else {
-          setError(data.error || 'Partida no encontrada');
+          setError(data.error || t('gameDetail.notFound', 'Partida no encontrada'));
         }
       } catch (err) {
         console.error('Error fetching game details:', err);
@@ -40,7 +42,7 @@ export default function GameDetail() {
     };
 
     if (id) fetchGame();
-  }, [id, baseUrl]);
+  }, [id, baseUrl, t]);
 
   // Check if this game is created by the current user locally
   const isMyGame = useMemo(() => {
@@ -101,7 +103,7 @@ export default function GameDetail() {
       <div className="min-h-screen bg-[#F5F2EB] flex items-center justify-center p-6">
         <div className="party-card bg-white p-8 rounded-3xl border-2 border-[#EAE3D5] text-center max-w-sm w-full">
           <div className="w-8 h-8 rounded-full border-3 border-[#FF5722] border-t-transparent animate-spin mx-auto mb-3" />
-          <p className="font-black text-sm text-[#181226]">Cargando partida...</p>
+          <p className="font-black text-sm text-[#181226]">{t('gameDetail.loading', 'Cargando detalles de la partida...')}</p>
         </div>
       </div>
     );
@@ -114,14 +116,14 @@ export default function GameDetail() {
           <div className="w-10 h-10 rounded-full bg-[#FEF2F2] border border-[#FCA5A5] flex items-center justify-center text-[#DC2626] mx-auto mb-3 font-black">
             ✕
           </div>
-          <h2 className="font-display font-black text-base text-[#181226] mb-2">Partida no disponible</h2>
+          <h2 className="font-display font-black text-base text-[#181226] mb-2">{t('gameDetail.notFound', 'Partida no disponible')}</h2>
           <p className="text-xs text-[#6B6280] mb-5">{error || 'La partida solicitada no existe o fue eliminada.'}</p>
           <button
             type="button"
             onClick={() => navigate('/library')}
             className="arcade-btn-primary w-full py-2.5 rounded-xl text-xs font-black cursor-pointer"
           >
-            Volver a la Biblioteca
+            {t('gameDetail.back', 'Volver a la Biblioteca')}
           </button>
         </div>
       </div>
@@ -141,10 +143,12 @@ export default function GameDetail() {
             <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            <span>Biblioteca</span>
+            <span>{t('gameDetail.back', 'Volver')}</span>
           </button>
 
           <div className="flex items-center gap-2">
+            <LanguageSelector />
+
             {isMyGame && (
               <button
                 type="button"
@@ -166,7 +170,7 @@ export default function GameDetail() {
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
-              <span>{copiedLink ? '¡Link Copiado!' : 'Compartir'}</span>
+              <span>{copiedLink ? t('gameDetail.copied', '¡Enlace copiado!') : t('gameDetail.share', 'Compartir')}</span>
             </button>
           </div>
         </header>
@@ -195,11 +199,11 @@ export default function GameDetail() {
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase ${
                   game.isPublic ? 'bg-[#ECFDF5] text-[#059669]' : 'bg-[#F5F3FF] text-[#7C3AED]'
                 }`}>
-                  {game.isPublic ? 'Pública' : 'Privada'}
+                  {game.isPublic ? t('library.myGames.public', 'Pública') : t('library.myGames.private', 'Privada')}
                 </span>
                 <span className="text-xs text-[#8E869E]">·</span>
                 <span className="text-xs font-black text-[#6B6280] font-mono">
-                  {game.playCount || 0} jugadas
+                  {game.playCount || 0} {t('library.cards.plays', 'jugadas')}
                 </span>
               </div>
 
@@ -215,10 +219,10 @@ export default function GameDetail() {
 
               <div className="flex items-center gap-4 text-xs font-bold text-[#574F6B]">
                 <div>
-                  Creada por: <span className="text-[#181226] font-black">{game.creatorName || 'Comunidad'}</span>
+                  {t('gameDetail.by', 'Creado por')}: <span className="text-[#181226] font-black">{game.creatorName || t('library.cards.community', 'Comunidad')}</span>
                 </div>
                 <div>
-                  Contenido: <span className="text-[#E21B3C] font-black">{game.tracks?.length || 0} canciones</span>
+                  <span className="text-[#E21B3C] font-black">{game.tracks?.length || 0} {t('gameDetail.tracks', 'canciones')}</span>
                 </div>
               </div>
             </div>
@@ -234,20 +238,17 @@ export default function GameDetail() {
                 {isLaunching ? (
                   <>
                     <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                    <span>Lanzando Sala...</span>
+                    <span>{t('gameDetail.starting', 'Iniciando...')}</span>
                   </>
                 ) : (
                   <>
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z" />
                     </svg>
-                    <span>EMPEZAR PARTIDA</span>
+                    <span>{t('gameDetail.playGame', 'JUGAR PARTIDA')}</span>
                   </>
                 )}
               </button>
-              <span className="text-[11px] font-bold text-[#8E869E] mt-2 text-center">
-                Abre la pantalla de la sala con el PIN para los jugadores
-              </span>
             </div>
           </div>
         </div>
@@ -257,19 +258,16 @@ export default function GameDetail() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#EAE3D5] mb-4">
             <div>
               <h2 className="font-display font-black text-sm uppercase tracking-wider text-[#181226] flex items-center gap-2">
-                <span>Canciones de esta trivia</span>
+                <span>{t('gameDetail.tracklist', 'Lista de Canciones')}</span>
                 <span className="px-2 py-0.5 rounded-full bg-[#181226] text-white text-xs font-black">
                   {game.tracks?.length || 0}
                 </span>
               </h2>
-              <p className="text-xs text-[#8E869E]">
-                Rondas musicales preparadas para adivinar con el pulsador
-              </p>
             </div>
 
             {/* Anti-spoiler Toggle */}
             <div className="flex items-center gap-2 bg-[#FAF7F2] p-1 rounded-xl border border-[#EAE3D5]">
-              <span className="text-[11px] font-bold text-[#574F6B] px-2">Anti-Spoiler:</span>
+              <span className="text-[11px] font-bold text-[#574F6B] px-2">{t('gameDetail.antiSpoiler', 'Modo Anti-Spoilers')}:</span>
               <button
                 type="button"
                 onClick={() => setAntiSpoiler(!antiSpoiler)}
@@ -279,7 +277,7 @@ export default function GameDetail() {
                     : 'bg-white text-[#181226] border border-[#EAE3D5]'
                 }`}
               >
-                {antiSpoiler ? 'Ocultar Nombres' : 'Mostrar Nombres'}
+                {antiSpoiler ? t('library.modal.hideNames', 'Ocultar Nombres') : t('library.modal.showNames', 'Mostrar Nombres')}
               </button>
             </div>
           </div>
@@ -309,7 +307,7 @@ export default function GameDetail() {
                         antiSpoiler ? 'blur-xs select-none' : ''
                       }`}
                     >
-                      {track.artist || 'Artista no especificado'}
+                      {track.artist || 'Artista'}
                     </p>
                   </div>
                 </div>
@@ -319,7 +317,7 @@ export default function GameDetail() {
                   type="button"
                   onClick={() => setPreviewTrack(track)}
                   className="w-8 h-8 rounded-xl bg-white border border-[#EAE3D5] flex items-center justify-center text-[#FF5722] hover:bg-[#FF5722] hover:text-white cursor-pointer transition-colors shrink-0"
-                  title="Escuchar prueba de audio"
+                  title={t('gameDetail.previewPlay', 'Escuchar preview')}
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
@@ -336,9 +334,6 @@ export default function GameDetail() {
             <div className="party-card bg-white p-5 sm:p-6 rounded-3xl border-2 border-[#EAE3D5] max-w-md w-full shadow-2xl">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <span className="badge-tag text-[#FF5722] font-black text-[10px]">
-                    PRUEBA DE AUDIO
-                  </span>
                   <h3 className="font-display font-black text-sm text-[#181226] truncate">
                     {previewTrack.title}
                   </h3>
@@ -374,7 +369,7 @@ export default function GameDetail() {
                 onClick={() => setPreviewTrack(null)}
                 className="arcade-btn w-full py-2.5 rounded-xl text-xs font-black text-[#181226] bg-[#FAF7F2] border border-[#EAE3D5] cursor-pointer"
               >
-                Cerrar Reproductor
+                {t('library.modal.close', 'Cerrar')}
               </button>
             </div>
           </div>

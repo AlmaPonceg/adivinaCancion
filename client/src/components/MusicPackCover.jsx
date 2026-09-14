@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { getGameCoverTheme } from '../utils/genreArt';
+import { useTranslation } from '../context/LanguageContext';
 
 export default function MusicPackCover({ genre, title, gameId = '', trackCount = 0, playCount = 0, size = 'normal', isHovered = false }) {
+  const { t } = useTranslation();
   const theme = getGameCoverTheme(genre, title, gameId);
+  const themeKey = theme.key || 'general';
   const [imgError, setImgError] = useState(false);
 
   const isSmall = size === 'small';
@@ -10,6 +13,10 @@ export default function MusicPackCover({ genre, title, gameId = '', trackCount =
 
   const heightClass = isSmall ? 'h-28' : isLarge ? 'h-52 sm:h-64' : 'h-40 sm:h-44';
   const imgSrc = imgError ? theme.fallbackImage : (theme.coverImage || theme.fallbackImage);
+
+  const localizedGenreLabel = t(`library.genreThemes.${themeKey}.label`, theme.label);
+  const localizedTagline = t(`library.genreThemes.${themeKey}.tagline`, theme.tagline);
+  const localizedTrackLabel = trackCount === 1 ? t('library.cards.track', 'tema') : t('library.cards.tracks', 'temas');
 
   return (
     <div className={`relative w-full ${heightClass} rounded-2xl overflow-hidden select-none bg-[#181226] border border-[#EAE3D5] shadow-xs group`}>
@@ -31,7 +38,7 @@ export default function MusicPackCover({ genre, title, gameId = '', trackCount =
       <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
         <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-white/95 text-[#181226] shadow-sm backdrop-blur-xs flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.accent }} />
-          <span>{theme.label}</span>
+          <span>{localizedGenreLabel}</span>
         </span>
       </div>
 
@@ -39,7 +46,7 @@ export default function MusicPackCover({ genre, title, gameId = '', trackCount =
       {isLarge && (
         <div className="absolute bottom-12 left-4 right-4 z-10 pointer-events-none">
           <span className="text-xs font-bold text-white/90 drop-shadow-md tracking-wide">
-            {theme.tagline}
+            {localizedTagline}
           </span>
         </div>
       )}
@@ -62,7 +69,7 @@ export default function MusicPackCover({ genre, title, gameId = '', trackCount =
             <svg className="w-3 h-3 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
             </svg>
-            <span>{trackCount} {trackCount === 1 ? 'tema' : 'temas'}</span>
+            <span>{trackCount} {localizedTrackLabel}</span>
           </span>
         </div>
       </div>
