@@ -175,7 +175,7 @@ export default function HostLobby() {
 
   // ── Manual Player State ─────────────────────────────────────
   const [showManualInput, setShowManualInput] = useState(false);
-  const [manualPlayerName, setManualPlayerName] = useState('');
+  const [manualName, setManualName] = useState('');
   const [manualError, setManualError] = useState('');
 
   // Keep screen awake while in lobby
