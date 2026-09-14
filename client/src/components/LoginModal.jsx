@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 
@@ -205,6 +206,16 @@ export default function LoginModal() {
                     <span>Iniciar Sesión</span>
                   )}
                 </button>
+              </div>
+
+              <div className="pt-3 border-t border-[#EAE3D5] text-center">
+                <Link
+                  to="/admin"
+                  onClick={closeLoginModal}
+                  className="text-[11px] font-bold text-[#8E869E] hover:text-[#46178F] transition-colors"
+                >
+                  Acceso a Moderación y Estadísticas →
+                </Link>
               </div>
             </form>
           </motion.div>
