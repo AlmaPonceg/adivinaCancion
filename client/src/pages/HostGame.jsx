@@ -399,7 +399,7 @@ export default function HostGame() {
       setSpeakCountdown(null);
       return;
     }
-    setSpeakCountdown(7);
+    setSpeakCountdown(10);
     const interval = setInterval(() => {
       setSpeakCountdown((prev) => {
         if (prev === null) return null;

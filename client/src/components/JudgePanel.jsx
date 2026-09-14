@@ -64,7 +64,7 @@ export default function JudgePanel({
           </div>
         )}
 
-        {/* 7s Answer Countdown Bar */}
+        {/* 10s Answer Countdown Bar */}
         {countdown !== null && (
           <div className="mt-4 pt-3 border-t border-[#EAE3D5]">
             <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -100,7 +100,7 @@ export default function JudgePanel({
                     ? 'bg-[#FF5722]'
                     : 'bg-[#059669]'
                 }`}
-                style={{ width: `${(Math.max(0, countdown) / 7) * 100}%` }}
+                style={{ width: `${(Math.max(0, countdown) / 10) * 100}%` }}
               />
             </div>
           </div>
