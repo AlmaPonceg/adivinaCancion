@@ -73,16 +73,16 @@ export default function BackgroundVideo() {
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none no-print"
+      className="fixed inset-0 pointer-events-none -z-10 overflow-hidden select-none no-print"
       style={{
         width: '100vw',
         height: '100dvh',
         minHeight: '-webkit-fill-available',
-        transform: 'translate3d(0, 0, 0)',
-        contain: 'strict',
+        zIndex: -10,
+        pointerEvents: 'none',
       }}
     >
-      {/* ── Video Element: Hardware-accelerated direct overlay plane ── */}
+      {/* ── Video Element: Hardware-accelerated ambient background plane ── */}
       <video
         ref={videoRef}
         src="/almaBaile.mp4"
@@ -91,32 +91,27 @@ export default function BackgroundVideo() {
         muted
         playsInline
         webkit-playsinline="true"
-        x5-playsinline="true"
-        x5-video-player-type="h5-page"
-        x5-video-player-fullscreen="true"
         preload="auto"
         disablePictureInPicture
         disableRemotePlayback
-        className="w-full h-full object-cover object-[center_20%] sm:object-[center_24%] opacity-80 sm:opacity-70"
+        className="w-full h-full object-cover object-[center_20%] sm:object-[center_24%] opacity-35 sm:opacity-45 pointer-events-none"
         style={{
           width: '100%',
           height: '100%',
           objectFit: 'cover',
-          transform: 'translateZ(0)',
-          willChange: 'transform',
-          backfaceVisibility: 'hidden',
-          WebkitBackfaceVisibility: 'hidden',
+          pointerEvents: 'none',
         }}
       />
 
-      {/* ── Soft Daytime Scrim & Glow Overlay (Single combined composited layer) ── */}
+      {/* ── Soft Daytime Scrim & Glow Overlay ── */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background: `
             radial-gradient(ellipse 90% 60% at 50% -15%, rgba(255, 87, 34, 0.08) 0%, transparent 65%),
-            rgba(247, 244, 238, 0.18)
+            rgba(247, 244, 238, 0.25)
           `,
+          pointerEvents: 'none',
         }}
       />
     </div>

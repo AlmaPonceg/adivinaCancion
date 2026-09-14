@@ -126,14 +126,14 @@ export default function PlayerJoin() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
-        className="party-card party-card-glow p-7 sm:p-9 w-full max-w-sm rounded-[2.2rem] relative z-10"
+        className="party-card party-card-glow p-7 sm:p-9 w-full max-w-sm rounded-[2.2rem] relative z-20"
       >
         {/* VIP Pass Header Tag */}
         <div className="text-center mb-7">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F7F4EE] border border-[#E5DFD5] mb-3">
             <span className="w-2 h-2 rounded-full bg-[#059669] shadow-[0_0_8px_#059669]" />
             <span className="text-xs font-bold text-[#FF5722]">
-              Cumple de Alma #24
+              Adiviná la Canción · En Vivo
             </span>
           </div>
           <h1 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[#181226] mb-1">

@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
 import BackgroundVideo from './components/BackgroundVideo';
 import HostLobby from './pages/HostLobby';
 import HostGame from './pages/HostGame';
@@ -14,16 +13,14 @@ export default function App() {
       <div className="relative min-h-dvh">
         <BackgroundVideo />
         <div className="relative z-10">
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/host" element={<HostLobby />} />
-              <Route path="/host/game" element={<HostGame />} />
-              <Route path="/play" element={<PlayerJoin />} />
-              <Route path="/play/buzzer" element={<PlayerBuzzer />} />
-              <Route path="/gameover" element={<GameOver />} />
-            </Routes>
-          </AnimatePresence>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/host" element={<HostLobby />} />
+            <Route path="/host/game" element={<HostGame />} />
+            <Route path="/play" element={<PlayerJoin />} />
+            <Route path="/play/buzzer" element={<PlayerBuzzer />} />
+            <Route path="/gameover" element={<GameOver />} />
+          </Routes>
         </div>
       </div>
     </BrowserRouter>
