@@ -432,7 +432,10 @@ export default function CommunityLibrary() {
                       </div>
 
                       {/* Title & Description */}
-                      <h3 className="font-display font-black text-base text-[#181226] leading-tight mb-1.5 group-hover:text-[#FF5722] transition-colors line-clamp-2">
+                      <h3
+                        onClick={() => navigate(`/game/${game.id}`)}
+                        className="font-display font-black text-base text-[#181226] leading-tight mb-1.5 group-hover:text-[#FF5722] transition-colors line-clamp-2 cursor-pointer"
+                      >
                         {game.title}
                       </h3>
                       {game.description && (
@@ -469,11 +472,11 @@ export default function CommunityLibrary() {
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
-                          onClick={() => handleInspectGame(game)}
+                          onClick={() => navigate(`/game/${game.id}`)}
                           className="arcade-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-[#181226] hover:text-[#FF5722] bg-[#FAF7F2] border border-[#EAE3D5] cursor-pointer"
-                          title="Ver lista de canciones"
+                          title="Ver detalles de la partida"
                         >
-                          Ver Lista
+                          Ver Partida
                         </button>
                         <button
                           type="button"
@@ -569,7 +572,10 @@ export default function CommunityLibrary() {
                         </span>
                       </div>
 
-                      <h3 className="font-display font-black text-base text-[#181226] leading-tight mb-1.5 group-hover:text-[#FF5722] transition-colors">
+                      <h3
+                        onClick={() => navigate(`/game/${game.id}`)}
+                        className="font-display font-black text-base text-[#181226] leading-tight mb-1.5 group-hover:text-[#FF5722] transition-colors cursor-pointer"
+                      >
                         {game.title}
                       </h3>
 
@@ -584,13 +590,21 @@ export default function CommunityLibrary() {
                       </div>
                     </div>
 
-                    {/* Actions: Jugar, Editar, Eliminar */}
+                    {/* Actions: Jugar, Ver, Editar, Eliminar */}
                     <div className="pt-3 border-t border-[#EAE3D5] flex items-center justify-between gap-2 mt-2">
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
+                          onClick={() => navigate(`/game/${game.id}`)}
+                          className="arcade-btn px-2 py-1.5 rounded-xl text-xs font-bold text-[#181226] hover:text-[#FF5722] bg-[#FAF7F2] border border-[#EAE3D5] cursor-pointer"
+                          title="Ver partida"
+                        >
+                          Ver
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => navigate(`/create?id=${game.id}`)}
-                          className="arcade-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-[#574F6B] hover:text-[#181226] bg-[#FAF7F2] border border-[#EAE3D5] cursor-pointer"
+                          className="arcade-btn px-2 py-1.5 rounded-xl text-xs font-bold text-[#574F6B] hover:text-[#181226] bg-[#FAF7F2] border border-[#EAE3D5] cursor-pointer"
                           title="Editar esta partida"
                         >
                           Editar

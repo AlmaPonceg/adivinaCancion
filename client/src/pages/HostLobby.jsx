@@ -62,7 +62,16 @@ export default function HostLobby() {
   const [connectionStatus, setConnectionStatus] = useState(socket.connected ? 'connected' : 'connecting');
 
   // ── Step State: 'mode' | 'playlist' | 'lobby' ───────────────
-  const [setupStep, setSetupStep] = useState('mode');
+  const [setupStep, setSetupStep] = useState(() => {
+    if (location.state?.directLaunch || location.state?.preloadedPlaylist) {
+      return 'lobby';
+    }
+    try {
+      const saved = localStorage.getItem('trivia_playlist');
+      if (saved && JSON.parse(saved).length > 0) return 'lobby';
+    } catch {}
+    return 'mode';
+  });
   const [showTutorial, setShowTutorial] = useState(false);
 
   // Auto-launch tutorial on first visit to the lobby
@@ -740,7 +749,7 @@ export default function HostLobby() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs font-black text-[#181226] truncate">
-                          Playlist de la Partida
+                          {location.state?.gameTitle || 'Playlist de la Partida'}
                         </p>
                         <p className="text-[11px] font-bold truncate transition-colors duration-300" style={{ color: currentTheme.color }}>
                           {playlist.length} {playlist.length === 1 ? 'canción cargada' : 'canciones cargadas'}

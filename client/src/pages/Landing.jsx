@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
@@ -5,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 export default function Landing() {
   const navigate = useNavigate();
   const { isAlmaTheme, openLoginModal, lockTheme } = useTheme();
+  const [roomCodeInput, setRoomCodeInput] = useState('');
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 text-[var(--color-text-primary)] relative">
@@ -122,50 +124,58 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* CTA Buttons */}
+        {/* Action Flows */}
         <div className="flex flex-col gap-3.5">
-          <button
-            onClick={() => navigate('/host')}
-            className="arcade-btn-primary py-4 px-6 rounded-2xl text-base font-black flex items-center justify-center gap-2.5 cursor-pointer"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Crear Sala (Host en Celu o TV)</span>
-          </button>
-
-          <button
-            onClick={() => navigate('/play')}
-            className="arcade-btn py-4 px-6 rounded-2xl text-base font-black text-[#181226] flex items-center justify-center gap-2.5 cursor-pointer"
-          >
-            <svg className="w-5 h-5 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-            <span>Unirme como Jugador con Celular</span>
-          </button>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {/* Quick PIN Join Input (Kahoot-style) */}
+          <div className="p-2.5 rounded-2xl bg-[#FAF7F2] border-2 border-[#E5DFD5] flex items-center gap-2">
+            <input
+              type="text"
+              value={roomCodeInput}
+              onChange={(e) => setRoomCodeInput(e.target.value.toUpperCase().slice(0, 4))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const code = roomCodeInput.trim().toUpperCase();
+                  if (code.length === 4) navigate(`/play?code=${code}`);
+                  else navigate('/play');
+                }
+              }}
+              placeholder="PIN DE SALA (4 LETRAS)"
+              className="flex-1 px-3 py-2.5 bg-white border border-[#E5DFD5] rounded-xl text-center font-display font-black text-sm tracking-widest text-[#181226] placeholder-[#8E869E] uppercase focus:outline-none focus:border-[#FF5722]"
+              maxLength={4}
+            />
             <button
-              onClick={() => navigate('/create')}
-              className="arcade-btn py-3 px-4 rounded-2xl text-xs sm:text-sm font-black text-[#181226] hover:text-[#FF5722] flex items-center justify-center gap-2 cursor-pointer bg-[#FAF7F2] border-2 border-[#E5DFD5] shadow-xs"
+              onClick={() => {
+                const code = roomCodeInput.trim().toUpperCase();
+                if (code.length === 4) navigate(`/play?code=${code}`);
+                else navigate('/play');
+              }}
+              className="arcade-btn px-4 py-2.5 rounded-xl text-xs font-black shrink-0 cursor-pointer bg-white border border-[#E5DFD5] hover:border-[#FF5722] text-[#181226]"
             >
-              <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              <span>Crear Partida</span>
-            </button>
-
-            <button
-              onClick={() => navigate('/library')}
-              className="arcade-btn py-3 px-4 rounded-2xl text-xs sm:text-sm font-black text-[#181226] hover:text-[#FF5722] flex items-center justify-center gap-2 cursor-pointer bg-[#FAF7F2] border-2 border-[#E5DFD5] shadow-xs"
-            >
-              <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              <span>Biblioteca</span>
+              Unirme
             </button>
           </div>
+
+          {/* Primary Host Action: Browse Games in Library to Play */}
+          <button
+            onClick={() => navigate('/library')}
+            className="arcade-btn-primary py-4 px-6 rounded-2xl text-base font-black flex items-center justify-center gap-2.5 cursor-pointer shadow-sm"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <span>Explorar Partidas para Jugar</span>
+          </button>
+
+          {/* Secondary Action: Create New Game (Kahoot Studio) */}
+          <button
+            onClick={() => navigate('/create')}
+            className="arcade-btn py-3 px-6 rounded-2xl text-xs sm:text-sm font-black text-[#181226] hover:text-[#FF5722] flex items-center justify-center gap-2 cursor-pointer bg-[#FAF7F2] border-2 border-[#E5DFD5] shadow-xs"
+          >
+            <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Crear Nueva Partida</span>
+          </button>
         </div>
       </motion.div>
     </div>
