@@ -35,10 +35,14 @@ function AppLayout() {
             <Route path="/planes" element={<PricingPlans />} />
             <Route path="/precios" element={<PricingPlans />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admindashboard" element={<AdminDashboard />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/dashboard" element={<AdminDashboard />} />
             <Route path="/moderador" element={<AdminDashboard />} />
             <Route path="/play" element={<PlayerJoin />} />
             <Route path="/play/buzzer" element={<PlayerBuzzer />} />
             <Route path="/gameover" element={<GameOver />} />
+            <Route path="*" element={<Landing />} />
           </Routes>
         </ErrorBoundary>
       </div>

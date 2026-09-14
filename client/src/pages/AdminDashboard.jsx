@@ -404,14 +404,31 @@ export default function AdminDashboard() {
   // ── RENDER: Dashboard Content ───────────────────────────────
 
   const traffic = data?.traffic || { activeSockets: 0, requestsPerMinute: 0, totalRequests: 0 };
-  const liveRooms = data?.liveRooms || { activeCount: 0, totalPlayersConnected: 0, rooms: [] };
-  const catalog = data?.catalog || { totalGames: 0, publicCount: 0, privateCount: 0, totalRealPlays: 0, totalCatalogTracks: 0, games: [] };
-  const profiles = data?.profiles || { totalCreators: 0, creators: [], totalPlayerSessions: 0, players: [] };
+  const liveRooms = {
+    activeCount: data?.liveRooms?.activeCount || 0,
+    totalPlayersConnected: data?.liveRooms?.totalPlayersConnected || 0,
+    rooms: Array.isArray(data?.liveRooms?.rooms) ? data.liveRooms.rooms : [],
+  };
+  const catalog = {
+    totalGames: data?.catalog?.totalGames || 0,
+    publicCount: data?.catalog?.publicCount || 0,
+    privateCount: data?.catalog?.privateCount || 0,
+    totalRealPlays: data?.catalog?.totalRealPlays || 0,
+    totalCatalogTracks: data?.catalog?.totalCatalogTracks || 0,
+    games: Array.isArray(data?.catalog?.games) ? data.catalog.games : [],
+  };
+  const profiles = {
+    totalCreators: data?.profiles?.totalCreators || 0,
+    creators: Array.isArray(data?.profiles?.creators) ? data.profiles.creators : [],
+    totalPlayerSessions: data?.profiles?.totalPlayerSessions || 0,
+    players: Array.isArray(data?.profiles?.players) ? data.profiles.players : [],
+  };
   const system = data?.system || {};
-  const events = data?.events || [];
+  const events = Array.isArray(data?.events) ? data.events : [];
 
   // Filter games for catalog table
   const filteredGames = catalog.games.filter((g) => {
+    if (!g) return false;
     const q = catalogSearch.toLowerCase().trim();
     const matchesQuery = !q ||
       (g.title || '').toLowerCase().includes(q) ||
@@ -426,7 +443,8 @@ export default function AdminDashboard() {
     return matchesQuery && matchesVisibility;
   });
 
-  const filteredUsers = usersList.filter((u) => {
+  const filteredUsers = (Array.isArray(usersList) ? usersList : []).filter((u) => {
+    if (!u) return false;
     if (!userSearch) return true;
     const q = userSearch.toLowerCase();
     return (
