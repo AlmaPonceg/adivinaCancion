@@ -77,15 +77,19 @@ export default function CommunityLibrary() {
     }
   }, [searchQuery, selectedGenre, selectedSort, baseUrl]);
 
-  // Debounced search on input change
+  // Instant fetch on initial mount or genre change, debounce when typing search query
   useEffect(() => {
     if (activeTab === 'community') {
+      if (!searchQuery.trim()) {
+        fetchCommunityGames();
+        return;
+      }
       const timer = setTimeout(() => {
         fetchCommunityGames();
       }, 250);
       return () => clearTimeout(timer);
     }
-  }, [fetchCommunityGames, activeTab]);
+  }, [fetchCommunityGames, activeTab, searchQuery]);
 
   // ── Fetch My Created Games ─────────────────────────────────
   const fetchMyGames = useCallback(async () => {
@@ -246,33 +250,33 @@ export default function CommunityLibrary() {
 
   return (
     <div className="min-h-screen bg-[#F5F2EB] text-[#181226] pb-16">
-      {/* ── Top Header Navigation (Kahoot-Style) ─────────────────── */}
-      <header className="bg-white border-b-2 border-[#EAE3D5] sticky top-0 z-30 shadow-xs">
+      {/* ── Top Header Navigation (Kahoot-Style Stage Purple) ──── */}
+      <header className="bg-[#46178F] border-b-4 border-[#2A0C59] sticky top-0 z-30 shadow-lg text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           {/* Left: Brand & Back */}
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="arcade-btn px-3 py-1.5 rounded-xl text-xs font-bold text-[#181226] hover:text-[#FF5722] flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 rounded-xl text-xs font-black text-white bg-white/10 hover:bg-white/20 border-t border-white/20 border-b-3 border-black/30 active:translate-y-0.5 active:border-b-0 flex items-center gap-1.5 cursor-pointer transition-all"
             >
-              <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-4 h-4 text-[#00E676]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               <span>Volver</span>
             </button>
 
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-[#FF5722] flex items-center justify-center text-white shadow-xs">
+              <div className="w-8 h-8 rounded-xl bg-[#00E676] text-[#023618] flex items-center justify-center font-black shadow-md">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                 </svg>
               </div>
               <div>
-                <h1 className="text-base sm:text-lg font-black tracking-tight text-[#181226] leading-none">
+                <h1 className="text-base sm:text-lg font-black tracking-tight text-white leading-none">
                   Biblioteca de Música
                 </h1>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#FF5722]">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#00E676]">
                   Partidas Comunitarias & Propias
                 </span>
               </div>
@@ -289,33 +293,33 @@ export default function CommunityLibrary() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar canciones, creador o género..."
-                className="w-full pl-9 pr-4 py-2 bg-[#FAF8F5] border-2 border-[#EAE3D5] rounded-xl text-xs font-semibold text-[#181226] placeholder-[#94A3B8] focus:outline-none focus:border-[#FF5722] focus:bg-white shadow-inner"
+                className="w-full pl-9 pr-4 py-2 bg-white text-[#181226] placeholder-[#8E869E] rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#00E676] shadow-inner border-0"
               />
-              <svg className="w-4 h-4 text-[#94A3B8] absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-4 h-4 text-[#64748B] absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
               </svg>
             </div>
           </div>
 
           {/* Right: Tab Toggle & Create Button */}
-          <div className="flex items-center gap-2">
-            <div className="bg-[#FAF8F5] p-1 rounded-xl border border-[#EAE3D5] flex items-center gap-1 text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="bg-black/25 p-1 rounded-xl border border-white/10 flex items-center gap-1 text-xs">
               <button
                 onClick={() => { setActiveTab('community'); setSelectedGenre('all'); }}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg font-black transition-all cursor-pointer ${
                   activeTab === 'community'
-                    ? 'bg-[#181226] text-white shadow-xs'
-                    : 'text-[#64748B] hover:text-[#181226]'
+                    ? 'bg-white text-[#46178F] shadow-sm'
+                    : 'text-white/75 hover:text-white'
                 }`}
               >
                 Comunidad
               </button>
               <button
                 onClick={() => setActiveTab('my_games')}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg font-black transition-all cursor-pointer ${
                   activeTab === 'my_games'
-                    ? 'bg-[#181226] text-white shadow-xs'
-                    : 'text-[#64748B] hover:text-[#181226]'
+                    ? 'bg-white text-[#46178F] shadow-sm'
+                    : 'text-white/75 hover:text-white'
                 }`}
               >
                 Mis Partidas ({myGames.length})
@@ -324,7 +328,7 @@ export default function CommunityLibrary() {
 
             <button
               onClick={() => navigate('/create')}
-              className="py-2 px-3.5 bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
+              className="arcade-btn-ruby py-2 px-3.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-md"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -334,22 +338,25 @@ export default function CommunityLibrary() {
           </div>
         </div>
 
-        {/* Quick Genre Pills (Horizontal bar) */}
+        {/* Quick Genre Pills (Horizontal bar with arcade buttons) */}
         {activeTab === 'community' && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 border-t border-[#EAE3D5] flex items-center gap-2 overflow-x-auto no-scrollbar">
-            {GENRE_FILTERS.map((gf) => (
-              <button
-                key={gf.id}
-                onClick={() => setSelectedGenre(gf.id)}
-                className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 border ${
-                  selectedGenre === gf.id
-                    ? 'bg-[#181226] text-white border-[#181226] shadow-xs'
-                    : 'bg-[#FAF8F5] text-[#64748B] hover:text-[#181226] border-[#EAE3D5]'
-                }`}
-              >
-                <span>{gf.label}</span>
-              </button>
-            ))}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 border-t border-white/10 flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {GENRE_FILTERS.map((gf) => {
+              const isSelected = selectedGenre === gf.id;
+              return (
+                <button
+                  key={gf.id}
+                  onClick={() => setSelectedGenre(gf.id)}
+                  className={`px-3 py-1 rounded-full text-xs font-black shrink-0 transition-all cursor-pointer flex items-center gap-1.5 border-b-2 active:translate-y-0.5 active:border-b-0 ${
+                    isSelected
+                      ? 'bg-[#00E676] text-[#023618] border-[#00A854] shadow-sm'
+                      : 'bg-white/10 hover:bg-white/20 text-white/90 border-black/20'
+                  }`}
+                >
+                  <span>{gf.label}</span>
+                </button>
+              );
+            })}
           </div>
         )}
       </header>
@@ -375,33 +382,33 @@ export default function CommunityLibrary() {
                 {/* ── 0. KAHOOT-STYLE MOOD TILES (Categorías visuales con foto) ── */}
                 <section className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#FF5722]">
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#E21B3C]">
                       EXPLORÁ POR TEMÁTICA
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
                     {MOOD_TILES.map((tile) => (
                       <div
                         key={tile.id}
                         onClick={() => setSelectedGenre(tile.id)}
-                        className={`group relative h-24 sm:h-28 rounded-2xl overflow-hidden border-2 ${tile.borderColor} shadow-xs hover:shadow-md cursor-pointer transition-all duration-200 flex flex-col justify-end p-3`}
+                        className={`group relative h-28 sm:h-32 rounded-2xl overflow-hidden border-2 ${tile.borderColor} border-b-[6px] border-black/35 shadow-md hover:-translate-y-1 active:translate-y-1 active:border-b-2 cursor-pointer transition-all duration-150 flex flex-col justify-end p-3 select-none`}
                       >
                         {/* Background Photo with dark gradient */}
                         <img
                           src={tile.image}
                           alt={tile.title}
-                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 pointer-events-none"
                         />
-                        <div className={`absolute inset-0 ${tile.bgColor}/80 mix-blend-multiply transition-opacity`} />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                        <div className={`absolute inset-0 ${tile.bgColor}/75 mix-blend-multiply transition-opacity`} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
 
                         {/* Title & Subtitle */}
                         <div className="relative z-10">
-                          <h4 className="font-black text-xs sm:text-sm text-white leading-tight">
+                          <h4 className="font-black text-xs sm:text-sm text-white leading-tight drop-shadow-sm">
                             {tile.title}
                           </h4>
-                          <p className="text-[10px] text-white/75 font-medium truncate mt-0.5">
+                          <p className="text-[10px] text-white/80 font-bold truncate mt-0.5 drop-shadow-xs">
                             {tile.subtitle}
                           </p>
                         </div>
@@ -414,7 +421,7 @@ export default function CommunityLibrary() {
                 <section className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#FF5722]">
+                      <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#E21B3C]">
                         SELECCIÓN ESPECIAL
                       </span>
                       <h2 className="text-xl font-black text-[#181226] tracking-tight">
@@ -429,7 +436,7 @@ export default function CommunityLibrary() {
                         key={game.id}
                         onMouseEnter={() => setHoveredCardId(game.id)}
                         onMouseLeave={() => setHoveredCardId(null)}
-                        className="group bg-white rounded-3xl border-2 border-[#EAE3D5] p-3.5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+                        className="group bg-white rounded-3xl border-2 border-[#DDD5C5] border-b-[6px] border-[#CCC2AF] p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between"
                       >
                         <div>
                           {/* Real photo cover */}
@@ -447,7 +454,7 @@ export default function CommunityLibrary() {
 
                           <h3
                             onClick={() => navigate(`/game/${game.id}`)}
-                            className="font-black text-base text-[#181226] group-hover:text-[#FF5722] transition-colors leading-snug line-clamp-1 mb-1 cursor-pointer"
+                            className="font-black text-base text-[#181226] group-hover:text-[#E21B3C] transition-colors leading-snug line-clamp-1 mb-1 cursor-pointer"
                           >
                             {game.title}
                           </h3>
@@ -458,7 +465,7 @@ export default function CommunityLibrary() {
 
                         <div className="pt-3 border-t border-[#EAE3D5] flex items-center justify-between">
                           <div className="flex items-center gap-1.5 text-xs font-bold text-[#64748B]">
-                            <div className="w-5 h-5 rounded-full bg-[#181226] text-white flex items-center justify-center text-[10px]">
+                            <div className="w-5 h-5 rounded-full bg-[#181226] text-white flex items-center justify-center text-[10px] font-black">
                               {(game.creatorName || 'C').charAt(0).toUpperCase()}
                             </div>
                             <span className="truncate max-w-[120px]">{game.creatorName || 'Comunidad'}</span>
@@ -467,14 +474,14 @@ export default function CommunityLibrary() {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => navigate(`/game/${game.id}`)}
-                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FAF8F5] hover:bg-[#F3EFE6] text-[#181226] border border-[#EAE3D5] cursor-pointer"
+                              className="arcade-btn px-3 py-1.5 text-xs font-bold cursor-pointer"
                             >
                               Ver
                             </button>
                             <button
                               onClick={() => handlePlayGame(game)}
                               disabled={launchingId === game.id}
-                              className="px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-[#FF5722] hover:bg-[#E64A19] text-white shadow-xs cursor-pointer flex items-center gap-1"
+                              className="arcade-btn-ruby px-4 py-1.5 text-xs font-black uppercase tracking-wider cursor-pointer flex items-center gap-1"
                             >
                               <span>{launchingId === game.id ? 'Iniciando...' : 'Jugar'}</span>
                             </button>
@@ -486,10 +493,10 @@ export default function CommunityLibrary() {
                 </section>
 
                 {/* ── 2. RANKING STRIP: Top Partidas (#1 a #4) ───── */}
-                <section className="bg-white rounded-3xl p-6 border-2 border-[#EAE3D5] shadow-xs space-y-4">
+                <section className="bg-white rounded-3xl p-6 border-2 border-[#DDD5C5] border-b-[6px] border-[#CCC2AF] shadow-sm space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF5722]">
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E21B3C]">
                         PODIUM DE LA COMUNIDAD
                       </span>
                       <h2 className="text-lg font-black text-[#181226] tracking-tight">
@@ -501,16 +508,16 @@ export default function CommunityLibrary() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {topRankedGames.map((game, index) => {
                       const rankColors = [
-                        'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]', // #1 Gold
-                        'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]', // #2 Silver
-                        'bg-[#FFEDD5] text-[#C2410C] border-[#FED7AA]', // #3 Bronze
-                        'bg-[#F3E8FF] text-[#7E22CE] border-[#E9D5FF]', // #4 Purple
+                        'bg-[#FFD600] text-[#2A1F00] border-[#B29500] shadow-xs', // #1 Gold
+                        'bg-[#F1F5F9] text-[#1E293B] border-[#94A3B8] shadow-xs', // #2 Silver
+                        'bg-[#FFEDD5] text-[#9A3412] border-[#FDBA74] shadow-xs', // #3 Bronze
+                        'bg-[#F3E8FF] text-[#46178F] border-[#D8B4FE] shadow-xs', // #4 Purple
                       ];
 
                       return (
                         <div
                           key={game.id}
-                          className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#EAE3D5] hover:border-[#FF5722]/50 hover:bg-white transition-all flex flex-col justify-between"
+                          className="p-3.5 rounded-2xl bg-[#FAF8F5] border-2 border-[#EAE3D5] border-b-4 border-[#DDD5C5] hover:border-[#E21B3C]/60 hover:bg-white transition-all flex flex-col justify-between"
                         >
                           <div>
                             {/* Photo Thumbnail */}
@@ -526,7 +533,7 @@ export default function CommunityLibrary() {
                             </div>
 
                             <div className="flex items-center gap-1.5 mb-1">
-                              <span className={`w-5 h-5 rounded-lg font-black text-[10px] flex items-center justify-center border ${rankColors[index] || rankColors[3]}`}>
+                              <span className={`w-5 h-5 rounded-md font-black text-[10px] flex items-center justify-center border ${rankColors[index] || rankColors[3]}`}>
                                 #{index + 1}
                               </span>
                               <h4 className="font-bold text-xs text-[#181226] line-clamp-1">
@@ -540,14 +547,14 @@ export default function CommunityLibrary() {
                           </div>
 
                           <div className="pt-2 border-t border-[#EAE3D5] flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-[#FF5722] flex items-center gap-1">
+                            <span className="text-[10px] font-black text-[#E21B3C] flex items-center gap-1 font-mono">
                               <span>▶</span>
                               <span>{game.playCount || 0} jugadas</span>
                             </span>
 
                             <button
                               onClick={() => navigate(`/game/${game.id}`)}
-                              className="px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#EAE3D5] text-[11px] font-bold text-[#181226] cursor-pointer"
+                              className="arcade-btn-ruby px-3 py-1 text-[11px] font-black uppercase tracking-wider cursor-pointer"
                             >
                               Jugar
                             </button>
@@ -947,7 +954,7 @@ function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onView
     <div
       onMouseEnter={() => setHoveredCardId(game.id)}
       onMouseLeave={() => setHoveredCardId(null)}
-      className="group bg-white rounded-3xl border-2 border-[#EAE3D5] p-3.5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+      className="group bg-white rounded-3xl border-2 border-[#DDD5C5] border-b-[6px] border-[#CCC2AF] p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between"
     >
       <div>
         {/* Real Photographic Cover */}
@@ -965,7 +972,7 @@ function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onView
         {/* Card Header & Title */}
         <h3
           onClick={onViewDetail}
-          className="font-black text-sm text-[#181226] group-hover:text-[#FF5722] transition-colors leading-snug line-clamp-1 mb-1 cursor-pointer"
+          className="font-black text-sm text-[#181226] group-hover:text-[#E21B3C] transition-colors leading-snug line-clamp-1 mb-1 cursor-pointer"
         >
           {game.title}
         </h3>
@@ -978,7 +985,7 @@ function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onView
         {Array.isArray(game.sampleTracks) && game.sampleTracks.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             {game.sampleTracks.slice(0, 2).map((st, i) => (
-              <span key={i} className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#FAF8F5] border border-[#EAE3D5] text-[#64748B] max-w-[140px] truncate">
+              <span key={i} className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#FAF8F5] border border-[#EAE3D5] text-[#64748B] max-w-[140px] truncate">
                 {st.title}
               </span>
             ))}
@@ -989,16 +996,16 @@ function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onView
       {/* Footer & Actions */}
       <div className="pt-3 border-t border-[#EAE3D5] flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-xs font-bold text-[#64748B]">
-          <div className="w-5 h-5 rounded-full bg-[#181226] text-white flex items-center justify-center text-[9px]">
+          <div className="w-5 h-5 rounded-full bg-[#240947] text-white flex items-center justify-center text-[9px] font-black">
             {(game.creatorName || 'C').charAt(0).toUpperCase()}
           </div>
           <span className="truncate max-w-[100px]">{game.creatorName || 'Comunidad'}</span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <button
             onClick={onViewDetail}
-            className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-[#FAF8F5] hover:bg-[#F3EFE6] text-[#181226] border border-[#EAE3D5] cursor-pointer"
+            className="arcade-btn px-3 py-1.5 text-xs font-bold cursor-pointer"
             title="Ver detalles de la partida"
           >
             Ver
@@ -1007,7 +1014,7 @@ function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onView
           <button
             onClick={onPlay}
             disabled={isLaunching}
-            className="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-[#FF5722] hover:bg-[#E64A19] text-white shadow-xs cursor-pointer flex items-center gap-1"
+            className="arcade-btn-ruby px-4 py-1.5 text-xs font-black uppercase tracking-wider cursor-pointer flex items-center gap-1"
           >
             <span>{isLaunching ? '...' : 'Jugar'}</span>
           </button>

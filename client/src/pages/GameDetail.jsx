@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { SERVER_URL } from '../socket';
 import { extractYoutubeId } from '../utils/trackHelper';
+import MusicPackCover from '../components/MusicPackCover';
 
 export default function GameDetail() {
   const { id } = useParams();
@@ -170,26 +171,39 @@ export default function GameDetail() {
           </div>
         </header>
 
-        {/* ── Game Hero Card (Kahoot-style Game Overview) ───────── */}
-        <div className="party-card bg-white p-6 sm:p-8 rounded-3xl border-2 border-[#EAE3D5] shadow-sm mb-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        {/* ── Game Hero Card (Kahoot-style Game Overview with Photography) ──── */}
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border-2 border-[#DDD5C5] border-b-[6px] border-[#CCC2AF] shadow-sm mb-6">
+          <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+            {/* Left: Photographic Cover */}
+            <div className="w-full md:w-64 shrink-0">
+              <MusicPackCover
+                genre={game.genre}
+                title={game.title}
+                gameId={game.id}
+                trackCount={game.tracks?.length || 0}
+                playCount={game.playCount || 0}
+                size="normal"
+              />
+            </div>
+
+            {/* Middle: Details */}
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-2.5">
-                <span className="badge-tag text-[#FF5722] font-black text-xs">
+                <span className="badge-tag text-[#E21B3C] font-black text-xs">
                   {game.genre || 'General'}
                 </span>
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase ${
                   game.isPublic ? 'bg-[#ECFDF5] text-[#059669]' : 'bg-[#F5F3FF] text-[#7C3AED]'
                 }`}>
                   {game.isPublic ? 'Pública' : 'Privada'}
                 </span>
                 <span className="text-xs text-[#8E869E]">·</span>
-                <span className="text-xs font-bold text-[#6B6280]">
+                <span className="text-xs font-black text-[#6B6280] font-mono">
                   {game.playCount || 0} jugadas
                 </span>
               </div>
 
-              <h1 className="font-display font-black text-2xl sm:text-4xl text-[#181226] tracking-tight mb-2 leading-tight">
+              <h1 className="font-display font-black text-2xl sm:text-3xl text-[#181226] tracking-tight mb-2 leading-tight">
                 {game.title}
               </h1>
 
@@ -204,18 +218,18 @@ export default function GameDetail() {
                   Creada por: <span className="text-[#181226] font-black">{game.creatorName || 'Comunidad'}</span>
                 </div>
                 <div>
-                  Contenido: <span className="text-[#FF5722] font-black">{game.tracks?.length || 0} canciones</span>
+                  Contenido: <span className="text-[#E21B3C] font-black">{game.tracks?.length || 0} canciones</span>
                 </div>
               </div>
             </div>
 
-            {/* Big Kahoot "JUGAR / START" Action Button */}
-            <div className="shrink-0 flex flex-col items-center">
+            {/* Right: Big Volumetric 3D "JUGAR / START" Action Button */}
+            <div className="shrink-0 flex flex-col items-center w-full md:w-auto pt-2 md:pt-0">
               <button
                 type="button"
                 onClick={handleStartGame}
                 disabled={isLaunching}
-                className="arcade-btn-primary px-8 py-5 rounded-2xl text-base sm:text-lg font-black flex items-center justify-center gap-3 shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 w-full sm:w-auto"
+                className="arcade-btn-ruby px-8 py-5 rounded-2xl text-base sm:text-lg font-black flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50 w-full shadow-lg"
               >
                 {isLaunching ? (
                   <>
@@ -227,19 +241,19 @@ export default function GameDetail() {
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z" />
                     </svg>
-                    <span>EMPEZAR PARTIDA (JUGAR)</span>
+                    <span>EMPEZAR PARTIDA</span>
                   </>
                 )}
               </button>
               <span className="text-[11px] font-bold text-[#8E869E] mt-2 text-center">
-                Abre la pantalla de la sala con el PIN para que se unan los jugadores
+                Abre la pantalla de la sala con el PIN para los jugadores
               </span>
             </div>
           </div>
         </div>
 
         {/* ── Tracklist / Preguntas Section ───────────────────────── */}
-        <div className="party-card bg-white p-6 sm:p-8 rounded-3xl border-2 border-[#EAE3D5] shadow-sm flex-1 flex flex-col">
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border-2 border-[#DDD5C5] border-b-[6px] border-[#CCC2AF] shadow-sm flex-1 flex flex-col">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#EAE3D5] mb-4">
             <div>
               <h2 className="font-display font-black text-sm uppercase tracking-wider text-[#181226] flex items-center gap-2">

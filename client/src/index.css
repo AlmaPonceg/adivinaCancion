@@ -17,6 +17,15 @@
   --color-neon-emerald: #059669;
   --color-text-on-dark: #181226;
   --color-text-muted-dark: #6B6280;
+
+  /* Arcade Game Show Palette (Kahoot-inspired) */
+  --color-stage-dark: #240947;
+  --color-stage-purple: #46178F;
+  --color-stage-purple-dark: #320F6B;
+  --color-action-ruby: #E21B3C;
+  --color-energy-lime: #00E676;
+  --color-tension-gold: #FFD600;
+  --color-game-cyan: #1368CE;
 }
 
 :root {
@@ -34,6 +43,18 @@
   --color-accent-gold: #D97706;
   --color-accent-cyan: #0284C7;
   --color-accent-violet: #6366F1;
+
+  /* Arcade Game Show Architecture Tokens */
+  --color-stage-dark: #240947;
+  --color-stage-purple: #46178F;
+  --color-stage-purple-dark: #320F6B;
+  --color-action-ruby: #E21B3C;
+  --color-energy-lime: #00E676;
+  --color-tension-gold: #FFD600;
+  --color-game-cyan: #1368CE;
+
+  --arcade-border-radius: 1.5rem;
+  --arcade-chunky-depth: 6px;
 
   --font-display: 'Syne', -apple-system, sans-serif;
   --font-tactical: 'Space Grotesk', -apple-system, sans-serif;
@@ -272,6 +293,202 @@ h1, h2, h3, .font-heading, .font-display {
   box-shadow: 0 1px 0 #065F46,
               0 4px 10px rgba(5, 150, 105, 0.25),
               inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* ── Kahoot-Inspired High-Voltage Arcade 3D Chunky Buttons ─────── */
+
+/* Action Ruby Button (#E21B3C) */
+.arcade-btn-ruby {
+  background: #E21B3C;
+  color: #FFFFFF;
+  border-radius: 1.125rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 6px 0 #9E1027,
+              0 12px 24px -2px rgba(226, 27, 60, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.08s ease, filter 0.08s ease;
+  cursor: pointer;
+  font-family: var(--font-tactical);
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  user-select: none;
+}
+
+.arcade-btn-ruby:hover:not(:disabled) {
+  filter: brightness(1.09);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #9E1027,
+              0 16px 28px -2px rgba(226, 27, 60, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.arcade-btn-ruby:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #9E1027,
+              0 4px 10px rgba(226, 27, 60, 0.25),
+              inset 0 2px 4px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Energy Lime Button (#00E676) */
+.arcade-btn-lime {
+  background: #00E676;
+  color: #023618;
+  border-radius: 1.125rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 6px 0 #00A854,
+              0 12px 24px -2px rgba(0, 230, 118, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.08s ease, filter 0.08s ease;
+  cursor: pointer;
+  font-family: var(--font-tactical);
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  user-select: none;
+}
+
+.arcade-btn-lime:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #00A854,
+              0 16px 28px -2px rgba(0, 230, 118, 0.45),
+              inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.arcade-btn-lime:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #00A854,
+              0 4px 10px rgba(0, 230, 118, 0.25),
+              inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Stage Purple Button (#46178F) */
+.arcade-btn-purple {
+  background: #46178F;
+  color: #FFFFFF;
+  border-radius: 1.125rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 6px 0 #2A0C59,
+              0 12px 24px -2px rgba(70, 23, 143, 0.45),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.08s ease, filter 0.08s ease;
+  cursor: pointer;
+  font-family: var(--font-tactical);
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  user-select: none;
+}
+
+.arcade-btn-purple:hover:not(:disabled) {
+  filter: brightness(1.12);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #2A0C59,
+              0 16px 28px -2px rgba(70, 23, 143, 0.55),
+              inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.arcade-btn-purple:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #2A0C59,
+              0 4px 10px rgba(70, 23, 143, 0.3),
+              inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Tension Gold Button (#FFD600) */
+.arcade-btn-gold {
+  background: #FFD600;
+  color: #2A1F00;
+  border-radius: 1.125rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 6px 0 #B29500,
+              0 12px 24px -2px rgba(255, 214, 0, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.08s ease, filter 0.08s ease;
+  cursor: pointer;
+  font-family: var(--font-tactical);
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  user-select: none;
+}
+
+.arcade-btn-gold:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #B29500,
+              0 16px 28px -2px rgba(255, 214, 0, 0.45);
+}
+
+.arcade-btn-gold:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #B29500,
+              0 4px 10px rgba(255, 214, 0, 0.25),
+              inset 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Electric Cyan Button (#1368CE) */
+.arcade-btn-cyan {
+  background: #1368CE;
+  color: #FFFFFF;
+  border-radius: 1.125rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 6px 0 #0B4A94,
+              0 12px 24px -2px rgba(19, 104, 206, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.08s ease, filter 0.08s ease;
+  cursor: pointer;
+  font-family: var(--font-tactical);
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  user-select: none;
+}
+
+.arcade-btn-cyan:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #0B4A94,
+              0 16px 28px -2px rgba(19, 104, 206, 0.5);
+}
+
+.arcade-btn-cyan:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #0B4A94,
+              0 4px 10px rgba(19, 104, 206, 0.25),
+              inset 0 2px 4px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* ── Arcade Cards & Surfaces ─────────────────────────────────── */
+
+.arcade-card-pop {
+  background: #FFFFFF;
+  border-radius: 1.5rem;
+  border: 2px solid #EAE3D5;
+  box-shadow: 0 6px 0 #DDD5C5,
+              0 16px 32px -4px rgba(24, 18, 38, 0.1);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.arcade-card-pop:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 9px 0 #DDD5C5,
+              0 22px 38px -4px rgba(24, 18, 38, 0.14);
+}
+
+.arcade-surface-stage {
+  background: #46178F;
+  border-radius: 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 0 #2A0C59,
+              0 20px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* Screen Shake Microinteraction */
+@keyframes arcadeShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.arcade-shake {
+  animation: arcadeShake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
 
