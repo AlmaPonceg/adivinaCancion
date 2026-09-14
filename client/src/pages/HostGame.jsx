@@ -511,16 +511,6 @@ export default function HostGame() {
           </button>
 
           <button
-            type="button"
-            onClick={() => setShowTutorial(true)}
-            className="arcade-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-[#6B6280] hover:text-[#FF5722] flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            title="Ver tutorial guiado de los controles de la partida"
-          >
-            <span className="w-4 h-4 rounded-full bg-[#FF5722] text-white flex items-center justify-center text-[10px] font-black leading-none">?</span>
-            <span>Tutorial</span>
-          </button>
-
-          <button
             id="tour-game-autohost-btn"
             type="button"
             onClick={toggleAutoHost}
@@ -971,6 +961,19 @@ export default function HostGame() {
           </div>
         </div>
       )}
+
+      {/* Floating Round Tutorial Help Button (Bottom-Right) */}
+      <button
+        type="button"
+        onClick={() => setShowTutorial(true)}
+        className="fixed bottom-4 right-4 z-40 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-[#EAE3D5] text-[#FF5722] hover:bg-[#FFF0EB] hover:scale-110 active:scale-95 shadow-md flex items-center justify-center cursor-pointer transition-all group"
+        title="Ver tutorial guiado de los controles de la partida"
+        aria-label="Ver tutorial guiado"
+      >
+        <span className="font-display font-black text-lg sm:text-xl leading-none group-hover:scale-110 transition-transform">
+          ?
+        </span>
+      </button>
 
       {/* In-Game Controls Guided Tutorial */}
       <SpotlightTutorial
