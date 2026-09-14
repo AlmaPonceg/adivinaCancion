@@ -12,9 +12,11 @@ export default function Landing() {
     <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 text-[var(--color-text-primary)] relative">
       {/* Top Navbar */}
       <header className="w-full max-w-xl flex items-center justify-between py-3 mb-3 z-20">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#181226] flex items-center justify-center text-white text-xs font-black shadow-2xs">
-            ♪
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-[#46178F] text-white flex items-center justify-center shadow-xs">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+            </svg>
           </div>
           <span className="font-display font-black text-sm text-[#181226] tracking-tight">
             Adiviná la Canción
