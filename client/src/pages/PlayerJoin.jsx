@@ -123,9 +123,6 @@ export default function PlayerJoin() {
   // ── Join Form View (Daytime VIP Pass) ────────────────────────
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 text-[var(--color-text-primary)] relative overflow-hidden">
-      {/* Sunlit ambient glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FF5722]/10 rounded-full blur-3xl pointer-events-none" />
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

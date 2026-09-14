@@ -339,16 +339,6 @@ export default function PlaylistSetup({
 
   return (
     <div className="h-screen max-h-screen p-3 sm:p-4 flex flex-col text-[var(--color-text-primary)] relative overflow-hidden">
-      {/* Dynamic ambient color glow matching current mode */}
-      <div
-        className="absolute top-[-10%] left-[20%] w-96 h-96 rounded-full blur-3xl pointer-events-none opacity-15 transition-all duration-700"
-        style={{ backgroundColor: currentTheme?.color || '#FF5722' }}
-      />
-      <div
-        className="absolute bottom-[-10%] right-[20%] w-96 h-96 rounded-full blur-3xl pointer-events-none opacity-15 transition-all duration-700"
-        style={{ backgroundColor: currentTheme?.color || '#FF5722' }}
-      />
-
       <div className="max-w-7xl w-full mx-auto flex-1 flex flex-col min-h-0 relative z-10">
         {/* ── Top Header Navigation Bar ────────────────────────────── */}
         <div className="flex items-center justify-between gap-3 mb-2.5 shrink-0">

@@ -1124,19 +1124,6 @@ export default function PlayerBuzzer() {
         )
       ) : (
         <div className="relative flex flex-col items-center justify-center my-auto py-2 w-full">
-          {/* Ambient reactive back-glow */}
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-3xl pointer-events-none transition-all duration-700 ease-out -z-0"
-            style={{
-              backgroundColor: playerState.isMyTurn
-                ? '#059669'
-                : playerState.canBuzz
-                ? (playerState.teamColor || '#FF5722')
-                : 'transparent',
-              opacity: playerState.isMyTurn ? 0.25 : playerState.canBuzz ? 0.2 : 0,
-              transform: playerState.canBuzz || playerState.isMyTurn ? 'translate(-50%, -50%) scale(1.18)' : 'translate(-50%, -50%) scale(0.8)',
-            }}
-          />
 
           {/* Player Gamer Profile Card (Daytime High Contrast) */}
           <div className="flex flex-col items-center mb-5 z-10">

@@ -528,15 +528,6 @@ export default function HostLobby() {
   if (setupStep === 'mode') {
     return (
       <div className="h-screen max-h-screen p-3 sm:p-4 md:p-6 flex items-center justify-center relative overflow-hidden text-[var(--color-text-primary)]">
-        <div
-          className="absolute -top-12 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-20 pointer-events-none transition-all duration-700"
-          style={{ backgroundColor: currentTheme.color }}
-        />
-        <div
-          className="absolute -bottom-12 right-1/4 w-96 h-96 rounded-full blur-3xl opacity-20 pointer-events-none transition-all duration-700"
-          style={{ backgroundColor: currentTheme.color }}
-        />
-
         <div className="w-full max-w-xl relative z-10 flex items-center justify-center">
           <GameModeSelector
             roomCode={roomCode}
@@ -569,12 +560,6 @@ export default function HostLobby() {
   // ── STEP 3: Clean Host Lobby View ───────────────────────────
   return (
     <div className="min-h-screen lg:h-screen lg:max-h-screen p-3 sm:p-4 flex flex-col text-[var(--color-text-primary)] relative overflow-y-auto lg:overflow-hidden">
-      {/* Ambient background glow tailored to active mode color */}
-      <div
-        className="absolute top-[-10%] left-[20%] w-96 h-96 rounded-full blur-3xl pointer-events-none opacity-15 transition-all duration-700"
-        style={{ backgroundColor: currentTheme.color }}
-      />
-
       <div className="max-w-7xl w-full mx-auto flex-1 flex flex-col min-h-0 relative z-10">
         {/* ── Master Console Header Bar ────────────────────────────── */}
         <div className="flex items-center justify-between gap-3 mb-2.5 shrink-0">

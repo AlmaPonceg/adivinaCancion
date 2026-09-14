@@ -937,10 +937,6 @@ const MusicPlayer = forwardRef(function MusicPlayer(
 
   return (
     <div className="party-card p-5 sm:p-7 rounded-[2rem] text-[#FAF8F5] relative overflow-hidden">
-      {/* Background ambient lighting glow */}
-      <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#FF5E36]/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-[#FF1493]/15 rounded-full blur-3xl pointer-events-none" />
-
       {/* Native HTML5 Audio Element for Local Offline Tracks */}
       <audio
         ref={audioPlayerRef}

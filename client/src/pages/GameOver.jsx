@@ -40,10 +40,6 @@ export default function GameOver() {
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 text-[var(--color-text-primary)] relative overflow-hidden">
-      {/* Ambient victory stage lights */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#F59E0B]/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-80 h-80 bg-[#FF5722]/08 rounded-full blur-3xl pointer-events-none" />
-
       <div className="w-full max-w-md relative z-10">
         {/* Winner Card */}
         <motion.div

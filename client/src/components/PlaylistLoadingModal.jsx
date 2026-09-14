@@ -58,7 +58,6 @@ export default function PlaylistLoadingModal({
 
             {/* Animated Vinyl Disc */}
             <div className="relative my-2">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#FF5722]/20 to-[#E11D48]/20 blur-xl scale-125 pointer-events-none" />
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ repeat: Infinity, duration: 3.5, ease: 'linear' }}
