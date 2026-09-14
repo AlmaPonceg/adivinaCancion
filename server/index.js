@@ -191,7 +191,7 @@ app.post('/api/playlist', async (req, res) => {
   }
 });
 
-// Interactive song search endpoint (Fast YouTube suggestions with thumbnails & duration)
+// Interactive song search endpoint (Fast YouTube suggestions with thumbnails, duration, and embeddability check)
 app.get('/api/search-songs', async (req, res) => {
   try {
     const query = String(req.query.q || '').trim();
@@ -204,7 +204,7 @@ app.get('/api/search-songs', async (req, res) => {
     const searchRes = await yt.search(query, { type: 'video' });
     const videos = searchRes.videos || [];
 
-    const results = [];
+    const candidates = [];
     for (const v of videos.slice(0, 15)) {
       const id = v.id || v.content_id;
       const title = v.title?.text || v.title?.toString() || v.metadata?.title?.text;
@@ -213,8 +213,8 @@ app.get('/api/search-songs', async (req, res) => {
       const thumbnail = v.thumbnails?.[0]?.url || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null);
 
       if (id && title) {
-        results.push({
-          id,
+        candidates.push({
+          id: String(id).trim(),
           title: title.trim(),
           author: author.trim(),
           duration: duration.trim(),
@@ -224,7 +224,22 @@ app.get('/api/search-songs', async (req, res) => {
       }
     }
 
-    res.json({ success: true, results });
+    // Pre-verify candidates in parallel (filter out videos where embedding is disabled by copyright owner)
+    const verifiedResults = await Promise.all(
+      candidates.slice(0, 12).map(async (item) => {
+        const check = await checkYoutubeVideoAvailability(item.id);
+        if (check && check.available) {
+          return {
+            ...item,
+            verified: true,
+          };
+        }
+        return null;
+      })
+    );
+
+    const results = verifiedResults.filter(Boolean);
+    res.json({ success: true, results, count: results.length });
   } catch (err) {
     console.error('[Search] Error buscando canciones:', err);
     res.status(500).json({ error: 'Error al buscar canciones' });

@@ -194,6 +194,7 @@ export default function PlaylistSetup({
       thumbnail: song.thumbnail,
       duration: song.duration,
       author: song.author,
+      verified: song.verified ?? true,
     };
     const updated = [...playlist, track];
     setPlaylist(updated);
@@ -854,9 +855,17 @@ export default function PlaylistSetup({
                               <p className="font-bold text-xs text-[#181226] truncate leading-tight" title={song.title}>
                                 {song.title}
                               </p>
-                              <p className="text-[11px] text-[#6B6280] truncate mt-0.5">
-                                {song.author || 'YouTube'}
-                              </p>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <p className="text-[11px] text-[#6B6280] truncate">
+                                  {song.author || 'YouTube'}
+                                </p>
+                                <span className="badge-tag bg-[#E6F9F0] text-[#059669] border border-[#059669]/30 px-1.5 py-0.2 rounded text-[9px] font-black inline-flex items-center gap-0.5 shrink-0">
+                                  <svg className="w-2.5 h-2.5 text-[#059669]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  <span>Verificada</span>
+                                </span>
+                              </div>
                             </div>
                           </div>
 
@@ -1115,6 +1124,13 @@ export default function PlaylistSetup({
                               URL
                             </span>
                           )}
+
+                          <span className="badge-tag bg-[#E6F9F0] text-[#059669] border border-[#059669]/30 px-1 py-0.2 rounded text-[9px] font-black inline-flex items-center gap-0.5 shrink-0" title="Verificada y lista para sonar">
+                            <svg className="w-2.5 h-2.5 text-[#059669]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>OK</span>
+                          </span>
 
                           <span
                             className={`truncate font-bold text-xs ${

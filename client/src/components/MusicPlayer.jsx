@@ -501,7 +501,10 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     setUrl(nextTrack.url || nextTrack);
     loadMedia(nextTrack);
   };
-  handleNextTrackRef.current = handleNextTrack;
+
+  useEffect(() => {
+    handleNextTrackRef.current = handleNextTrack;
+  });
 
   const handlePrevTrack = () => {
     if (!activeQueue || activeQueue.length === 0) return;
