@@ -250,36 +250,31 @@ export default function CommunityLibrary() {
 
   return (
     <div className="min-h-screen bg-[#F5F2EB] text-[#181226] pb-16">
-      {/* ── Top Header Navigation (Kahoot-Style Stage Purple) ──── */}
-      <header className="bg-[#46178F] border-b-4 border-[#2A0C59] sticky top-0 z-30 shadow-lg text-white">
+      {/* ── Top Header Navigation (Clean Crisp Kahoot Style) ──── */}
+      <header className="bg-white border-b-2 border-[#EAE3D5] sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           {/* Left: Brand & Back */}
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="px-3 py-1.5 rounded-xl text-xs font-black text-white bg-white/10 hover:bg-white/20 border-t border-white/20 border-b-3 border-black/30 active:translate-y-0.5 active:border-b-0 flex items-center gap-1.5 cursor-pointer transition-all"
+              className="arcade-btn px-3 py-1.5 rounded-xl text-xs font-bold text-[#181226] hover:text-[#E21B3C] flex items-center gap-1.5 cursor-pointer"
             >
-              <svg className="w-4 h-4 text-[#00E676]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-4 h-4 text-[#E21B3C]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               <span>Volver</span>
             </button>
 
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-[#00E676] text-[#023618] flex items-center justify-center font-black shadow-md">
+              <div className="w-8 h-8 rounded-xl bg-[#46178F] text-white flex items-center justify-center font-black shadow-xs">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                 </svg>
               </div>
-              <div>
-                <h1 className="text-base sm:text-lg font-black tracking-tight text-white leading-none">
-                  Biblioteca de Música
-                </h1>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#00E676]">
-                  Partidas Comunitarias & Propias
-                </span>
-              </div>
+              <h1 className="text-base sm:text-lg font-black tracking-tight text-[#181226]">
+                Biblioteca de Música
+              </h1>
             </div>
           </div>
 
@@ -293,7 +288,7 @@ export default function CommunityLibrary() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar canciones, creador o género..."
-                className="w-full pl-9 pr-4 py-2 bg-white text-[#181226] placeholder-[#8E869E] rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#00E676] shadow-inner border-0"
+                className="w-full pl-9 pr-4 py-2 bg-[#FAF8F5] border-2 border-[#EAE3D5] rounded-xl text-xs font-semibold text-[#181226] placeholder-[#8E869E] focus:outline-none focus:border-[#46178F] focus:bg-white shadow-inner"
               />
               <svg className="w-4 h-4 text-[#64748B] absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -303,13 +298,13 @@ export default function CommunityLibrary() {
 
           {/* Right: Tab Toggle & Create Button */}
           <div className="flex items-center gap-2.5">
-            <div className="bg-black/25 p-1 rounded-xl border border-white/10 flex items-center gap-1 text-xs">
+            <div className="bg-[#FAF8F5] p-1 rounded-xl border border-[#EAE3D5] flex items-center gap-1 text-xs">
               <button
                 onClick={() => { setActiveTab('community'); setSelectedGenre('all'); }}
                 className={`px-3 py-1.5 rounded-lg font-black transition-all cursor-pointer ${
                   activeTab === 'community'
-                    ? 'bg-white text-[#46178F] shadow-sm'
-                    : 'text-white/75 hover:text-white'
+                    ? 'bg-[#46178F] text-white shadow-xs'
+                    : 'text-[#64748B] hover:text-[#181226]'
                 }`}
               >
                 Comunidad
@@ -318,8 +313,8 @@ export default function CommunityLibrary() {
                 onClick={() => setActiveTab('my_games')}
                 className={`px-3 py-1.5 rounded-lg font-black transition-all cursor-pointer ${
                   activeTab === 'my_games'
-                    ? 'bg-white text-[#46178F] shadow-sm'
-                    : 'text-white/75 hover:text-white'
+                    ? 'bg-[#46178F] text-white shadow-xs'
+                    : 'text-[#64748B] hover:text-[#181226]'
                 }`}
               >
                 Mis Partidas ({myGames.length})
@@ -338,19 +333,19 @@ export default function CommunityLibrary() {
           </div>
         </div>
 
-        {/* Quick Genre Pills (Horizontal bar with arcade buttons) */}
+        {/* Quick Genre Pills */}
         {activeTab === 'community' && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 border-t border-white/10 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 border-t border-[#EAE3D5] flex items-center gap-2 overflow-x-auto no-scrollbar">
             {GENRE_FILTERS.map((gf) => {
               const isSelected = selectedGenre === gf.id;
               return (
                 <button
                   key={gf.id}
                   onClick={() => setSelectedGenre(gf.id)}
-                  className={`px-3 py-1 rounded-full text-xs font-black shrink-0 transition-all cursor-pointer flex items-center gap-1.5 border-b-2 active:translate-y-0.5 active:border-b-0 ${
+                  className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 border ${
                     isSelected
-                      ? 'bg-[#00E676] text-[#023618] border-[#00A854] shadow-sm'
-                      : 'bg-white/10 hover:bg-white/20 text-white/90 border-black/20'
+                      ? 'bg-[#46178F] text-white border-[#46178F] shadow-xs'
+                      : 'bg-[#FAF8F5] text-[#64748B] hover:text-[#181226] border-[#EAE3D5]'
                   }`}
                 >
                   <span>{gf.label}</span>
