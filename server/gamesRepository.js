@@ -17,7 +17,7 @@ const INITIAL_COMMUNITY_GAMES = [
     creatorName: 'Comunidad Trivia',
     isPublic: true,
     gameMode: 'auto',
-    playCount: 142,
+    playCount: 0,
     createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
     tracks: [
       { id: 'pre_rn_1', title: 'De Música Ligera', artist: 'Soda Stereo', type: 'youtube', url: 'https://www.youtube.com/watch?v=OX-us7PEfkc' },
@@ -40,7 +40,7 @@ const INITIAL_COMMUNITY_GAMES = [
     creatorName: 'DJ Fiesta',
     isPublic: true,
     gameMode: 'auto',
-    playCount: 238,
+    playCount: 0,
     createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
     tracks: [
       { id: 'pre_cc_1', title: 'No me arrepiento de este amor', artist: 'Gilda', type: 'youtube', url: 'https://www.youtube.com/watch?v=Z216J0k_36o' },
@@ -63,7 +63,7 @@ const INITIAL_COMMUNITY_GAMES = [
     creatorName: 'RadioHits',
     isPublic: true,
     gameMode: 'individual',
-    playCount: 95,
+    playCount: 0,
     createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
     tracks: [
       { id: 'pre_pop_1', title: '...Baby One More Time', artist: 'Britney Spears', type: 'youtube', url: 'https://www.youtube.com/watch?v=C-u5WLJ9Yk4' },
@@ -86,7 +86,7 @@ const INITIAL_COMMUNITY_GAMES = [
     creatorName: 'OtakuClub',
     isPublic: true,
     gameMode: 'autohost',
-    playCount: 184,
+    playCount: 0,
     createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
     tracks: [
       { id: 'pre_ani_1', title: 'Cha-La Head-Cha-La (Dragon Ball Z)', artist: 'Ricardo Silva', type: 'youtube', url: 'https://www.youtube.com/watch?v=GHnfX1RmZX8' },
@@ -107,7 +107,7 @@ const INITIAL_COMMUNITY_GAMES = [
     creatorName: 'Perreo2000',
     isPublic: true,
     gameMode: 'auto',
-    playCount: 310,
+    playCount: 0,
     createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
     tracks: [
       { id: 'pre_reg_1', title: 'Gasolina', artist: 'Daddy Yankee', type: 'youtube', url: 'https://www.youtube.com/watch?v=CCF1_jI8Prk' },
@@ -337,6 +337,42 @@ class GamesRepository {
       return game.playCount;
     }
     return 0;
+  }
+
+  /**
+   * List all saved games (public and private) for administration
+   */
+  async listAllGames() {
+    return this._readAll();
+  }
+
+  /**
+   * Reset play count to 0 for a game
+   */
+  async resetPlayCount(id) {
+    const all = this._readAll();
+    const game = all.find((g) => g.id === id);
+    if (game) {
+      game.playCount = 0;
+      this._writeAll(all);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Toggle visibility (public / private) for a game
+   */
+  async toggleVisibility(id) {
+    const all = this._readAll();
+    const game = all.find((g) => g.id === id);
+    if (game) {
+      game.isPublic = !game.isPublic;
+      game.updatedAt = new Date().toISOString();
+      this._writeAll(all);
+      return game;
+    }
+    return null;
   }
 }
 

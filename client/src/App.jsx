@@ -13,6 +13,7 @@ import Landing from './pages/Landing';
 import CommunityLibrary from './pages/CommunityLibrary';
 import GameCreator from './pages/GameCreator';
 import GameDetail from './pages/GameDetail';
+import AdminDashboard from './pages/AdminDashboard';
 
 function AppLayout() {
   const { isAlmaTheme } = useTheme();
@@ -30,6 +31,8 @@ function AppLayout() {
             <Route path="/library" element={<CommunityLibrary />} />
             <Route path="/game/:id" element={<GameDetail />} />
             <Route path="/create" element={<GameCreator />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/moderador" element={<AdminDashboard />} />
             <Route path="/play" element={<PlayerJoin />} />
             <Route path="/play/buzzer" element={<PlayerBuzzer />} />
             <Route path="/gameover" element={<GameOver />} />

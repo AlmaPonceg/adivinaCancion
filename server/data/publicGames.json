@@ -128,7 +128,8 @@
       }
     ],
     "playCount": 0,
-    "createdAt": "2026-09-14T14:57:01.677Z"
+    "createdAt": "2026-09-14T14:57:01.677Z",
+    "updatedAt": "2026-09-14T16:24:56.264Z"
   },
   {
     "id": "game_1789397749867_erc4i",
@@ -165,7 +166,7 @@
     "creatorName": "Comunidad Trivia",
     "isPublic": true,
     "gameMode": "auto",
-    "playCount": 142,
+    "playCount": 0,
     "createdAt": "2026-09-07T14:54:36.885Z",
     "tracks": [
       {
@@ -248,7 +249,7 @@
     "creatorName": "DJ Fiesta",
     "isPublic": true,
     "gameMode": "auto",
-    "playCount": 239,
+    "playCount": 0,
     "createdAt": "2026-09-09T14:54:36.886Z",
     "tracks": [
       {
@@ -331,7 +332,7 @@
     "creatorName": "RadioHits",
     "isPublic": true,
     "gameMode": "individual",
-    "playCount": 95,
+    "playCount": 0,
     "createdAt": "2026-09-11T14:54:36.886Z",
     "tracks": [
       {
@@ -414,7 +415,7 @@
     "creatorName": "OtakuClub",
     "isPublic": true,
     "gameMode": "autohost",
-    "playCount": 184,
+    "playCount": 0,
     "createdAt": "2026-09-12T14:54:36.886Z",
     "tracks": [
       {
@@ -483,7 +484,7 @@
     "creatorName": "Perreo2000",
     "isPublic": true,
     "gameMode": "auto",
-    "playCount": 311,
+    "playCount": 0,
     "createdAt": "2026-09-13T14:54:36.886Z",
     "tracks": [
       {

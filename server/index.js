@@ -16,6 +16,7 @@ import YouTube from 'youtube-sr';
 import { Innertube, Log } from 'youtubei.js';
 import { selectDjSongCandidates } from './djCatalog.js';
 import gamesRepository from './gamesRepository.js';
+import analyticsManager from './analyticsManager.js';
 
 // Silence verbose attachment warnings from Innertube's text parser
 Log.setLevel(Log.Level.ERROR);
@@ -68,6 +69,7 @@ const io = new Server(httpServer, {
 
 app.use(cors());
 app.use(express.json());
+app.use(analyticsManager.requestTracker());
 
 const gm = new GameManager();
 
@@ -207,6 +209,12 @@ app.post('/api/games', async (req, res) => {
     });
 
     console.log(`[API] Nueva partida creada: "${newGame.title}" (${newGame.isPublic ? 'PÚBLICA' : 'PRIVADA'}) con ${newGame.tracks.length} canciones`);
+    analyticsManager.recordEvent({
+      type: 'SUCCESS',
+      category: 'GAME',
+      message: `Nueva partida creada: "${newGame.title}" (${newGame.isPublic ? 'Pública' : 'Privada'}) por ${newGame.creatorName}`,
+      meta: { id: newGame.id, title: newGame.title }
+    });
     return res.status(201).json({ success: true, game: newGame });
   } catch (err) {
     console.error('[API] Error creating game:', err);
@@ -218,6 +226,10 @@ app.post('/api/games', async (req, res) => {
 app.post('/api/games/:id/play', async (req, res) => {
   try {
     const count = await gamesRepository.incrementPlayCount(req.params.id);
+    const game = await gamesRepository.getGameById(req.params.id);
+    if (game) {
+      analyticsManager.registerGamePlay(game.id, game.title, count);
+    }
     return res.json({ success: true, playCount: count });
   } catch (err) {
     return res.status(500).json({ success: false, error: 'Error actualizando contador' });
@@ -259,6 +271,148 @@ app.post('/api/games/batch', async (req, res) => {
     console.error('[API] Error fetching batch games:', err);
     return res.status(500).json({ success: false, error: 'Error al consultar partidas' });
   }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Moderator & Admin API Endpoints
+// ═══════════════════════════════════════════════════════════════
+
+const ADMIN_PASSKEY = (process.env.ADMIN_KEY || 'admin2024').trim();
+
+function generateAdminToken() {
+  const daySeed = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+  return crypto.createHmac('sha256', ADMIN_PASSKEY).update(`admin_session_${daySeed}`).digest('hex');
+}
+
+function requireAdminAuth(req, res, next) {
+  const authHeader = req.headers['authorization'] || '';
+  const tokenHeader = req.headers['x-admin-token'] || req.headers['x-admin-key'] || '';
+  const provided = tokenHeader || (authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : '');
+
+  const expectedToken = generateAdminToken();
+
+  if (provided === ADMIN_PASSKEY || provided === expectedToken) {
+    return next();
+  }
+
+  return res.status(401).json({
+    success: false,
+    error: 'No autorizado. Se requiere clave de moderador válida.'
+  });
+}
+
+// Verify moderator passkey
+app.post('/api/admin/verify', (req, res) => {
+  const { passkey } = req.body || {};
+  if (!passkey || typeof passkey !== 'string') {
+    return res.status(400).json({ success: false, error: 'Clave de moderador no proporcionada' });
+  }
+
+  if (passkey.trim() === ADMIN_PASSKEY) {
+    const token = generateAdminToken();
+    analyticsManager.recordEvent({
+      type: 'INFO',
+      category: 'MOD',
+      message: 'Sesión de moderador autenticada exitosamente'
+    });
+    return res.json({ success: true, token });
+  }
+
+  return res.status(401).json({ success: false, error: 'Clave de moderador incorrecta' });
+});
+
+// Get full moderator dashboard stats & telemetry
+app.get('/api/admin/stats', requireAdminAuth, async (req, res) => {
+  try {
+    const data = await analyticsManager.getDashboardData(io, gm, gamesRepository);
+    return res.json(data);
+  } catch (err) {
+    console.error('[Admin] Error fetching stats:', err);
+    return res.status(500).json({ success: false, error: 'Error al obtener telemetría' });
+  }
+});
+
+// Toggle game visibility (public / private)
+app.put('/api/admin/games/:id/visibility', requireAdminAuth, async (req, res) => {
+  try {
+    const game = await gamesRepository.toggleVisibility(req.params.id);
+    if (!game) {
+      return res.status(404).json({ success: false, error: 'Partida no encontrada' });
+    }
+    analyticsManager.registerModAction(
+      'Cambio de visibilidad',
+      game.title,
+      game.isPublic ? 'Ahora es PÚBLICA' : 'Ahora es PRIVADA'
+    );
+    return res.json({ success: true, game, isPublic: game.isPublic });
+  } catch (err) {
+    console.error('[Admin] Error toggling visibility:', err);
+    return res.status(500).json({ success: false, error: 'Error al cambiar visibilidad' });
+  }
+});
+
+// Reset game play count to 0
+app.post('/api/admin/games/:id/reset-plays', requireAdminAuth, async (req, res) => {
+  try {
+    const success = await gamesRepository.resetPlayCount(req.params.id);
+    if (!success) {
+      return res.status(404).json({ success: false, error: 'Partida no encontrada' });
+    }
+    const game = await gamesRepository.getGameById(req.params.id);
+    analyticsManager.registerModAction('Reinicio de contador de jugadas a 0', game?.title || req.params.id);
+    return res.json({ success: true, playCount: 0 });
+  } catch (err) {
+    console.error('[Admin] Error resetting play count:', err);
+    return res.status(500).json({ success: false, error: 'Error al reiniciar contador' });
+  }
+});
+
+// Delete game with moderator audit
+app.delete('/api/admin/games/:id/moderation', requireAdminAuth, async (req, res) => {
+  try {
+    const game = await gamesRepository.getGameById(req.params.id);
+    const title = game?.title || req.params.id;
+    const deleted = await gamesRepository.deleteGame(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'Partida no encontrada o ya eliminada' });
+    }
+    analyticsManager.registerModAction('Eliminación de partida', title);
+    return res.json({ success: true, message: 'Partida eliminada por moderación' });
+  } catch (err) {
+    console.error('[Admin] Error deleting game:', err);
+    return res.status(500).json({ success: false, error: 'Error al eliminar partida' });
+  }
+});
+
+// Force close a live game room
+app.post('/api/admin/rooms/:code/close', requireAdminAuth, (req, res) => {
+  try {
+    const code = String(req.params.code).trim().toUpperCase();
+    const room = gm.getRoom(code);
+    if (!room) {
+      return res.status(404).json({ success: false, error: 'Sala no encontrada o ya inactiva' });
+    }
+
+    io.to(code).emit('room-closed', { reason: 'Sala cerrada por el moderador.' });
+    gm.deleteRoom(code);
+    analyticsManager.registerModAction('Cierre forzado de sala', code);
+
+    return res.json({ success: true, message: `Sala ${code} cerrada exitosamente` });
+  } catch (err) {
+    console.error('[Admin] Error closing room:', err);
+    return res.status(500).json({ success: false, error: 'Error al cerrar la sala' });
+  }
+});
+
+// Clear event log
+app.post('/api/admin/events/clear', requireAdminAuth, (req, res) => {
+  analyticsManager.clearEvents();
+  analyticsManager.recordEvent({
+    type: 'WARN',
+    category: 'MOD',
+    message: 'Registro de eventos vaciado por el moderador'
+  });
+  return res.json({ success: true });
 });
 
 // YouTube Auto-Karaoke endpoint (Supports Playlist URL or Array of Song Names)
@@ -660,6 +814,7 @@ function broadcastPlayerList(roomCode) {
 
 io.on('connection', (socket) => {
   console.log(`[Connect] ${socket.id}`);
+  analyticsManager.totalSocketConnections++;
 
   let currentRoom = null;
 
@@ -670,6 +825,7 @@ io.on('connection', (socket) => {
     currentRoom = room.code;
     socket.join(room.code);
     console.log(`[Room] Created: ${room.code} by ${socket.id}`);
+    analyticsManager.registerRoomCreated(room.code, socket.id);
     socket.emit('room-created', { code: room.code });
     if (typeof callback === 'function') {
       callback({ code: room.code });
@@ -704,6 +860,8 @@ io.on('connection', (socket) => {
     if (result.error) {
       return callback?.({ error: result.error });
     }
+
+    analyticsManager.registerPlayerJoin(playerId || result.player?.id, name, code);
 
     currentRoom = code;
     socket.join(code);
@@ -1122,6 +1280,7 @@ io.on('connection', (socket) => {
     }
 
     const { buzzEntry, isFirst } = result;
+    analyticsManager.registerBuzzerHit(buzzEntry.playerName, code, buzzEntry.teamName);
 
     if (isFirst) {
       io.to(code).emit('first-buzz', {
