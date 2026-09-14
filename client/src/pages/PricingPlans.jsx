@@ -60,7 +60,7 @@ export default function PricingPlans() {
 
       localStorage.setItem('trivia_user_plan', plan.id);
       setSelectedPlanId(plan.id);
-      showToast(`¡Plan ${plan.name} activado con éxito!`, 'success');
+      showToast(t('plans.planActivated', '¡Plan activado con éxito!'), 'success');
     } catch (err) {
       showToast(err.message || 'Error al seleccionar plan', 'error');
     } finally {
@@ -190,7 +190,7 @@ export default function PricingPlans() {
                     className="py-2.5 px-4 text-[10px] font-black uppercase tracking-wider text-center text-white shadow-xs"
                     style={{ backgroundColor: p.accentColor || '#46178F' }}
                   >
-                    {p.badge || 'Plan Hitpop!'}
+                    {t(`plans.tiers.${p.id}.badge`, p.badge || 'Plan Hitpop!')}
                   </div>
 
                   <div className="p-6 flex-1 flex flex-col justify-between">
@@ -198,7 +198,7 @@ export default function PricingPlans() {
                       {/* Plan Name & Tagline */}
                       <div className="flex items-center justify-between mb-2">
                         <h2 className="font-display font-black text-2xl text-[#181226]">
-                          {p.name}
+                          {t(`plans.tiers.${p.id}.name`, p.name)}
                         </h2>
                         {isSelected && (
                           <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-[#00E676] text-[#0A5C36]">
@@ -208,7 +208,7 @@ export default function PricingPlans() {
                       </div>
 
                       <p className="text-xs font-medium text-[#64748B] mb-5 min-h-[36px] leading-relaxed">
-                        {p.tagline}
+                        {t(`plans.tiers.${p.id}.tagline`, p.tagline)}
                       </p>
 
                       {/* Price Display */}
@@ -228,7 +228,7 @@ export default function PricingPlans() {
                             </div>
                             {p.discountText && (
                               <div className="text-[11px] font-bold text-[#FF5722] mt-0.5">
-                                {p.discountText}
+                                {t(`plans.tiers.${p.id}.discountText`, p.discountText)}
                               </div>
                             )}
                           </div>
@@ -243,7 +243,7 @@ export default function PricingPlans() {
                         {p.features?.map((feat, idx) => (
                           <div key={idx} className="flex items-start gap-2 text-xs font-semibold text-[#181226]">
                             <span className="text-[#00C853] font-black shrink-0">✓</span>
-                            <span>{feat}</span>
+                            <span>{t(`plans.tiers.${p.id}.features.${idx}`, feat)}</span>
                           </div>
                         ))}
                       </div>
@@ -274,7 +274,7 @@ export default function PricingPlans() {
                           onClick={() => handleSelectPlan(p)}
                           className="w-full arcade-btn arcade-btn-ruby py-3 text-xs uppercase cursor-pointer"
                         >
-                          {isActivating === p.id ? t('plans.activating', 'Activando...') : `${t('plans.choose', 'Elegir')} Party Plus`}
+                          {isActivating === p.id ? t('plans.activating', 'Activando...') : `${t('plans.choose', 'Elegir')} ${t(`plans.tiers.${p.id}.name`, p.name)}`}
                         </button>
                       ) : isPro ? (
                         <button
@@ -283,7 +283,7 @@ export default function PricingPlans() {
                           onClick={() => handleSelectPlan(p)}
                           className="w-full arcade-btn arcade-btn-purple py-3 text-xs uppercase cursor-pointer"
                         >
-                          {isActivating === p.id ? t('plans.activating', 'Activando...') : `${t('plans.choose', 'Elegir')} Showtime Pro`}
+                          {isActivating === p.id ? t('plans.activating', 'Activando...') : `${t('plans.choose', 'Elegir')} ${t(`plans.tiers.${p.id}.name`, p.name)}`}
                         </button>
                       ) : isUltra ? (
                         <button
@@ -292,7 +292,7 @@ export default function PricingPlans() {
                           onClick={() => handleSelectPlan(p)}
                           className="w-full arcade-btn arcade-btn-lime py-3 text-xs uppercase cursor-pointer"
                         >
-                          {isActivating === p.id ? t('plans.activating', 'Activando...') : `${t('plans.choose', 'Elegir')} Festival 360`}
+                          {isActivating === p.id ? t('plans.activating', 'Activando...') : `${t('plans.choose', 'Elegir')} ${t(`plans.tiers.${p.id}.name`, p.name)}`}
                         </button>
                       ) : (
                         <button

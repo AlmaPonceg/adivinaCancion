@@ -4,6 +4,7 @@ import { SERVER_URL } from '../socket';
 import { useTranslation } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { getLocalizedGameDescription, getLocalizedGameTitle } from '../i18n/translations';
 import MusicPackCover from '../components/MusicPackCover';
 import AppLogo from '../components/AppLogo';
 import LanguageSelector from '../components/LanguageSelector';
@@ -495,7 +496,7 @@ export default function CommunityLibrary() {
                           <div className="mb-3 cursor-pointer" onClick={() => navigate(`/game/${game.id}`)}>
                             <MusicPackCover
                               genre={game.genre}
-                              title={game.title}
+                              title={getLocalizedGameTitle(game, t)}
                               gameId={game.id}
                               trackCount={game.trackCount}
                               playCount={game.playCount}
@@ -508,10 +509,10 @@ export default function CommunityLibrary() {
                             onClick={() => navigate(`/game/${game.id}`)}
                             className="font-black text-base text-[#181226] group-hover:text-[#E21B3C] transition-colors leading-snug line-clamp-1 mb-1 cursor-pointer"
                           >
-                            {game.title}
+                            {getLocalizedGameTitle(game, t)}
                           </h3>
                           <p className="text-xs text-[#64748B] line-clamp-2 leading-relaxed mb-3">
-                            {game.description || t('library.cards.defaultDesc', 'Partida de música interactiva creada por la comunidad.')}
+                            {getLocalizedGameDescription(game, t)}
                           </p>
                         </div>
 
@@ -578,7 +579,7 @@ export default function CommunityLibrary() {
                             <div className="mb-2.5">
                               <MusicPackCover
                                 genre={game.genre}
-                                title={game.title}
+                                title={getLocalizedGameTitle(game, t)}
                                 gameId={game.id}
                                 trackCount={game.trackCount}
                                 playCount={game.playCount}
@@ -591,7 +592,7 @@ export default function CommunityLibrary() {
                                 #{index + 1}
                               </span>
                               <h4 className="font-bold text-xs text-[#181226] line-clamp-1">
-                                {game.title}
+                                {getLocalizedGameTitle(game, t)}
                               </h4>
                             </div>
 
@@ -833,7 +834,7 @@ export default function CommunityLibrary() {
                       <div className="mb-3">
                         <MusicPackCover
                           genre={game.genre}
-                          title={game.title}
+                          title={getLocalizedGameTitle(game, t)}
                           gameId={game.id}
                           trackCount={game.trackCount || (Array.isArray(game.tracks) ? game.tracks.length : 0)}
                           playCount={game.playCount || 0}
@@ -853,10 +854,10 @@ export default function CommunityLibrary() {
                       </div>
 
                       <h3 className="font-bold text-sm text-[#181226] mb-1 line-clamp-1">
-                        {game.title}
+                        {getLocalizedGameTitle(game, t)}
                       </h3>
                       <p className="text-xs text-[#64748B] line-clamp-2 mb-3">
-                        {game.description || t('library.cards.defaultDesc', 'Sin descripción')}
+                        {getLocalizedGameDescription(game, t)}
                       </p>
                     </div>
 
@@ -900,7 +901,7 @@ export default function CommunityLibrary() {
                 <span className="text-[10px] font-black uppercase tracking-wider text-[#FF5722]">
                   {t('library.modal.previewEyebrow', 'VISTA PREVIA DE PARTIDA')}
                 </span>
-                <h3 className="text-base font-black text-[#181226]">{inspectingGame.title}</h3>
+                <h3 className="text-base font-black text-[#181226]">{getLocalizedGameTitle(inspectingGame, t)}</h3>
                 <p className="text-xs text-[#64748B]">
                   {t('library.modal.by', 'Por')} {inspectingGame.creatorName || t('library.cards.community', 'Comunidad')} · {inspectingTracks.length} {t('library.modal.tracks', 'canciones')}
                 </p>
@@ -975,7 +976,7 @@ export default function CommunityLibrary() {
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full border-2 border-[#EAE3D5] shadow-2xl text-center">
             <h3 className="text-base font-black text-[#181226] mb-2">{t('library.myGames.deleteConfirmTitle', '¿Eliminar Partida?')}</h3>
             <p className="text-xs text-[#64748B] mb-5">
-              {t('library.myGames.deleteConfirmDesc', 'Se eliminará "{title}" de tu lista guardada.').replace('{title}', gameToDelete.title)}
+              {t('library.myGames.deleteConfirmDesc', 'Se eliminará "{title}" de tu lista guardada.').replace('{title}', getLocalizedGameTitle(gameToDelete, t))}
             </p>
             <div className="flex gap-2">
               <button
@@ -1016,7 +1017,7 @@ function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onView
         <div className="mb-3 cursor-pointer" onClick={onViewDetail}>
           <MusicPackCover
             genre={game.genre}
-            title={game.title}
+            title={getLocalizedGameTitle(game, t)}
             gameId={game.id}
             trackCount={game.trackCount || 0}
             playCount={game.playCount || 0}
@@ -1029,11 +1030,11 @@ function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onView
           onClick={onViewDetail}
           className="font-black text-sm text-[#181226] group-hover:text-[#E21B3C] transition-colors leading-snug line-clamp-1 mb-1 cursor-pointer"
         >
-          {game.title}
+          {getLocalizedGameTitle(game, t)}
         </h3>
 
         <p className="text-xs text-[#64748B] line-clamp-2 leading-relaxed mb-3">
-          {game.description || t('library.cards.defaultDesc', 'Partida de trivia musical interactiva.')}
+          {getLocalizedGameDescription(game, t)}
         </p>
 
         {/* Sample Tracks Tags */}

@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { SERVER_URL } from '../socket';
 import { extractYoutubeId } from '../utils/trackHelper';
 import { useTranslation } from '../context/LanguageContext';
+import { getLocalizedGameDescription, getLocalizedGameTitle } from '../i18n/translations';
+import { getGameCoverTheme } from '../utils/genreArt';
 import MusicPackCover from '../components/MusicPackCover';
 import LanguageSelector from '../components/LanguageSelector';
 
@@ -182,7 +184,7 @@ export default function GameDetail() {
             <div className="w-full md:w-64 shrink-0">
               <MusicPackCover
                 genre={game.genre}
-                title={game.title}
+                title={getLocalizedGameTitle(game, t)}
                 gameId={game.id}
                 trackCount={game.tracks?.length || 0}
                 playCount={game.playCount || 0}
@@ -194,7 +196,10 @@ export default function GameDetail() {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-2.5">
                 <span className="badge-tag text-[#E21B3C] font-black text-xs">
-                  {game.genre || 'General'}
+                  {(() => {
+                    const theme = getGameCoverTheme(game.genre, game.title, game.id);
+                    return t(`library.genreThemes.${theme.key}.label`, game.genre || 'General');
+                  })()}
                 </span>
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase ${
                   game.isPublic ? 'bg-[#ECFDF5] text-[#059669]' : 'bg-[#F5F3FF] text-[#7C3AED]'
@@ -208,12 +213,12 @@ export default function GameDetail() {
               </div>
 
               <h1 className="font-display font-black text-2xl sm:text-3xl text-[#181226] tracking-tight mb-2 leading-tight">
-                {game.title}
+                {getLocalizedGameTitle(game, t)}
               </h1>
 
-              {game.description && (
+              {getLocalizedGameDescription(game, t) && (
                 <p className="text-xs sm:text-sm text-[#574F6B] max-w-xl leading-relaxed mb-4">
-                  {game.description}
+                  {getLocalizedGameDescription(game, t)}
                 </p>
               )}
 

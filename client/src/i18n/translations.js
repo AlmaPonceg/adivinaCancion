@@ -175,6 +175,36 @@ export const translations = {
         close: 'Cerrar',
         startNow: 'Empezar Partida Ahora',
       },
+      gameTitles: {
+        'game_1789399149034_19zgu': 'Grandes Éxitos del Rock Nacional 2024',
+        'game_1789399016268_mf7zz': 'Trivia Rock y Pop 90s (Edición Remasterizada)',
+        'game_1789397749867_erc4i': 'Trap Argentino Bizarrap',
+        'pack-rock-nacional': 'Rock Nacional Clásico',
+        'rock-nacional': 'Rock Nacional Clásico',
+        'pack-cumbias-cuarteto': 'Cumbias & Cuarteto de Fiesta',
+        'cumbia-cuarteto': 'Cumbias & Cuarteto de Fiesta',
+        'pack-pop-2000s': 'Hits Pop 2000s Bangerz',
+        'pop-2000s': 'Hits Pop 2000s Bangerz',
+        'pack-anime-series': 'Intros de Series & Animé',
+        'anime-series': 'Intros de Series & Animé',
+        'pack-reggaeton-old-school': 'Reggaeton Old School',
+        'reggaeton-old-school': 'Reggaeton Old School',
+      },
+      gameDescriptions: {
+        'game_1789399149034_19zgu': 'Los himnos indiscutidos del rock argentino que todo el mundo sabe de memoria.',
+        'game_1789399016268_mf7zz': 'Partida de prueba estilo Kahoot creada por el usuario',
+        'game_1789397749867_erc4i': 'Las mejores BZRP Music Sessions para cantar a todo pulmón.',
+        'pack-rock-nacional': 'Los himnos indiscutidos del rock argentino que todo el mundo sabe de memoria.',
+        'rock-nacional': 'Los himnos indiscutidos del rock argentino que todo el mundo sabe de memoria.',
+        'pack-cumbias-cuarteto': 'Gilda, Rodrigo, Los Palmeras y los temas que levantan a todos de la silla.',
+        'cumbia-cuarteto': 'Gilda, Rodrigo, Los Palmeras y los temas que levantan a todos de la silla.',
+        'pack-pop-2000s': 'Los himnos de discoteca y radio que marcaron a toda una generación.',
+        'pop-2000s': 'Los himnos de discoteca y radio que marcaron a toda una generación.',
+        'pack-anime-series': 'Abrí el baúl de la infancia con las intros de tele más cantadas de la historia.',
+        'anime-series': 'Abrí el baúl de la infancia con las intros de tele más cantadas de la historia.',
+        'pack-reggaeton-old-school': 'Los temas que inauguraron el perreo en los boliches y fiestas de los 2000.',
+        'reggaeton-old-school': 'Los temas que inauguraron el perreo en los boliches y fiestas de los 2000.',
+      },
     },
     plans: {
       badge: 'Planes para Cada Escenario',
@@ -200,6 +230,59 @@ export const translations = {
       back: 'Volver',
       moderationLink: 'Panel de Moderación →',
       loadingPlans: 'Cargando catálogo de planes...',
+      planActivated: '¡Plan activado con éxito!',
+      tiers: {
+        free: {
+          name: 'Acústico',
+          badge: 'Para jugar en casa',
+          tagline: 'Ideal para jugar con amigos cercanos y reuniones pequeñas sin costo alguno.',
+          features: [
+            'Hasta 10 jugadores por sala',
+            'Acceso a todos los packs públicos',
+            'Pulsador web clásico en tiempo real',
+            'Marcador automático de puntuación',
+          ],
+        },
+        plus: {
+          name: 'Party Plus',
+          badge: 'Para particulares y amigos',
+          tagline: 'El kit de herramientas para juntadas, cumpleaños y diversión musical sin trabas.',
+          discountText: 'Ahorrá 20% anual',
+          features: [
+            'Hasta 35 jugadores en simultáneo',
+            'Creación de packs personalizados ilimitados',
+            'Efectos de sonido arcade y pulsadores temáticos',
+            'Buscador integrado de canciones con vista previa',
+            'Partidas sin anuncios ni esperas',
+          ],
+        },
+        pro: {
+          name: 'Showtime Pro',
+          badge: 'Más Popular',
+          tagline: 'La experiencia de game-show definitiva para bares, eventos medianos y docentes.',
+          discountText: 'Ahorrá 25% anual',
+          features: [
+            'Hasta 100 jugadores en simultáneo',
+            'Asistente DJ Bot inteligente con IA para sugerencias en vivo',
+            'Modo Torneo por Equipos con podio interactivo',
+            'Controles avanzados de tiempo y desempates',
+            'Acceso prioritario a novedades y packs exclusivos',
+          ],
+        },
+        ultra: {
+          name: 'Festival 360',
+          badge: 'Para profesionales y eventos',
+          tagline: 'La plataforma total para animadores, salones de fiestas, boliches y grandes eventos.',
+          discountText: 'Ahorrá 30% hasta fin de mes',
+          features: [
+            'Jugadores ilimitados (hasta 1.000+ por sala)',
+            'Personalización completa de colores, logo y pantallas',
+            'Panel de control dual para DJ y animador en vivo',
+            'Descarga de reportes y estadísticas en Excel / JSON',
+            'Soporte técnico prioritario 24/7 para tus eventos',
+          ],
+        },
+      },
     },
     gameDetail: {
       back: 'Volver',
@@ -402,6 +485,36 @@ export const translations = {
         close: 'Close',
         startNow: 'Start Game Now',
       },
+      gameTitles: {
+        'game_1789399149034_19zgu': 'Argentine Rock Greatest Hits 2024',
+        'game_1789399016268_mf7zz': '90s Rock & Pop Trivia (Remastered Edition)',
+        'game_1789397749867_erc4i': 'Argentine Trap & Bizarrap',
+        'pack-rock-nacional': 'Classic Argentine Rock',
+        'rock-nacional': 'Classic Argentine Rock',
+        'pack-cumbias-cuarteto': 'Party Cumbia & Cuarteto',
+        'cumbia-cuarteto': 'Party Cumbia & Cuarteto',
+        'pack-pop-2000s': '2000s Pop Hits Bangerz',
+        'pop-2000s': '2000s Pop Hits Bangerz',
+        'pack-anime-series': 'Anime & TV Series Intros',
+        'anime-series': 'Anime & TV Series Intros',
+        'pack-reggaeton-old-school': 'Old School Reggaeton',
+        'reggaeton-old-school': 'Old School Reggaeton',
+      },
+      gameDescriptions: {
+        'game_1789399149034_19zgu': 'The undisputed Argentine rock anthems that everyone knows by heart.',
+        'game_1789399016268_mf7zz': 'Kahoot-style test game created by user.',
+        'game_1789397749867_erc4i': 'The top BZRP Music Sessions to sing along at the top of your lungs.',
+        'pack-rock-nacional': 'The undisputed Argentine rock anthems that everyone knows by heart.',
+        'rock-nacional': 'The undisputed Argentine rock anthems that everyone knows by heart.',
+        'pack-cumbias-cuarteto': 'Gilda, Rodrigo, Los Palmeras and party tracks that get everyone off their seats.',
+        'cumbia-cuarteto': 'Gilda, Rodrigo, Los Palmeras and party tracks that get everyone off their seats.',
+        'pack-pop-2000s': 'Club and radio anthems that defined an entire generation.',
+        'pop-2000s': 'Club and radio anthems that defined an entire generation.',
+        'pack-anime-series': 'Unlock childhood nostalgia with the most sung TV anime theme songs.',
+        'anime-series': 'Unlock childhood nostalgia with the most sung TV anime theme songs.',
+        'pack-reggaeton-old-school': 'The legendary tracks that kickstarted club perreo in the 2000s.',
+        'reggaeton-old-school': 'The legendary tracks that kickstarted club perreo in the 2000s.',
+      },
     },
     plans: {
       badge: 'Plans for Every Scenario',
@@ -427,6 +540,59 @@ export const translations = {
       back: 'Back',
       moderationLink: 'Moderation Panel →',
       loadingPlans: 'Loading plans catalog...',
+      planActivated: 'Plan activated successfully!',
+      tiers: {
+        free: {
+          name: 'Acoustic',
+          badge: 'For Home Hangouts',
+          tagline: 'Perfect for playing with close friends and small casual gatherings at zero cost.',
+          features: [
+            'Up to 10 players per room',
+            'Access to all public song packs',
+            'Classic real-time web buzzer',
+            'Automated scoreboard & points',
+          ],
+        },
+        plus: {
+          name: 'Party Plus',
+          badge: 'For Parties & Friends',
+          tagline: 'The ultimate toolkit for birthday bashes, parties, and non-stop music fun.',
+          discountText: 'Save 20% yearly',
+          features: [
+            'Up to 35 concurrent players',
+            'Unlimited custom pack creation',
+            'Arcade sound FX & custom buzzers',
+            'Built-in YouTube search with preview',
+            'Ad-free sessions with zero delay',
+          ],
+        },
+        pro: {
+          name: 'Showtime Pro',
+          badge: 'Most Popular',
+          tagline: 'The definitive game-show experience for bars, medium events, and quiz hosts.',
+          discountText: 'Save 25% yearly',
+          features: [
+            'Up to 100 concurrent players',
+            'Smart AI DJ Bot assistant with live suggestions',
+            'Team Tournament mode with interactive podium',
+            'Advanced timer and sudden-death tiebreakers',
+            'Priority access to new releases & exclusive packs',
+          ],
+        },
+        ultra: {
+          name: 'Festival 360',
+          badge: 'For Pros & Live Venues',
+          tagline: 'The full enterprise platform for MCs, party venues, clubs, and massive festivals.',
+          discountText: 'Save 30% until end of month',
+          features: [
+            'Unlimited players (up to 1,000+ per room)',
+            'Full custom branding: colors, logo & screen takeover',
+            'Dual control panel for live DJ and stage host',
+            'Export game reports & analytics in Excel / JSON',
+            'Priority 24/7 dedicated support for your events',
+          ],
+        },
+      },
     },
     gameDetail: {
       back: 'Back',
@@ -629,6 +795,36 @@ export const translations = {
         close: 'Fechar',
         startNow: 'Iniciar Jogo Agora',
       },
+      gameTitles: {
+        'game_1789399149034_19zgu': 'Grandes Sucessos do Rock Nacional 2024',
+        'game_1789399016268_mf7zz': 'Trivia Rock e Pop Anos 90 (Edição Remasterizada)',
+        'game_1789397749867_erc4i': 'Trap Argentino Bizarrap',
+        'pack-rock-nacional': 'Rock Nacional Clássico',
+        'rock-nacional': 'Rock Nacional Clássico',
+        'pack-cumbias-cuarteto': 'Cumbias & Cuarteto de Festa',
+        'cumbia-cuarteto': 'Cumbias & Cuarteto de Festa',
+        'pack-pop-2000s': 'Hits Pop Anos 2000 Bangerz',
+        'pop-2000s': 'Hits Pop Anos 2000 Bangerz',
+        'pack-anime-series': 'Aberturas de Séries & Animê',
+        'anime-series': 'Aberturas de Séries & Animê',
+        'pack-reggaeton-old-school': 'Reggaeton Old School',
+        'reggaeton-old-school': 'Reggaeton Old School',
+      },
+      gameDescriptions: {
+        'game_1789399149034_19zgu': 'Os hinos indiscutíveis do rock argentino que todo mundo sabe de cor.',
+        'game_1789399016268_mf7zz': 'Jogo de teste estilo Kahoot criado pelo usuário.',
+        'game_1789397749867_erc4i': 'As melhores BZRP Music Sessions para cantar a plenos pulmões.',
+        'pack-rock-nacional': 'Os hinos indiscutíveis do rock argentino que todo mundo sabe de cor.',
+        'rock-nacional': 'Os hinos indiscutíveis do rock argentino que todo mundo sabe de cor.',
+        'pack-cumbias-cuarteto': 'Gilda, Rodrigo, Los Palmeras e os sucessos que levantam todo mundo da cadeira.',
+        'cumbia-cuarteto': 'Gilda, Rodrigo, Los Palmeras e os sucessos que levantam todo mundo da cadeira.',
+        'pack-pop-2000s': 'Os hinos de balada e rádio que marcaram toda uma geração.',
+        'pop-2000s': 'Os hinos de balada e rádio que marcaram toda uma geração.',
+        'pack-anime-series': 'Abra o baú da infância com as aberturas de TV mais cantadas da história.',
+        'anime-series': 'Abra o baú da infância com as aberturas de TV mais cantadas da história.',
+        'pack-reggaeton-old-school': 'As músicas que inauguraram o perreo nas baladas e festas dos anos 2000.',
+        'reggaeton-old-school': 'As músicas que inauguraram o perreo nas baladas e festas dos anos 2000.',
+      },
     },
     plans: {
       badge: 'Planos para Cada Ocasião',
@@ -654,6 +850,59 @@ export const translations = {
       back: 'Voltar',
       moderationLink: 'Painel de Moderação →',
       loadingPlans: 'Carregando catálogo de planos...',
+      planActivated: 'Plano ativado com sucesso!',
+      tiers: {
+        free: {
+          name: 'Acústico',
+          badge: 'Para jogar em casa',
+          tagline: 'Perfeito para jogar com amigos e pequenas reuniões sem nenhum custo.',
+          features: [
+            'Até 10 jogadores por sala',
+            'Acesso a todos os packs públicos',
+            'Botão web clássico em tempo real',
+            'Placar automático de pontuação',
+          ],
+        },
+        plus: {
+          name: 'Party Plus',
+          badge: 'Para festas e amigos',
+          tagline: 'O kit definitivo para aniversários, resenhas e diversão musical sem limites.',
+          discountText: 'Poupe 20% no plano anual',
+          features: [
+            'Até 35 jogadores simultâneos',
+            'Criação ilimitada de packs personalizados',
+            'Efeitos sonoros arcade e botões temáticos',
+            'Busca integrada do YouTube com prévia',
+            'Partidas sem anúncios nem atrasos',
+          ],
+        },
+        pro: {
+          name: 'Showtime Pro',
+          badge: 'Mais Popular',
+          tagline: 'A experiência definitiva de game-show para bares, eventos médios e professores.',
+          discountText: 'Poupe 25% no plano anual',
+          features: [
+            'Até 100 jogadores simultâneos',
+            'Assistente DJ Bot com IA para sugestões ao vivo',
+            'Modo Torneio em Equipes com pódio interativo',
+            'Controles avançados de tempo e desempate',
+            'Acesso prioritário a novidades e packs exclusivos',
+          ],
+        },
+        ultra: {
+          name: 'Festival 360',
+          badge: 'Para profissionais e grandes eventos',
+          tagline: 'A plataforma completa para animadores, salões de festas, baladas e festivais.',
+          discountText: 'Poupe 30% até o fim do mês',
+          features: [
+            'Jogadores ilimitados (até 1.000+ por sala)',
+            'Personalização completa de cores, logotipo e telas',
+            'Painel de controle duplo para DJ e apresentador ao vivo',
+            'Exportação de relatórios e métricas em Excel / JSON',
+            'Suporte prioritário 24/7 dedicado para seus eventos',
+          ],
+        },
+      },
     },
     gameDetail: {
       back: 'Voltar',
@@ -856,6 +1105,36 @@ export const translations = {
         close: 'Fermer',
         startNow: 'Lancer la Partie',
       },
+      gameTitles: {
+        'game_1789399149034_19zgu': 'Les Plus Grands Succès du Rock Argentin 2024',
+        'game_1789399016268_mf7zz': 'Quiz Rock et Pop Années 90 (Édition Remastérisée)',
+        'game_1789397749867_erc4i': 'Trap Argentin Bizarrap',
+        'pack-rock-nacional': 'Rock Argentin Classique',
+        'rock-nacional': 'Rock Argentin Classique',
+        'pack-cumbias-cuarteto': 'Cumbia & Cuarteto Festifs',
+        'cumbia-cuarteto': 'Cumbia & Cuarteto Festifs',
+        'pack-pop-2000s': 'Hits Pop Années 2000',
+        'pop-2000s': 'Hits Pop Années 2000',
+        'pack-anime-series': 'Génériques d\'Animes & Séries TV',
+        'anime-series': 'Génériques d\'Animes & Séries TV',
+        'pack-reggaeton-old-school': 'Reggaeton Old School',
+        'reggaeton-old-school': 'Reggaeton Old School',
+      },
+      gameDescriptions: {
+        'game_1789399149034_19zgu': 'Les hymnes incontournables du rock argentin que tout le monde connaît par cœur.',
+        'game_1789399016268_mf7zz': 'Partie test style Kahoot créée par l\'utilisateur.',
+        'game_1789397749867_erc4i': 'Les meilleures BZRP Music Sessions à chanter à tue-tête.',
+        'pack-rock-nacional': 'Les hymnes incontournables du rock argentin que tout le monde connaît par cœur.',
+        'rock-nacional': 'Les hymnes incontournables du rock argentin que tout le monde connaît par cœur.',
+        'pack-cumbias-cuarteto': 'Gilda, Rodrigo, Los Palmeras et les hits qui font danser tout le monde.',
+        'cumbia-cuarteto': 'Gilda, Rodrigo, Los Palmeras et les hits qui font danser tout le monde.',
+        'pack-pop-2000s': 'Les hymnes de discothèque et de radio qui ont marqué toute une génération.',
+        'pop-2000s': 'Les hymnes de discothèque et de radio qui ont marqué toute une génération.',
+        'pack-anime-series': 'Replongez en enfance avec les génériques télévisés les plus cultes.',
+        'anime-series': 'Replongez en enfance avec les génériques télévisés les plus cultes.',
+        'pack-reggaeton-old-school': 'Les morceaux mythiques qui ont lancé le perreo dans les clubs des années 2000.',
+        'reggaeton-old-school': 'Les morceaux mythiques qui ont lancé le perreo dans les clubs des années 2000.',
+      },
     },
     plans: {
       badge: 'Abonnements pour Chaque Événement',
@@ -881,6 +1160,59 @@ export const translations = {
       back: 'Retour',
       moderationLink: 'Panneau de Modération →',
       loadingPlans: 'Chargement des forfaits...',
+      planActivated: 'Abonnement activé avec succès !',
+      tiers: {
+        free: {
+          name: 'Acoustique',
+          badge: 'Pour la maison',
+          tagline: 'Idéal pour jouer entre amis et en petits comités sans aucun frais.',
+          features: [
+            'Jusqu\'à 10 joueurs par salon',
+            'Accès à tous les packs musicaux publics',
+            'Buzzer web classique en temps réel',
+            'Tableau des scores et points automatique',
+          ],
+        },
+        plus: {
+          name: 'Party Plus',
+          badge: 'Pour fêtes et amis',
+          tagline: 'Le kit idéal pour les anniversaires, soirées et fous rires musicaux.',
+          discountText: 'Économisez 20% par an',
+          features: [
+            'Jusqu\'à 35 joueurs en simultané',
+            'Création illimitée de packs personnalisés',
+            'Effets sonores arcade et buzzers thématiques',
+            'Recherche YouTube intégrée avec aperçu',
+            'Parties sans publicité ni attente',
+          ],
+        },
+        pro: {
+          name: 'Showtime Pro',
+          badge: 'Le Plus Populaire',
+          tagline: 'L\'expérience ultime de jeu télévisé pour bars, événements et animateurs.',
+          discountText: 'Économisez 25% par an',
+          features: [
+            'Jusqu\'à 100 joueurs en simultané',
+            'Assistant IA DJ Bot avec suggestions en direct',
+            'Mode Tournoi par Équipes avec podium interactif',
+            'Commandes avancées de temps et de départage',
+            'Accès prioritaire aux nouveautés et packs exclusifs',
+          ],
+        },
+        ultra: {
+          name: 'Festival 360',
+          badge: 'Pour professionnels et grands événements',
+          tagline: 'La plateforme complète pour animateurs, clubs, salles de fête et festivals.',
+          discountText: 'Économisez 30% jusqu\'à la fin du mois',
+          features: [
+            'Joueurs illimités (jusqu\'à 1 000+ par salon)',
+            'Personnalisation complète : couleurs, logo et écrans',
+            'Double tableau de bord pour DJ et animateur en direct',
+            'Exportation des rapports et statistiques en Excel / JSON',
+            'Support dédié prioritaire 24/7 pour vos événements',
+          ],
+        },
+      },
     },
     gameDetail: {
       back: 'Retour',
@@ -1083,6 +1415,36 @@ export const translations = {
         close: 'Schließen',
         startNow: 'Spiel jetzt starten',
       },
+      gameTitles: {
+        'game_1789399149034_19zgu': 'Argentinische Rock-Hits 2024',
+        'game_1789399016268_mf7zz': '90er Rock & Pop Quiz (Remastered Edition)',
+        'game_1789397749867_erc4i': 'Argentinischer Trap & Bizarrap',
+        'pack-rock-nacional': 'Klassischer argentinischer Rock',
+        'rock-nacional': 'Klassischer argentinischer Rock',
+        'pack-cumbias-cuarteto': 'Party-Cumbia & Cuarteto',
+        'cumbia-cuarteto': 'Party-Cumbia & Cuarteto',
+        'pack-pop-2000s': '2000er Pop-Hits Bangerz',
+        'pop-2000s': '2000er Pop-Hits Bangerz',
+        'pack-anime-series': 'Anime- & Serien-Intros',
+        'anime-series': 'Anime- & Serien-Intros',
+        'pack-reggaeton-old-school': 'Old School Reggaeton',
+        'reggaeton-old-school': 'Old School Reggaeton',
+      },
+      gameDescriptions: {
+        'game_1789399149034_19zgu': 'Die unangefochtenen Hymnen des argentinischen Rocks, die jeder auswendig kann.',
+        'game_1789399016268_mf7zz': 'Kahoot-Style Testspiel vom Benutzer erstellt.',
+        'game_1789397749867_erc4i': 'Die besten BZRP Music Sessions zum lauthals Mitsingen.',
+        'pack-rock-nacional': 'Die unangefochtenen Hymnen des argentinischen Rocks, die jeder auswendig kann.',
+        'rock-nacional': 'Die unangefochtenen Hymnen des argentinischen Rocks, die jeder auswendig kann.',
+        'pack-cumbias-cuarteto': 'Gilda, Rodrigo, Los Palmeras und die Hits, die alle von den Sitzen reißen.',
+        'cumbia-cuarteto': 'Gilda, Rodrigo, Los Palmeras und die Hits, die alle von den Sitzen reißen.',
+        'pack-pop-2000s': 'Club- und Radiohymnen, die eine ganze Generation geprägt haben.',
+        'pop-2000s': 'Club- und Radiohymnen, die eine ganze Generation geprägt haben.',
+        'pack-anime-series': 'Kindheitserinnerungen mit den meistgesungenen TV-Intros der Geschichte.',
+        'anime-series': 'Kindheitserinnerungen mit den meistgesungenen TV-Intros der Geschichte.',
+        'pack-reggaeton-old-school': 'Die Hits, die den Club-Perreo der 2000er Jahre begründeten.',
+        'reggaeton-old-school': 'Die Hits, die den Club-Perreo der 2000er Jahre begründeten.',
+      },
     },
     plans: {
       badge: 'Tarife für Jeden Anlass',
@@ -1108,6 +1470,59 @@ export const translations = {
       back: 'Zurück',
       moderationLink: 'Moderations-Panel →',
       loadingPlans: 'Lade Tarife...',
+      planActivated: 'Tarif erfolgreich aktiviert!',
+      tiers: {
+        free: {
+          name: 'Akustik',
+          badge: 'Für Zuhause',
+          tagline: 'Ideal für Spiele mit Freunden und kleine Treffen völlig kostenlos.',
+          features: [
+            'Bis zu 10 Spieler pro Raum',
+            'Zugang zu allen öffentlichen Song-Packs',
+            'Klassischer Echtzeit-Web-Buzzer',
+            'Automatische Punkte- und Rangliste',
+          ],
+        },
+        plus: {
+          name: 'Party Plus',
+          badge: 'Für Partys & Freunde',
+          tagline: 'Das ultimative Kit für Geburtstage, Partys und grenzenlosen Musikspaß.',
+          discountText: '20% jährlich sparen',
+          features: [
+            'Bis zu 35 gleichzeitige Spieler',
+            'Unbegrenzte Erstellung eigener Packs',
+            'Arcade-Soundeffekte und thematische Buzzer',
+            'Integrierte YouTube-Suche mit Vorschau',
+            'Werbefreies Spielen ohne Wartezeit',
+          ],
+        },
+        pro: {
+          name: 'Showtime Pro',
+          badge: 'Beliebteste Wahl',
+          tagline: 'Das ultimative Gameshow-Erlebnis für Bars, Events und Moderatoren.',
+          discountText: '25% jährlich sparen',
+          features: [
+            'Bis zu 100 gleichzeitige Spieler',
+            'Intelligenter KI-DJ-Bot mit Live-Vorschlägen',
+            'Team-Turniermodus mit interaktivem Podium',
+            'Erweiterte Timer- und Stechen-Steuerung',
+            'Priorisierter Zugang zu neuen Packs',
+          ],
+        },
+        ultra: {
+          name: 'Festival 360',
+          badge: 'Für Profis & Großveranstaltungen',
+          tagline: 'Die Komplettlösung für Moderatoren, Eventlocations, Clubs und Großveranstaltungen.',
+          discountText: '30% sparen bis Monatsende',
+          features: [
+            'Unbegrenzte Spieler (bis zu 1.000+ pro Raum)',
+            'Vollständiges Branding: Farben, Logos & Bildschirme',
+            'Duales Steuerpult für DJ und Live-Moderator',
+            'Export von Spielberichten & Statistiken in Excel / JSON',
+            'Priorisierter 24/7-Support für deine Großveranstaltungen',
+          ],
+        },
+      },
     },
     gameDetail: {
       back: 'Zurück',
@@ -1142,3 +1557,78 @@ export const translations = {
     },
   },
 };
+
+/**
+ * Helper to get localized game description across all languages with ID and text-matching fallbacks
+ */
+export function getLocalizedGameDescription(game, t) {
+  if (!game) return '';
+  if (game.id) {
+    const byId = t(`library.gameDescriptions.${game.id}`, '');
+    if (byId && byId !== `library.gameDescriptions.${game.id}`) return byId;
+  }
+  const desc = (game.description || '').trim();
+  if (!desc) {
+    return t('library.cards.defaultDesc', 'Partida de trivia musical interactiva creada por la comunidad.');
+  }
+  if (desc.includes('himnos indiscutidos') || desc.includes('rock argentino')) {
+    return t('library.gameDescriptions.pack-rock-nacional', desc);
+  }
+  if (desc.includes('estilo Kahoot') || desc.includes('prueba estilo Kahoot')) {
+    return t('library.gameDescriptions.game_1789399016268_mf7zz', desc);
+  }
+  if (desc.includes('BZRP') || desc.includes('Bizarrap') || desc.includes('todo pulmón')) {
+    return t('library.gameDescriptions.game_1789397749867_erc4i', desc);
+  }
+  if (desc.includes('Gilda') || desc.includes('levantan a todos de la silla')) {
+    return t('library.gameDescriptions.pack-cumbias-cuarteto', desc);
+  }
+  if (desc.includes('marcaron a toda una generación') || desc.includes('radio que marcaron')) {
+    return t('library.gameDescriptions.pack-pop-2000s', desc);
+  }
+  if (desc.includes('baúl de la infancia') || desc.includes('intros de tele')) {
+    return t('library.gameDescriptions.pack-anime-series', desc);
+  }
+  if (desc.includes('inauguraron el perreo') || desc.includes('perreo en los boliches')) {
+    return t('library.gameDescriptions.pack-reggaeton-old-school', desc);
+  }
+  return desc;
+}
+
+/**
+ * Helper to get localized game title across all languages with ID and text-matching fallbacks
+ */
+export function getLocalizedGameTitle(game, t) {
+  if (!game) return '';
+  if (game.id) {
+    const byId = t(`library.gameTitles.${game.id}`, '');
+    if (byId && byId !== `library.gameTitles.${game.id}`) return byId;
+  }
+  const title = (game.title || '').trim();
+  if (title.includes('Grandes Éxitos del Rock Nacional')) {
+    return t('library.gameTitles.game_1789399149034_19zgu', title);
+  }
+  if (title.includes('Trivia Rock y Pop 90s')) {
+    return t('library.gameTitles.game_1789399016268_mf7zz', title);
+  }
+  if (title.includes('Trap Argentino Bizarrap')) {
+    return t('library.gameTitles.game_1789397749867_erc4i', title);
+  }
+  if (title.includes('Rock Nacional Clásico')) {
+    return t('library.gameTitles.pack-rock-nacional', title);
+  }
+  if (title.includes('Cumbias & Cuarteto')) {
+    return t('library.gameTitles.pack-cumbias-cuarteto', title);
+  }
+  if (title.includes('Hits Pop 2000s')) {
+    return t('library.gameTitles.pack-pop-2000s', title);
+  }
+  if (title.includes('Intros de Series & Animé')) {
+    return t('library.gameTitles.pack-anime-series', title);
+  }
+  if (title.includes('Reggaeton Old School')) {
+    return t('library.gameTitles.pack-reggaeton-old-school', title);
+  }
+  return title;
+}
+
