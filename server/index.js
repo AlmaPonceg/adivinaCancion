@@ -224,6 +224,43 @@ app.post('/api/games/:id/play', async (req, res) => {
   }
 });
 
+// Update a saved game
+app.put('/api/games/:id', async (req, res) => {
+  try {
+    const updated = await gamesRepository.updateGame(req.params.id, req.body || {});
+    return res.json({ success: true, game: updated });
+  } catch (err) {
+    console.error('[API] Error updating game:', err);
+    return res.status(400).json({ success: false, error: err.message || 'Error al actualizar la partida' });
+  }
+});
+
+// Delete a saved game
+app.delete('/api/games/:id', async (req, res) => {
+  try {
+    const deleted = await gamesRepository.deleteGame(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'Partida no encontrada o ya eliminada' });
+    }
+    return res.json({ success: true, message: 'Partida eliminada' });
+  } catch (err) {
+    console.error('[API] Error deleting game:', err);
+    return res.status(500).json({ success: false, error: 'Error al eliminar la partida' });
+  }
+});
+
+// Fetch batch games by IDs (e.g. for "My Games" tab)
+app.post('/api/games/batch', async (req, res) => {
+  try {
+    const { ids } = req.body || {};
+    const games = await gamesRepository.getGamesByIds(ids || []);
+    return res.json({ success: true, games });
+  } catch (err) {
+    console.error('[API] Error fetching batch games:', err);
+    return res.status(500).json({ success: false, error: 'Error al consultar partidas' });
+  }
+});
+
 // YouTube Auto-Karaoke endpoint (Supports Playlist URL or Array of Song Names)
 app.post('/api/playlist', async (req, res) => {
   try {

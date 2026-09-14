@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import socket, { SERVER_URL } from '../socket';
 import { useSocketEvent, useSocketEmit } from '../hooks/useSocket';
 import QRDisplay from '../components/QRDisplay';
@@ -53,6 +53,7 @@ const LOBBY_TUTORIAL_STEPS = [
 
 export default function HostLobby() {
   const navigate = useNavigate();
+  const location = useLocation();
   const emit = useSocketEmit();
   const [roomCode, setRoomCode] = useState(null);
   const [players, setPlayers] = useState([]);
@@ -81,8 +82,14 @@ export default function HostLobby() {
 
   // ── Playlist State ──────────────────────────────────────────
   const [playlist, setPlaylist] = useState(() => {
+    if (location.state?.preloadedPlaylist && Array.isArray(location.state.preloadedPlaylist)) {
+      try {
+        localStorage.setItem('trivia_playlist', JSON.stringify(location.state.preloadedPlaylist));
+      } catch {}
+      return location.state.preloadedPlaylist;
+    }
     try {
-      const saved = localStorage.getItem('trivia_playlist');
+      const saved = localStorage.getItem('trivia_playlist') || localStorage.getItem('trivia_current_playlist');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];

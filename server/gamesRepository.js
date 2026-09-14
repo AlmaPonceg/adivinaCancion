@@ -271,6 +271,61 @@ class GamesRepository {
   }
 
   /**
+   * Update an existing saved game
+   */
+  async updateGame(id, { title, description, creatorName, isPublic, gameMode, tracks, genre } = {}) {
+    const all = this._readAll();
+    const index = all.findIndex((g) => g.id === id);
+    if (index === -1) {
+      throw new Error('Partida no encontrada');
+    }
+    const current = all[index];
+    const updated = {
+      ...current,
+      title: title !== undefined ? title.trim() : current.title,
+      description: description !== undefined ? description.trim() : current.description,
+      creatorName: creatorName !== undefined ? creatorName.trim() : current.creatorName,
+      isPublic: isPublic !== undefined ? Boolean(isPublic) : current.isPublic,
+      gameMode: gameMode !== undefined ? gameMode : current.gameMode,
+      genre: genre !== undefined ? genre.trim() : current.genre,
+      tracks: Array.isArray(tracks) && tracks.length > 0 ? tracks.map((t, idx) => ({
+        id: t.id || `t_${idx}_${Date.now()}`,
+        title: t.title || 'Canción sin título',
+        artist: t.artist || 'Artista desconocido',
+        type: t.type || 'youtube',
+        url: t.url || ''
+      })) : current.tracks,
+      updatedAt: new Date().toISOString()
+    };
+    all[index] = updated;
+    this._writeAll(all);
+    return updated;
+  }
+
+  /**
+   * Delete game by ID
+   */
+  async deleteGame(id) {
+    const all = this._readAll();
+    const filtered = all.filter((g) => g.id !== id);
+    if (filtered.length === all.length) {
+      return false;
+    }
+    this._writeAll(filtered);
+    return true;
+  }
+
+  /**
+   * Get multiple games by an array of IDs
+   */
+  async getGamesByIds(ids = []) {
+    if (!Array.isArray(ids) || ids.length === 0) return [];
+    const all = this._readAll();
+    const set = new Set(ids);
+    return all.filter((g) => set.has(g.id));
+  }
+
+  /**
    * Increment play count when a host launches the game
    */
   async incrementPlayCount(id) {

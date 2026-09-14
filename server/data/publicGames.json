@@ -1,5 +1,116 @@
 [
   {
+    "id": "game_1789399149034_19zgu",
+    "title": "Fiesta Cumbias & Cuarteto 2024",
+    "description": "Los himnos indiscutidos del rock argentino que todo el mundo sabe de memoria.",
+    "creatorName": "DJ Cumple",
+    "isPublic": true,
+    "gameMode": "auto",
+    "genre": "Rock Argentino",
+    "tracks": [
+      {
+        "id": "pre_rock-nacional_0_1789399148239",
+        "title": "De Música Ligera",
+        "artist": "Soda Stereo",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=OX-us7PEfkc"
+      },
+      {
+        "id": "pre_rock-nacional_1_1789399148239",
+        "title": "El Amor Después del Amor",
+        "artist": "Fito Páez",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=knvgOdKPaMQ"
+      },
+      {
+        "id": "pre_rock-nacional_2_1789399148239",
+        "title": "Mil Horas",
+        "artist": "Los Abuelos de la Nada",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=1To_Wz5RWi0"
+      },
+      {
+        "id": "pre_rock-nacional_3_1789399148239",
+        "title": "Ji Ji Ji",
+        "artist": "Patricio Rey y sus Redonditos de Ricota",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=tVvTDVswTxQ"
+      },
+      {
+        "id": "pre_rock-nacional_4_1789399148239",
+        "title": "Flaca",
+        "artist": "Andrés Calamaro",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=UCF9oHXhDMU"
+      },
+      {
+        "id": "pre_rock-nacional_5_1789399148239",
+        "title": "Lamento Boliviano",
+        "artist": "Los Enanitos Verdes",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=hReAuaAuJOE"
+      },
+      {
+        "id": "pre_rock-nacional_6_1789399148239",
+        "title": "Rezo por Vos",
+        "artist": "Charly García & Luis Alberto Spinetta",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=kHPja5eLZdU"
+      },
+      {
+        "id": "pre_rock-nacional_7_1789399148239",
+        "title": "Spaghetti del Rock",
+        "artist": "Divididos",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=cdzpf_T2qaA"
+      },
+      {
+        "id": "pre_rock-nacional_8_1789399148239",
+        "title": "Pupilas Lejanas",
+        "artist": "Los Pericos",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=zPxlLzbFpMg"
+      },
+      {
+        "id": "pre_rock-nacional_9_1789399148239",
+        "title": "Irresponsables",
+        "artist": "Babasónicos",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=gZV2Q9zH2eg"
+      }
+    ],
+    "playCount": 0,
+    "createdAt": "2026-09-14T15:19:09.034Z"
+  },
+  {
+    "id": "game_1789399016268_mf7zz",
+    "title": "Trivia Rock y Pop 90s (Edición Remasterizada)",
+    "description": "Partida de prueba estilo Kahoot creada por el usuario",
+    "creatorName": "Facu Dev",
+    "isPublic": true,
+    "gameMode": "auto",
+    "genre": "Rock Argentino",
+    "tracks": [
+      {
+        "id": "t_0_1789399016269",
+        "title": "Canción Animal",
+        "artist": "Soda Stereo",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=animal123"
+      },
+      {
+        "id": "t_1_1789399016269",
+        "title": "Matador",
+        "artist": "Los Fabulosos Cadillacs",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=matador456"
+      }
+    ],
+    "playCount": 0,
+    "createdAt": "2026-09-14T15:16:56.269Z",
+    "updatedAt": "2026-09-14T15:16:56.304Z"
+  },
+  {
     "id": "game_1789397821677_4vsqu",
     "title": "Mi Partida Privada de Cumpleaños",
     "description": "",

@@ -145,15 +145,27 @@ export default function Landing() {
             <span>Unirme como Jugador con Celular</span>
           </button>
 
-          <button
-            onClick={() => navigate('/library')}
-            className="arcade-btn py-3.5 px-6 rounded-2xl text-sm font-black text-[#181226] hover:text-[#FF5722] flex items-center justify-center gap-2 cursor-pointer bg-[#F7F4EE] border-2 border-[#E5DFD5] shadow-xs"
-          >
-            <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            <span>Explorar Biblioteca de Partidas</span>
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button
+              onClick={() => navigate('/create')}
+              className="arcade-btn py-3 px-4 rounded-2xl text-xs sm:text-sm font-black text-[#181226] hover:text-[#FF5722] flex items-center justify-center gap-2 cursor-pointer bg-[#FAF7F2] border-2 border-[#E5DFD5] shadow-xs"
+            >
+              <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Crear Partida</span>
+            </button>
+
+            <button
+              onClick={() => navigate('/library')}
+              className="arcade-btn py-3 px-4 rounded-2xl text-xs sm:text-sm font-black text-[#181226] hover:text-[#FF5722] flex items-center justify-center gap-2 cursor-pointer bg-[#FAF7F2] border-2 border-[#E5DFD5] shadow-xs"
+            >
+              <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              <span>Biblioteca</span>
+            </button>
+          </div>
         </div>
       </motion.div>
     </div>
