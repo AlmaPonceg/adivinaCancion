@@ -87,49 +87,6 @@ const MusicPlayer = forwardRef(function MusicPlayer(
   const skipCountdownRef = useRef(null);
   const handleNextTrackRef = useRef(null);
 
-  const handlePlaybackError = useCallback(
-    (code) => {
-      setIsPlaying(false);
-      stopProgress();
-      if (timerRef.current) clearTimeout(timerRef.current);
-
-      const isRestriction = code === 101 || code === 150;
-      const errorDetails = {
-        code,
-        isRestriction,
-        title: currentTrack?.title || currentTrack?.name || 'Canción actual',
-        message: isRestriction
-          ? 'El autor bloqueó la reproducción fuera de YouTube por derechos de autor.'
-          : 'Este video fue eliminado, es privado o no está disponible en YouTube.',
-      };
-      setUnavailableError(errorDetails);
-
-      setSkipSecondsLeft(3);
-      if (skipCountdownRef.current) clearInterval(skipCountdownRef.current);
-      let remaining = 3;
-      skipCountdownRef.current = setInterval(() => {
-        remaining -= 1;
-        setSkipSecondsLeft(remaining);
-        if (remaining <= 0) {
-          clearInterval(skipCountdownRef.current);
-          skipCountdownRef.current = null;
-          setUnavailableError(null);
-          handleNextTrackRef.current?.();
-        }
-      }, 1000);
-    },
-    [currentTrack, stopProgress]
-  );
-
-  const handleManualSkipUnavailable = () => {
-    if (skipCountdownRef.current) {
-      clearInterval(skipCountdownRef.current);
-      skipCountdownRef.current = null;
-    }
-    setUnavailableError(null);
-    handleNextTrackRef.current?.();
-  };
-
   const applyDuration = useCallback((val) => {
     const parsed = Math.max(1, Math.min(120, parseInt(val, 10) || 1));
     setPlayDuration(parsed);
@@ -212,6 +169,49 @@ const MusicPlayer = forwardRef(function MusicPlayer(
       }
     }, 150);
   }, [mediaType, stopProgress]);
+
+  const handlePlaybackError = useCallback(
+    (code) => {
+      setIsPlaying(false);
+      stopProgress();
+      if (timerRef.current) clearTimeout(timerRef.current);
+
+      const isRestriction = code === 101 || code === 150;
+      const errorDetails = {
+        code,
+        isRestriction,
+        title: currentTrack?.title || currentTrack?.name || 'Canción actual',
+        message: isRestriction
+          ? 'El autor bloqueó la reproducción fuera de YouTube por derechos de autor.'
+          : 'Este video fue eliminado, es privado o no está disponible en YouTube.',
+      };
+      setUnavailableError(errorDetails);
+
+      setSkipSecondsLeft(3);
+      if (skipCountdownRef.current) clearInterval(skipCountdownRef.current);
+      let remaining = 3;
+      skipCountdownRef.current = setInterval(() => {
+        remaining -= 1;
+        setSkipSecondsLeft(remaining);
+        if (remaining <= 0) {
+          clearInterval(skipCountdownRef.current);
+          skipCountdownRef.current = null;
+          setUnavailableError(null);
+          handleNextTrackRef.current?.();
+        }
+      }, 1000);
+    },
+    [currentTrack, stopProgress]
+  );
+
+  const handleManualSkipUnavailable = () => {
+    if (skipCountdownRef.current) {
+      clearInterval(skipCountdownRef.current);
+      skipCountdownRef.current = null;
+    }
+    setUnavailableError(null);
+    handleNextTrackRef.current?.();
+  };
 
   const loadMedia = useCallback(
     (trackInput) => {
