@@ -1,13 +1,20 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam, onRemoveTeam, maxPlayersPerTeam = 4 }) {
+export default function TeamDisplay({
+  teams,
+  onMovePlayer,
+  onRenameTeam,
+  onRemoveTeam,
+  maxPlayersPerTeam = 4,
+  isIndividual = false,
+}) {
   const [editingIdx, setEditingIdx] = useState(null);
   const [editName, setEditName] = useState('');
 
   if (!teams || teams.length === 0) return null;
 
-  const hasLimit = typeof maxPlayersPerTeam === 'number' && maxPlayersPerTeam > 0;
+  const hasLimit = !isIndividual && typeof maxPlayersPerTeam === 'number' && maxPlayersPerTeam > 0;
 
   const startEdit = (idx, currentName) => {
     setEditingIdx(idx);
@@ -109,17 +116,23 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam, onRemov
                   </span>
                 )}
 
-                <span
-                  className={`mono text-xs font-bold px-2.5 py-1 rounded-lg border shrink-0 ${
-                    hasLimit && team.players.length >= maxPlayersPerTeam
-                      ? 'bg-[#FFF0EB] text-[#FF5722] border-[#FF5722]/30'
-                      : 'bg-white border-[#EAE3D5] text-[#6B6280]'
-                  }`}
-                >
-                  {team.players.length}{hasLimit ? `/${maxPlayersPerTeam}` : ' jug.'}
-                </span>
+                {isIndividual ? (
+                  <span className="mono text-xs font-black px-2.5 py-1 rounded-lg bg-[#FDF4FF] border border-[#F5D0FE] text-[#86198F] shrink-0 shadow-2xs">
+                    🏆 1 vs Todos
+                  </span>
+                ) : (
+                  <span
+                    className={`mono text-xs font-bold px-2.5 py-1 rounded-lg border shrink-0 ${
+                      hasLimit && team.players.length >= maxPlayersPerTeam
+                        ? 'bg-[#FFF0EB] text-[#FF5722] border-[#FF5722]/30'
+                        : 'bg-white border-[#EAE3D5] text-[#6B6280]'
+                    }`}
+                  >
+                    {team.players.length}{hasLimit ? `/${maxPlayersPerTeam}` : ' jug.'}
+                  </span>
+                )}
 
-                {onRemoveTeam && teams.length > 2 && (
+                {!isIndividual && onRemoveTeam && teams.length > 2 && (
                   <button
                     type="button"
                     onClick={() => onRemoveTeam(teamIdx)}
@@ -165,7 +178,7 @@ export default function TeamDisplay({ teams, onMovePlayer, onRenameTeam, onRemov
                     </div>
 
                     {/* Quick Move to another team selector */}
-                    {onMovePlayer && teams.length > 1 && (
+                    {!isIndividual && onMovePlayer && teams.length > 1 && (
                       <div className="flex items-center gap-1 shrink-0">
                         <select
                           value={teamIdx}

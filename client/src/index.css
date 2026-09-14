@@ -200,6 +200,101 @@ h1, h2, h3, .font-heading, .font-display {
               inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
 
+/* Mode-Themed Physical Arcade Buttons */
+.arcade-btn-indigo {
+  background: #4F46E5;
+  color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 5px 0 #312E81,
+              0 10px 22px -3px rgba(79, 70, 229, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.08s ease;
+  cursor: pointer;
+  font-family: var(--font-tactical);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.arcade-btn-indigo:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #312E81,
+              0 14px 28px -2px rgba(79, 70, 229, 0.45),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.arcade-btn-indigo:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #312E81,
+              0 4px 10px rgba(79, 70, 229, 0.25),
+              inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+.arcade-btn-magenta {
+  background: #D946EF;
+  color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 5px 0 #86198F,
+              0 10px 22px -3px rgba(217, 70, 239, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.08s ease;
+  cursor: pointer;
+  font-family: var(--font-tactical);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.arcade-btn-magenta:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #86198F,
+              0 14px 28px -2px rgba(217, 70, 239, 0.45),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.arcade-btn-magenta:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #86198F,
+              0 4px 10px rgba(217, 70, 239, 0.25),
+              inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+.arcade-btn-emerald {
+  background: #059669;
+  color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 5px 0 #065F46,
+              0 10px 22px -3px rgba(5, 150, 105, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.08s ease;
+  cursor: pointer;
+  font-family: var(--font-tactical);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.arcade-btn-emerald:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #065F46,
+              0 14px 28px -2px rgba(5, 150, 105, 0.45),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.arcade-btn-emerald:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #065F46,
+              0 4px 10px rgba(5, 150, 105, 0.25),
+              inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+
 /* Neutral Arcade Button (Crisp Ivory Bevel) */
 .console-btn, .arcade-btn {
   background: #FFFFFF;
