@@ -152,22 +152,17 @@ export default function GameModeSelector({
               onClick={() => setSelectedId(mode.id)}
               className={`w-full rounded-2xl border-2 transition-all cursor-pointer overflow-hidden ${
                 isSelected
-                  ? 'border-current bg-white shadow-sm'
+                  ? 'border-[#181226] bg-white shadow-sm'
                   : 'border-[#EAE3D5] bg-[#FAF7F2] hover:border-[#DDD5C5] hover:bg-white'
               }`}
-              style={{
-                borderColor: isSelected ? mode.color : '#EAE3D5',
-              }}
             >
               {/* Option Header Row */}
               <div className="p-3.5 flex items-center gap-3.5">
                 {/* Mode Number Stamp */}
                 <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center font-display font-black text-sm shrink-0 transition-colors"
-                  style={{
-                    backgroundColor: isSelected ? mode.color : '#EDE8DF',
-                    color: isSelected ? '#FFFFFF' : '#6B6280',
-                  }}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-display font-black text-sm shrink-0 transition-colors ${
+                    isSelected ? 'bg-[#181226] text-white' : 'bg-[#EDE8DF] text-[#6B6280]'
+                  }`}
                 >
                   {mode.num}
                 </div>
@@ -184,11 +179,9 @@ export default function GameModeSelector({
 
                 {/* Accordion Indicator */}
                 <div
-                  className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-all"
-                  style={{
-                    backgroundColor: isSelected ? mode.color : '#F1ECE3',
-                    color: isSelected ? '#FFFFFF' : '#8A8199',
-                  }}
+                  className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                    isSelected ? 'bg-[#181226] text-white' : 'bg-[#F1ECE3] text-[#8A8199]'
+                  }`}
                 >
                   {isSelected ? (
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -202,7 +195,7 @@ export default function GameModeSelector({
                 </div>
               </div>
 
-              {/* Expandable Brief Description & 3D Arcade Button */}
+              {/* Expandable Brief Description & Primary Arcade Button */}
               <AnimatePresence initial={false}>
                 {isSelected && (
                   <motion.div
@@ -213,23 +206,19 @@ export default function GameModeSelector({
                     className="overflow-hidden"
                   >
                     <div className="px-3.5 pb-3.5 pt-1 flex flex-col gap-3">
-                      {/* Short, natural explanation in a warm inset well */}
-                      <p className="text-xs text-[#2A233C] font-semibold leading-relaxed bg-[#F7F4EE] p-3 rounded-xl border border-[#DDD5C5]">
+                      {/* Short, natural explanation in a clean inset well */}
+                      <p className="text-xs text-[#2A233C] font-semibold leading-relaxed bg-[#FAF7F2] p-3 rounded-xl border border-[#EAE3D5]">
                         {mode.description}
                       </p>
 
-                      {/* 3D Physical Arcade Button */}
+                      {/* Unified Solid Primary Arcade Button */}
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleConfirm(mode);
                         }}
-                        className="w-full py-3 px-4 rounded-xl text-white font-tactical font-black text-sm flex items-center justify-center gap-2 cursor-pointer transition-transform active:translate-y-0.5"
-                        style={{
-                          backgroundColor: mode.color,
-                          boxShadow: `0 4px 0 ${mode.colorDark}`,
-                        }}
+                        className="w-full arcade-btn-primary py-3 px-4 rounded-xl text-white font-tactical font-black text-sm flex items-center justify-center gap-2 cursor-pointer transition-transform active:translate-y-0.5 shadow-sm"
                       >
                         <span>Continuar con {mode.shortName} →</span>
                       </button>
