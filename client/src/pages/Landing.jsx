@@ -15,8 +15,8 @@ export default function Landing() {
       <header className="w-full max-w-xl flex items-center justify-between py-3 mb-3 z-20">
         <div className="flex items-center gap-2.5">
           <AppLogo className="w-8 h-8" />
-          <span className="font-display font-black text-sm text-[#181226] tracking-tight">
-            Adiviná la Canción
+          <span className="font-display font-black text-lg text-[#181226] tracking-tight">
+            Hitpop!
           </span>
         </div>
 
@@ -119,18 +119,18 @@ export default function Landing() {
         <div className="flex items-center justify-center gap-3 mb-3">
           <span className="h-px w-8 bg-[#E5DFD5]" />
           <span className="badge-tag text-[#FF5722] tracking-[0.25em] font-extrabold">
-            JUEGO DE MÚSICA EN VIVO · MULTIJUGADOR
+            TRIVIA MUSICAL EN VIVO · MULTIJUGADOR
           </span>
           <span className="h-px w-8 bg-[#E5DFD5]" />
         </div>
 
         {/* Hero Title with Solid Color Accent */}
-        <h1 className="font-display text-3xl sm:text-5xl font-black tracking-tight leading-[1.05] text-[#181226] mb-3">
-          ADIVINÁ LA <span className="text-[#FF5722]">CANCIÓN</span>
+        <h1 className="font-display text-4xl sm:text-6xl font-black tracking-tight leading-[1.02] text-[#181226] mb-3">
+          HITPOP<span className="text-[#FF5722]">!</span>
         </h1>
 
         <p className="text-[#574F6B] text-xs sm:text-base mb-6 sm:mb-7 max-w-sm mx-auto leading-relaxed font-semibold">
-          El juego de música en vivo para reuniones y fiestas. Cada invitado usa su celular como pulsador de alta velocidad.
+          El juego de adivinar canciones en vivo para reuniones y fiestas. Cada invitado usa su celular como pulsador de alta velocidad.
         </p>
 
         {/* Feature Strip */}

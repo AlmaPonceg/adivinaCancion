@@ -1,4 +1,4 @@
-export default function AppLogo({ className = "w-8 h-8", alt = "Adiviná la Canción" }) {
+export default function AppLogo({ className = "w-8 h-8", alt = "Hitpop!" }) {
   return (
     <img
       src="/logo.png"

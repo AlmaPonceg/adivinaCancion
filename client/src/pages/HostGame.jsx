@@ -484,7 +484,7 @@ export default function HostGame() {
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <span className="w-2.5 h-2.5 rounded-full bg-[#059669] shadow-[0_0_8px_#059669]" />
-            <h1 className="font-display text-base sm:text-lg font-black text-[#181226]">ADIVINÁ LA CANCIÓN</h1>
+            <h1 className="font-display text-base sm:text-lg font-black text-[#181226]">HITPOP!</h1>
           </div>
           <p className="mono text-xs text-[#6B6280]">
             Sala {roomCode} · Ronda {roundNumber}{playlist.length > 0 ? ` de ${playlist.length}` : ''}

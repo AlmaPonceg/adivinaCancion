@@ -31,9 +31,9 @@ export function ThemeProvider({ children }) {
   // Dynamic document title update based on active theme
   useEffect(() => {
     if (isAlmaTheme) {
-      document.title = 'Adiviná la Canción — Cumple Alma #24';
+      document.title = 'Hitpop! — Cumple Alma #24';
     } else {
-      document.title = 'Adiviná la Canción — Trivia Musical en Vivo';
+      document.title = 'Hitpop! — Trivia Musical en Vivo';
     }
   }, [isAlmaTheme]);
 
