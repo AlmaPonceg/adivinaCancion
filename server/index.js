@@ -15,6 +15,7 @@ import { GameManager, GAME_STATES, TEAM_COLORS } from './gameManager.js';
 import YouTube from 'youtube-sr';
 import { Innertube, Log } from 'youtubei.js';
 import { selectDjSongCandidates } from './djCatalog.js';
+import gamesRepository from './gamesRepository.js';
 
 // Silence verbose attachment warnings from Innertube's text parser
 Log.setLevel(Log.Level.ERROR);
@@ -145,6 +146,82 @@ app.post('/api/verify-memory-code', (req, res) => {
     unlockedAt: now,
     message: 'Modo Recuerdo desbloqueado exitosamente'
   });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Community Library & Public Saved Games API
+// ═══════════════════════════════════════════════════════════════
+
+// List & search public games
+app.get('/api/games/public', async (req, res) => {
+  try {
+    const { q, genre, mode, sort, limit, offset } = req.query;
+    const result = await gamesRepository.listPublicGames({
+      query: q,
+      genre,
+      mode,
+      sort,
+      limit: limit ? parseInt(limit, 10) : 50,
+      offset: offset ? parseInt(offset, 10) : 0
+    });
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[API] Error listing public games:', err);
+    return res.status(500).json({ success: false, error: 'Error al consultar la biblioteca pública' });
+  }
+});
+
+// Get game details by ID (including tracks to clone / play)
+app.get('/api/games/:id', async (req, res) => {
+  try {
+    const game = await gamesRepository.getGameById(req.params.id);
+    if (!game) {
+      return res.status(404).json({ success: false, error: 'Partida no encontrada' });
+    }
+    return res.json({ success: true, game });
+  } catch (err) {
+    console.error('[API] Error getting game by id:', err);
+    return res.status(500).json({ success: false, error: 'Error al obtener la partida' });
+  }
+});
+
+// Create & publish a game
+app.post('/api/games', async (req, res) => {
+  try {
+    const { title, description, creatorName, isPublic, gameMode, tracks, genre } = req.body || {};
+    if (!title || !tracks || !Array.isArray(tracks) || tracks.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'El título y al menos una canción son obligatorios para guardar la partida'
+      });
+    }
+
+    const newGame = await gamesRepository.createGame({
+      title,
+      description,
+      creatorName,
+      isPublic: Boolean(isPublic),
+      gameMode,
+      tracks,
+      genre
+    });
+
+    console.log(`[API] Nueva partida creada: "${newGame.title}" (${newGame.isPublic ? 'PÚBLICA' : 'PRIVADA'}) con ${newGame.tracks.length} canciones`);
+    return res.status(201).json({ success: true, game: newGame });
+  } catch (err) {
+    console.error('[API] Error creating game:', err);
+    return res.status(400).json({ success: false, error: err.message || 'Error al guardar la partida' });
+  }
+});
+
+// Record a play / launch of a game
+app.post('/api/games/:id/play', async (req, res) => {
+  try {
+    const count = await gamesRepository.incrementPlayCount(req.params.id);
+    return res.json({ success: true, playCount: count });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'Error actualizando contador' });
+  }
 });
 
 // YouTube Auto-Karaoke endpoint (Supports Playlist URL or Array of Song Names)

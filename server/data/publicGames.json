@@ -1,0 +1,436 @@
+[
+  {
+    "id": "game_1789397821677_4vsqu",
+    "title": "Mi Partida Privada de Cumpleaños",
+    "description": "",
+    "creatorName": "Secreto",
+    "isPublic": false,
+    "gameMode": "auto",
+    "genre": "General",
+    "tracks": [
+      {
+        "id": "t_0_1789397821677",
+        "title": "Tema secreto",
+        "artist": "Artista secreto",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=123"
+      }
+    ],
+    "playCount": 0,
+    "createdAt": "2026-09-14T14:57:01.677Z"
+  },
+  {
+    "id": "game_1789397749867_erc4i",
+    "title": "Trap Argentino Bizarrap",
+    "description": "Las mejores BZRP Music Sessions para cantar a todo pulmón.",
+    "creatorName": "Facu",
+    "isPublic": true,
+    "gameMode": "auto",
+    "genre": "Trap & Urbano",
+    "tracks": [
+      {
+        "id": "t_0_1789397749867",
+        "title": "Quevedo: BZRP Music Sessions, Vol. 52",
+        "artist": "Bizarrap & Quevedo",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=A_g3lMcWVy0"
+      },
+      {
+        "id": "t_1_1789397749867",
+        "title": "Nathy Peluso: BZRP Music Sessions, Vol. 36",
+        "artist": "Bizarrap & Nathy Peluso",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=TiM_TFpT_DE"
+      }
+    ],
+    "playCount": 0,
+    "createdAt": "2026-09-14T14:55:49.867Z"
+  },
+  {
+    "id": "pack-rock-nacional",
+    "title": "Rock Nacional Clásico",
+    "description": "Los himnos indiscutidos del rock argentino que todo el mundo sabe de memoria.",
+    "genre": "Rock Argentino",
+    "creatorName": "Comunidad Trivia",
+    "isPublic": true,
+    "gameMode": "auto",
+    "playCount": 142,
+    "createdAt": "2026-09-07T14:54:36.885Z",
+    "tracks": [
+      {
+        "id": "pre_rn_1",
+        "title": "De Música Ligera",
+        "artist": "Soda Stereo",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=OX-us7PEfkc"
+      },
+      {
+        "id": "pre_rn_2",
+        "title": "El Amor Después del Amor",
+        "artist": "Fito Páez",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=knvgOdKPaMQ"
+      },
+      {
+        "id": "pre_rn_3",
+        "title": "Mil Horas",
+        "artist": "Los Abuelos de la Nada",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=1To_Wz5RWi0"
+      },
+      {
+        "id": "pre_rn_4",
+        "title": "Ji Ji Ji",
+        "artist": "Patricio Rey y sus Redonditos de Ricota",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=tVvTDVswTxQ"
+      },
+      {
+        "id": "pre_rn_5",
+        "title": "Flaca",
+        "artist": "Andrés Calamaro",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=UCF9oHXhDMU"
+      },
+      {
+        "id": "pre_rn_6",
+        "title": "Lamento Boliviano",
+        "artist": "Los Enanitos Verdes",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=hReAuaAuJOE"
+      },
+      {
+        "id": "pre_rn_7",
+        "title": "Rezo por Vos",
+        "artist": "Charly García & Spinetta",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=cM3C6_Fq3cI"
+      },
+      {
+        "id": "pre_rn_8",
+        "title": "Persiana Americana",
+        "artist": "Soda Stereo",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=kYJ5oV27T2U"
+      },
+      {
+        "id": "pre_rn_9",
+        "title": "Costumbres Argentinas",
+        "artist": "Los Abuelos de la Nada",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=c1vW8s-y5zM"
+      },
+      {
+        "id": "pre_rn_10",
+        "title": "Seguir Viviendo Sin Tu Amor",
+        "artist": "Luis Alberto Spinetta",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=0h65_f4d0mU"
+      }
+    ]
+  },
+  {
+    "id": "pack-cumbias-cuarteto",
+    "title": "Cumbias & Cuarteto de Fiesta",
+    "description": "Gilda, Rodrigo, Los Palmeras y los temas que levantan a todos de la silla.",
+    "genre": "Cumbia & Cuarteto",
+    "creatorName": "DJ Fiesta",
+    "isPublic": true,
+    "gameMode": "auto",
+    "playCount": 239,
+    "createdAt": "2026-09-09T14:54:36.886Z",
+    "tracks": [
+      {
+        "id": "pre_cc_1",
+        "title": "No me arrepiento de este amor",
+        "artist": "Gilda",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=Z216J0k_36o"
+      },
+      {
+        "id": "pre_cc_2",
+        "title": "Soy Cordobés",
+        "artist": "Rodrigo",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=zJg5k6_qHw0"
+      },
+      {
+        "id": "pre_cc_3",
+        "title": "El Bombón Asesino",
+        "artist": "Los Palmeras",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=mY9rL9w2d2A"
+      },
+      {
+        "id": "pre_cc_4",
+        "title": "Quién se ha tomado todo el vino",
+        "artist": "La Mona Jiménez",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=9_d8_v3o3bA"
+      },
+      {
+        "id": "pre_cc_5",
+        "title": "Nunca Me Faltes",
+        "artist": "Antonio Ríos",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=8q2f5_pL8kQ"
+      },
+      {
+        "id": "pre_cc_6",
+        "title": "Ocho Cuarenta",
+        "artist": "Rodrigo",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=v8j5_d2b1nA"
+      },
+      {
+        "id": "pre_cc_7",
+        "title": "Corazón Valiente",
+        "artist": "Gilda",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=b4b2_r9qL8E"
+      },
+      {
+        "id": "pre_cc_8",
+        "title": "Mentirosa",
+        "artist": "Ráfaga",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=1d8o_b4p7kM"
+      },
+      {
+        "id": "pre_cc_9",
+        "title": "Amor Clasificado",
+        "artist": "Rodrigo",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=k5_q8p2f7dA"
+      },
+      {
+        "id": "pre_cc_10",
+        "title": "Beso a Beso",
+        "artist": "La Mona Jiménez",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=0h9_f4m3b1A"
+      }
+    ]
+  },
+  {
+    "id": "pack-pop-2000s",
+    "title": "Hits Pop 2000s Bangerz",
+    "description": "Los himnos de discoteca y radio que marcaron a toda una generación.",
+    "genre": "Pop Internacional",
+    "creatorName": "RadioHits",
+    "isPublic": true,
+    "gameMode": "individual",
+    "playCount": 95,
+    "createdAt": "2026-09-11T14:54:36.886Z",
+    "tracks": [
+      {
+        "id": "pre_pop_1",
+        "title": "...Baby One More Time",
+        "artist": "Britney Spears",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=C-u5WLJ9Yk4"
+      },
+      {
+        "id": "pre_pop_2",
+        "title": "Hips Don't Lie",
+        "artist": "Shakira feat. Wyclef Jean",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=DUT5rEU6pqM"
+      },
+      {
+        "id": "pre_pop_3",
+        "title": "I Gotta Feeling",
+        "artist": "The Black Eyed Peas",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=uSD4vsh1zDA"
+      },
+      {
+        "id": "pre_pop_4",
+        "title": "Without Me",
+        "artist": "Eminem",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=YVkUvmDQ3HY"
+      },
+      {
+        "id": "pre_pop_5",
+        "title": "Crazy in Love",
+        "artist": "Beyoncé feat. Jay-Z",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=ViwtNLUqkMY"
+      },
+      {
+        "id": "pre_pop_6",
+        "title": "Poker Face",
+        "artist": "Lady Gaga",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=bESGLojNYSo"
+      },
+      {
+        "id": "pre_pop_7",
+        "title": "Yeah!",
+        "artist": "Usher feat. Lil Jon, Ludacris",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=GxBSyx85Kp8"
+      },
+      {
+        "id": "pre_pop_8",
+        "title": "Umbrella",
+        "artist": "Rihanna feat. Jay-Z",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=CvBfHwUxHIk"
+      },
+      {
+        "id": "pre_pop_9",
+        "title": "In da Club",
+        "artist": "50 Cent",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=5qm8PH4xAss"
+      },
+      {
+        "id": "pre_pop_10",
+        "title": "Toxic",
+        "artist": "Britney Spears",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=LOZuxwVk7TU"
+      }
+    ]
+  },
+  {
+    "id": "pack-anime-series",
+    "title": "Intros de Series & Animé",
+    "description": "Abrí el baúl de la infancia con las intros de tele más cantadas de la historia.",
+    "genre": "Nostalgia TV",
+    "creatorName": "OtakuClub",
+    "isPublic": true,
+    "gameMode": "autohost",
+    "playCount": 184,
+    "createdAt": "2026-09-12T14:54:36.886Z",
+    "tracks": [
+      {
+        "id": "pre_ani_1",
+        "title": "Cha-La Head-Cha-La (Dragon Ball Z)",
+        "artist": "Ricardo Silva",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=GHnfX1RmZX8"
+      },
+      {
+        "id": "pre_ani_2",
+        "title": "Atrápalos Ya (Pokémon)",
+        "artist": "Intro Latino",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=8iU8LPEa4o0"
+      },
+      {
+        "id": "pre_ani_3",
+        "title": "Tema de Apertura (Los Simuladores)",
+        "artist": "Astor Piazzolla",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=o5UuI_aXU7E"
+      },
+      {
+        "id": "pre_ani_4",
+        "title": "Pegasus Fantasy (Saint Seiya)",
+        "artist": "Mauren Mendo",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=mZ5lK2qf5vE"
+      },
+      {
+        "id": "pre_ani_5",
+        "title": "Dan Dan Kokoro Hikareteku (Dragon Ball GT)",
+        "artist": "Aarón Montalvo",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=uK4jXgQG6jU"
+      },
+      {
+        "id": "pre_ani_6",
+        "title": "Digimon Adventure (Butterfly)",
+        "artist": "César Franco",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=9L7w2b3vF4A"
+      },
+      {
+        "id": "pre_ani_7",
+        "title": "Apertura (Casados con Hijos)",
+        "artist": "Cumbia Argentina",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=8q2f5_pL8kQ"
+      },
+      {
+        "id": "pre_ani_8",
+        "title": "Haruka Kanata (Naruto)",
+        "artist": "Asian Kung-Fu Generation",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=1d8o_b4p7kM"
+      }
+    ]
+  },
+  {
+    "id": "pack-reggaeton-old-school",
+    "title": "Reggaeton Old School",
+    "description": "Los temas que inauguraron el perreo en los boliches y fiestas de los 2000.",
+    "genre": "Reggaeton Clásico",
+    "creatorName": "Perreo2000",
+    "isPublic": true,
+    "gameMode": "auto",
+    "playCount": 310,
+    "createdAt": "2026-09-13T14:54:36.886Z",
+    "tracks": [
+      {
+        "id": "pre_reg_1",
+        "title": "Gasolina",
+        "artist": "Daddy Yankee",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=CCF1_jI8Prk"
+      },
+      {
+        "id": "pre_reg_2",
+        "title": "Dale Don Dale",
+        "artist": "Don Omar",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=QZ0c-nS-78U"
+      },
+      {
+        "id": "pre_reg_3",
+        "title": "Rakata",
+        "artist": "Wisin & Yandel",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=E_u70zJ18sM"
+      },
+      {
+        "id": "pre_reg_4",
+        "title": "Atrévete-te-te",
+        "artist": "Calle 13",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=vXtJkDHEAAc"
+      },
+      {
+        "id": "pre_reg_5",
+        "title": "Lo Que Pasó, Pasó",
+        "artist": "Daddy Yankee",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=gT1I7B5kP6k"
+      },
+      {
+        "id": "pre_reg_6",
+        "title": "Pobre Diabla",
+        "artist": "Don Omar",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=0b7_q_u7w8U"
+      },
+      {
+        "id": "pre_reg_7",
+        "title": "Mayor Que Yo",
+        "artist": "Luny Tunes, Baby Ranks, Daddy Yankee",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=8q2f5_pL8kQ"
+      },
+      {
+        "id": "pre_reg_8",
+        "title": "Dile",
+        "artist": "Don Omar",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=1d8o_b4p7kM"
+      }
+    ]
+  }
+]

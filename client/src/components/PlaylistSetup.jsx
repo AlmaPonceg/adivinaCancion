@@ -42,6 +42,19 @@ export default function PlaylistSetup({
   const [savePlaylistName, setSavePlaylistName] = useState('');
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
   const [playlistToDelete, setPlaylistToDelete] = useState(null);
+  const [saveIsPublic, setSaveIsPublic] = useState(true);
+  const [saveCreatorName, setSaveCreatorName] = useState(() => {
+    try {
+      return localStorage.getItem('trivia_creator_name') || '';
+    } catch {
+      return '';
+    }
+  });
+
+  // ── Community Library Tab State ───────────────────────────
+  const [communityGames, setCommunityGames] = useState([]);
+  const [communityLoading, setCommunityLoading] = useState(false);
+  const [communitySearch, setCommunitySearch] = useState('');
 
   // ── Search State ──────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
@@ -68,7 +81,50 @@ export default function PlaylistSetup({
     }
   };
 
-  const handleSaveCurrentPlaylist = (e) => {
+  const fetchCommunityGames = async (query = '') => {
+    try {
+      setCommunityLoading(true);
+      const baseUrl = SERVER_URL || window.location.origin;
+      const params = new URLSearchParams();
+      if (query.trim()) params.set('q', query.trim());
+      const res = await fetch(`${baseUrl}/api/games/public?${params.toString()}`);
+      const data = await res.json();
+      if (data.success) {
+        setCommunityGames(data.games || []);
+      }
+    } catch (err) {
+      console.error('Error fetching community games:', err);
+    } finally {
+      setCommunityLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'community') {
+      const timer = setTimeout(() => {
+        fetchCommunityGames(communitySearch);
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, communitySearch]);
+
+  const handleLoadCommunityGame = async (game) => {
+    try {
+      const baseUrl = SERVER_URL || window.location.origin;
+      const res = await fetch(`${baseUrl}/api/games/${game.id}`);
+      const data = await res.json();
+      if (data.success && data.game && data.game.tracks) {
+        setPlaylist(data.game.tracks);
+        savePlaylistToStorage(data.game.tracks);
+        setSaveSuccessMsg(`¡Partida comunitaria "${game.title}" cargada (${data.game.tracks.length} temas)!`);
+        setTimeout(() => setSaveSuccessMsg(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error loading community game:', err);
+    }
+  };
+
+  const handleSaveCurrentPlaylist = async (e) => {
     e.preventDefault();
     const name = savePlaylistName.trim();
     if (!name || playlist.length === 0) return;
@@ -97,10 +153,42 @@ export default function PlaylistSetup({
 
     const updated = [newEntry, ...savedPlaylists];
     persistSavedPlaylists(updated);
+
+    if (saveIsPublic) {
+      try {
+        const baseUrl = SERVER_URL || window.location.origin;
+        if (saveCreatorName.trim()) {
+          try { localStorage.setItem('trivia_creator_name', saveCreatorName.trim()); } catch (err) {}
+        }
+        await fetch(`${baseUrl}/api/games`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: name,
+            creatorName: saveCreatorName.trim() || 'Anónimo',
+            isPublic: true,
+            gameMode: currentTheme?.id || 'auto',
+            tracks: playlist.map((t) => ({
+              id: t.id,
+              title: t.title || t.name,
+              artist: t.author || t.artist || '',
+              type: t.type || 'youtube',
+              url: t.url || ''
+            }))
+          })
+        });
+        setSaveSuccessMsg(`¡"${name}" guardada y publicada en la biblioteca comunitaria!`);
+      } catch (err) {
+        console.error('Error publishing game:', err);
+        setSaveSuccessMsg(`¡"${name}" guardada localmente!`);
+      }
+    } else {
+      setSaveSuccessMsg(`¡"${name}" guardada de forma privada!`);
+    }
+
     setSavePlaylistName('');
     setIsSavingCurrent(false);
-    setSaveSuccessMsg(`¡"${name}" guardada con éxito!`);
-    setTimeout(() => setSaveSuccessMsg(''), 3000);
+    setTimeout(() => setSaveSuccessMsg(''), 3500);
   };
 
   const handleLoadSavedPlaylist = async (savedItem) => {
@@ -444,6 +532,21 @@ export default function PlaylistSetup({
 
               <button
                 type="button"
+                onClick={() => setActiveTab('community')}
+                className={`py-2 px-2.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 ${
+                  activeTab === 'community'
+                    ? 'bg-[#FF5722] text-white shadow-xs'
+                    : 'text-[#6B6280] hover:text-[#181226]'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span className="truncate">Comunidad</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setActiveTab('saved')}
                 className={`py-2 px-2.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 ${
                   activeTab === 'saved'
@@ -589,6 +692,112 @@ export default function PlaylistSetup({
                 </div>
               )}
 
+              {/* ── TAB: Comunidad / Biblioteca Pública ──────────── */}
+              {activeTab === 'community' && (
+                <div className="flex-1 min-h-0 flex flex-col space-y-2.5">
+                  <div className="shrink-0 px-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="font-display font-black text-xs sm:text-sm text-[#181226]">
+                        Biblioteca de Partidas de la Comunidad
+                      </h3>
+                      <p className="text-[11px] text-[#6B6280]">
+                        Elegí y jugá trivias compartidas por otros jugadores.
+                      </p>
+                    </div>
+
+                    <div className="relative w-full sm:w-56">
+                      <input
+                        type="text"
+                        value={communitySearch}
+                        onChange={(e) => setCommunitySearch(e.target.value)}
+                        placeholder="Buscar en la comunidad..."
+                        className="w-full pl-7 pr-6 py-1 text-xs bg-white border border-[#EAE3D5] rounded-lg text-[#181226] focus:outline-none focus:border-[#FF5722]"
+                      />
+                      <svg className="w-3.5 h-3.5 text-[#8E869E] absolute left-2 top-2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      {communitySearch && (
+                        <button
+                          type="button"
+                          onClick={() => setCommunitySearch('')}
+                          className="absolute right-2 top-1 text-xs text-[#8E869E] hover:text-[#181226]"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2.5 custom-scrollbar">
+                    {communityLoading ? (
+                      <div className="py-8 text-center text-xs font-bold text-[#8E869E]">
+                        Buscando partidas comunitarias...
+                      </div>
+                    ) : communityGames.length === 0 ? (
+                      <div className="py-8 text-center text-xs text-[#8E869E]">
+                        No se encontraron partidas con ese término.
+                      </div>
+                    ) : (
+                      communityGames.map((g) => (
+                        <div
+                          key={g.id}
+                          className="p-3.5 rounded-2xl bg-[#FAF7F2] hover:bg-white border border-[#EAE3D5] hover:border-[#DDD5C5] transition-all shadow-2xs hover:shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-white border border-[#EAE3D5] text-[#181226]">
+                                {g.genre}
+                              </span>
+                              <h4 className="font-display font-black text-sm text-[#181226]">
+                                {g.title}
+                              </h4>
+                              <span className="mono text-[10px] font-bold text-[#6B6280]">
+                                · Por {g.creatorName || 'Comunidad'} ({g.trackCount} canciones)
+                              </span>
+                            </div>
+
+                            {g.description && (
+                              <p className="text-xs text-[#574F6B] font-medium leading-tight mb-2">
+                                {g.description}
+                              </p>
+                            )}
+
+                            {g.sampleTracks && g.sampleTracks.length > 0 && (
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {g.sampleTracks.slice(0, 3).map((t, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white border border-[#EAE3D5] text-[#181226] truncate max-w-[150px]"
+                                  >
+                                    {t.title}
+                                  </span>
+                                ))}
+                                {g.trackCount > 3 && (
+                                  <span className="text-[10px] font-bold text-[#8E869E]">
+                                    +{g.trackCount - 3} más
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleLoadCommunityGame(g)}
+                            className="arcade-btn-primary px-3.5 py-2.5 rounded-xl text-xs font-black text-white shrink-0 flex items-center justify-center gap-1.5 cursor-pointer shadow-md hover:brightness-105 active:scale-95 transition-all"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            </svg>
+                            <span>Cargar Partida →</span>
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* ── TAB 1: Mis Playlists Guardadas ─────────────────── */}
               {activeTab === 'saved' && (
                 <div className="flex-1 min-h-0 flex flex-col space-y-2.5">
@@ -616,37 +825,62 @@ export default function PlaylistSetup({
                     )}
                   </div>
 
-                  {/* Inline Save Form */}
+                  {/* Inline Save & Publish Form */}
                   {isSavingCurrent && (
                     <form
                       onSubmit={handleSaveCurrentPlaylist}
-                      className="p-3 bg-[#FFF8F5] border-2 border-[#FF5722]/40 rounded-xl flex items-center gap-2 animate-fade-in shrink-0"
+                      className="p-3 bg-[#FFF8F5] border-2 border-[#FF5722]/40 rounded-xl flex flex-col gap-2.5 animate-fade-in shrink-0"
                     >
-                      <input
-                        type="text"
-                        value={savePlaylistName}
-                        onChange={(e) => setSavePlaylistName(e.target.value)}
-                        placeholder="Nombre de la playlist (ej. Rock Nacional, Hits 2000s...)"
-                        className="flex-1 px-3 py-1.5 text-xs bg-white border border-[#EAE3D5] rounded-lg focus:outline-none focus:border-[#FF5722] text-[#181226]"
-                        autoFocus
-                      />
-                      <button
-                        type="submit"
-                        disabled={!savePlaylistName.trim()}
-                        className="arcade-btn-primary px-3 py-1.5 text-xs font-black text-white shrink-0 cursor-pointer disabled:opacity-50"
-                      >
-                        Guardar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsSavingCurrent(false);
-                          setSavePlaylistName('');
-                        }}
-                        className="px-2.5 py-1.5 text-xs font-bold text-[#6B6280] hover:text-[#181226] cursor-pointer"
-                      >
-                        Cancelar
-                      </button>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          value={savePlaylistName}
+                          onChange={(e) => setSavePlaylistName(e.target.value)}
+                          placeholder="Nombre de la partida (ej. Rock Nacional, Hits 2000s...)"
+                          className="flex-1 px-3 py-1.5 text-xs bg-white border border-[#EAE3D5] rounded-lg focus:outline-none focus:border-[#FF5722] text-[#181226] font-medium"
+                          autoFocus
+                        />
+                        <input
+                          type="text"
+                          value={saveCreatorName}
+                          onChange={(e) => setSaveCreatorName(e.target.value)}
+                          placeholder="Tu nombre / apodo (opcional)"
+                          className="w-full sm:w-44 px-3 py-1.5 text-xs bg-white border border-[#EAE3D5] rounded-lg focus:outline-none focus:border-[#FF5722] text-[#181226]"
+                        />
+                      </div>
+
+                      {/* Public vs Private selector */}
+                      <div className="flex items-center justify-between gap-3 pt-1 border-t border-[#FF5722]/20">
+                        <label className="flex items-center gap-2 text-xs font-bold text-[#181226] cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={saveIsPublic}
+                            onChange={(e) => setSaveIsPublic(e.target.checked)}
+                            className="w-4 h-4 rounded text-[#FF5722] focus:ring-0 accent-[#FF5722] cursor-pointer"
+                          />
+                          <span>Publicar en la biblioteca comunitaria (visible para todos)</span>
+                        </label>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsSavingCurrent(false);
+                              setSavePlaylistName('');
+                            }}
+                            className="px-2.5 py-1 text-xs font-bold text-[#6B6280] hover:text-[#181226] cursor-pointer"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={!savePlaylistName.trim()}
+                            className="arcade-btn-primary px-3.5 py-1.5 text-xs font-black text-white shrink-0 cursor-pointer disabled:opacity-50"
+                          >
+                            Guardar {saveIsPublic ? '& Publicar' : ''}
+                          </button>
+                        </div>
+                      </div>
                     </form>
                   )}
 
