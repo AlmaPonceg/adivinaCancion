@@ -330,7 +330,7 @@ export default function SpotlightTutorial({
               onClick={handleNext}
               className="arcade-btn-primary px-4 py-2 rounded-xl text-xs font-tactical font-black text-white flex items-center gap-1.5 cursor-pointer shadow-md hover:brightness-105 active:scale-95 transition-all"
             >
-              <span>{isLastStep ? '¡Entendido, a jugar! 🚀' : 'Siguiente →'}</span>
+              <span>{isLastStep ? '¡Entendido, a jugar!' : 'Siguiente →'}</span>
             </button>
           </div>
         </div>

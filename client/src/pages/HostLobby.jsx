@@ -767,7 +767,14 @@ export default function HostLobby() {
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-8 h-8 rounded-xl bg-[#4F46E5] text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
-                          🎲
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <rect x="3" y="3" width="18" height="18" rx="4" />
+                            <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+                            <circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" />
+                            <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                            <circle cx="8.5" cy="15.5" r="1.5" fill="currentColor" />
+                            <circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" />
+                          </svg>
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
@@ -855,7 +862,9 @@ export default function HostLobby() {
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-8 h-8 rounded-xl bg-[#FF5722] text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
-                          🚩
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                          </svg>
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
@@ -932,7 +941,9 @@ export default function HostLobby() {
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-8 h-8 rounded-xl bg-[#D946EF] text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
-                          🏆
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 21h8m-4-4v4m-5-8h10a4 4 0 004-4V5H3v4a4 4 0 004 4zm-4-4H2a2 2 0 002 2h1m14-2h2a2 2 0 01-2 2h-1" />
+                          </svg>
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
@@ -965,10 +976,16 @@ export default function HostLobby() {
                     <div className="flex items-center justify-between gap-2 flex-wrap pt-2 border-t border-[#F5D0FE]">
                       <div className="flex items-center gap-2">
                         <span className="text-xs px-2.5 py-1 rounded-xl bg-white border border-[#F5D0FE] text-[#86198F] font-black flex items-center gap-1.5 shadow-2xs">
-                          <span>⚡ 1 vs Todos</span>
+                          <svg className="w-3.5 h-3.5 text-[#D946EF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          <span>1 vs Todos</span>
                         </span>
                         <span className="text-xs px-2.5 py-1 rounded-xl bg-white border border-[#F5D0FE] text-[#86198F] font-black flex items-center gap-1.5 shadow-2xs">
-                          <span>🏆 Podio y Ranking Personal</span>
+                          <svg className="w-3.5 h-3.5 text-[#D946EF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                          <span>Podio y Ranking Personal</span>
                         </span>
                       </div>
 
@@ -986,7 +1003,9 @@ export default function HostLobby() {
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-8 h-8 rounded-xl bg-[#059669] text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
-                          🛡️
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
@@ -1100,10 +1119,31 @@ export default function HostLobby() {
                           className="w-16 h-16 rounded-2xl text-white flex items-center justify-center shadow-lg relative text-2xl"
                           style={{ backgroundColor: currentTheme.color }}
                         >
-                          {currentTheme.id === 'auto' && '🎲'}
-                          {currentTheme.id === 'manual' && '🚩'}
-                          {currentTheme.id === 'individual' && '🏆'}
-                          {currentTheme.id === 'autohost' && '🛡️'}
+                          {currentTheme.id === 'auto' && (
+                            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <rect x="3" y="3" width="18" height="18" rx="4" />
+                              <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+                              <circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" />
+                              <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                              <circle cx="8.5" cy="15.5" r="1.5" fill="currentColor" />
+                              <circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" />
+                            </svg>
+                          )}
+                          {currentTheme.id === 'manual' && (
+                            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                            </svg>
+                          )}
+                          {currentTheme.id === 'individual' && (
+                            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 21h8m-4-4v4m-5-8h10a4 4 0 004-4V5H3v4a4 4 0 004 4zm-4-4H2a2 2 0 002 2h1m14-2h2a2 2 0 01-2 2h-1" />
+                            </svg>
+                          )}
+                          {currentTheme.id === 'autohost' && (
+                            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                          )}
                           <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#059669] border-2 border-white shadow-xs" />
                         </div>
                       </div>
@@ -1200,10 +1240,10 @@ export default function HostLobby() {
                                     color: currentTheme.colorText,
                                   }}
                                 >
-                                  {currentTheme.id === 'auto' && '🎲 En sorteo'}
-                                  {currentTheme.id === 'manual' && '🚩 Bando libre'}
-                                  {currentTheme.id === 'individual' && '⚡ Solo'}
-                                  {currentTheme.id === 'autohost' && '🎮 Jugador'}
+                                  {currentTheme.id === 'auto' && 'En sorteo'}
+                                  {currentTheme.id === 'manual' && 'Bando libre'}
+                                  {currentTheme.id === 'individual' && 'Individual'}
+                                  {currentTheme.id === 'autohost' && 'En sala'}
                                 </span>
                               )}
 
@@ -1355,7 +1395,14 @@ export default function HostLobby() {
                     >
                       {currentTheme.id === 'auto' && (
                         <>
-                          <span className="text-lg">🎲</span>
+                          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <rect x="3" y="3" width="18" height="18" rx="4" />
+                            <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+                            <circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" />
+                            <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                            <circle cx="8.5" cy="15.5" r="1.5" fill="currentColor" />
+                            <circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" />
+                          </svg>
                           <span>
                             {isShuffling
                               ? 'Sorteando equipos...'
@@ -1365,7 +1412,9 @@ export default function HostLobby() {
                       )}
                       {currentTheme.id === 'manual' && (
                         <>
-                          <span className="text-lg">🚩</span>
+                          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                          </svg>
                           <span>
                             {isShuffling
                               ? 'Confirmando equipos...'
@@ -1375,7 +1424,9 @@ export default function HostLobby() {
                       )}
                       {currentTheme.id === 'individual' && (
                         <>
-                          <span className="text-lg">🏆</span>
+                          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 21h8m-4-4v4m-5-8h10a4 4 0 004-4V5H3v4a4 4 0 004 4zm-4-4H2a2 2 0 002 2h1m14-2h2a2 2 0 01-2 2h-1" />
+                          </svg>
                           <span>
                             {isShuffling
                               ? 'Armando batalla...'
@@ -1385,7 +1436,9 @@ export default function HostLobby() {
                       )}
                       {currentTheme.id === 'autohost' && (
                         <>
-                          <span className="text-lg">🛡️</span>
+                          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
                           <span>
                             {isShuffling
                               ? 'Iniciando TV...'
@@ -1403,25 +1456,38 @@ export default function HostLobby() {
                     >
                       {currentTheme.id === 'auto' && (
                         <>
-                          <span className="text-sm">🎲</span>
+                          <svg className="w-4 h-4 text-[#4F46E5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <rect x="3" y="3" width="18" height="18" rx="4" />
+                            <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+                            <circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" />
+                            <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                            <circle cx="8.5" cy="15.5" r="1.5" fill="currentColor" />
+                            <circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" />
+                          </svg>
                           <span>Volver a sortear</span>
                         </>
                       )}
                       {currentTheme.id === 'manual' && (
                         <>
-                          <span className="text-sm">🚩</span>
+                          <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                          </svg>
                           <span>Reconfigurar equipos</span>
                         </>
                       )}
                       {currentTheme.id === 'individual' && (
                         <>
-                          <span className="text-sm">🏆</span>
+                          <svg className="w-4 h-4 text-[#D946EF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 21h8m-4-4v4m-5-8h10a4 4 0 004-4V5H3v4a4 4 0 004 4zm-4-4H2a2 2 0 002 2h1m14-2h2a2 2 0 01-2 2h-1" />
+                          </svg>
                           <span>Reordenar participantes</span>
                         </>
                       )}
                       {currentTheme.id === 'autohost' && (
                         <>
-                          <span className="text-sm">🛡️</span>
+                          <svg className="w-4 h-4 text-[#059669]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
                           <span>Volver a sortear</span>
                         </>
                       )}

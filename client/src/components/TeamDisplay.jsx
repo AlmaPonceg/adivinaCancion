@@ -118,7 +118,7 @@ export default function TeamDisplay({
 
                 {isIndividual ? (
                   <span className="mono text-xs font-black px-2.5 py-1 rounded-lg bg-[#FDF4FF] border border-[#F5D0FE] text-[#86198F] shrink-0 shadow-2xs">
-                    🏆 1 vs Todos
+                    1 vs Todos
                   </span>
                 ) : (
                   <span
