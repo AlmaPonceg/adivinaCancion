@@ -1164,7 +1164,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
             <div className="w-20 h-20 rounded-full border border-white/10" />
             <div className="w-14 h-14 rounded-full border border-white/5 absolute" />
             {/* Center label */}
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FF5722] via-[#E11D48] to-[#F59E0B] border-2 border-black flex items-center justify-center absolute shadow-md">
+            <div className="w-8 h-8 rounded-full bg-[#FF5722] border-2 border-[#181226] flex items-center justify-center absolute shadow-md">
               <svg className="w-3.5 h-3.5 text-white fill-current" viewBox="0 0 24 24">
                 <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
               </svg>
@@ -1197,7 +1197,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
                   repeatType: 'reverse',
                   ease: 'easeInOut',
                 }}
-                className="flex-1 rounded-full bg-gradient-to-t from-[#FF5722] via-[#E11D48] to-[#F59E0B] min-w-[2px]"
+                className="flex-1 rounded-full bg-[#FF5722] min-w-[2px]"
               />
             ))}
           </div>
@@ -1230,7 +1230,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
               {/* Background Track */}
               <div className="w-full h-2.5 bg-[#EAE3D5] rounded-full overflow-hidden border border-[#DDD5C5] relative">
                 <div
-                  className="h-full bg-gradient-to-r from-[#FF5722] via-[#E11D48] to-[#F59E0B] rounded-full shadow-[0_0_8px_#FF5722]"
+                  className="h-full bg-[#FF5722] rounded-full"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>

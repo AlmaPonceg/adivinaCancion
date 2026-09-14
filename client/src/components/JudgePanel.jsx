@@ -155,7 +155,7 @@ export default function JudgePanel({
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#FFF8F5] to-[#FAF7F2] border-2 border-[#FF5722]/40 shadow-xs relative overflow-hidden text-left"
+            className="p-4 sm:p-5 rounded-2xl bg-[#FFFFFF] border-2 border-[#FF5722]/30 shadow-xs relative overflow-hidden text-left"
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -206,10 +206,8 @@ export default function JudgePanel({
       <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 rounded-2xl bg-[#FAF7F2] border-2 border-[#EAE3D5] p-2.5 sm:p-3.5 shadow-sm">
         <button
           onClick={onCorrect}
-          className="relative overflow-hidden py-3.5 sm:py-5 px-2 sm:px-4 rounded-xl sm:rounded-2xl font-tactical font-black uppercase tracking-wider text-xs sm:text-sm text-white bg-gradient-to-b from-[#059669] via-[#047857] to-[#065F46] border-2 border-[#064E3B] border-b-[5px] sm:border-b-[6px] shadow-[0_6px_16px_rgba(5,150,105,0.35),inset_0_2px_3px_rgba(255,255,255,0.45),inset_0_-4px_8px_rgba(0,0,0,0.3)] flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-all duration-100 hover:brightness-110 active:translate-y-1 active:border-b-2 active:shadow-[0_2px_6px_rgba(5,150,105,0.3),inset_0_3px_8px_rgba(0,0,0,0.45)] focus:outline-none"
-          style={{ textShadow: '0 2px 4px rgba(0,0,0,0.4)' }}
+          className="relative overflow-hidden py-3.5 sm:py-5 px-2 sm:px-4 rounded-xl sm:rounded-2xl font-tactical font-black uppercase tracking-wider text-xs sm:text-sm text-white bg-[#059669] hover:bg-[#047857] border-2 border-[#064E3B] border-b-[5px] sm:border-b-[6px] shadow-[0_4px_0_#064E3B] flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-all duration-100 active:translate-y-1 active:border-b-2 active:shadow-none focus:outline-none"
         >
-          <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
           <span className="relative rounded-full bg-black/20 p-1 sm:p-1.5 border border-white/20 shrink-0">
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 13l4 4L19 7" />
@@ -224,10 +222,8 @@ export default function JudgePanel({
 
         <button
           onClick={onIncorrect}
-          className="relative overflow-hidden py-3.5 sm:py-5 px-2 sm:px-4 rounded-xl sm:rounded-2xl font-tactical font-black uppercase tracking-wider text-xs sm:text-sm text-white bg-gradient-to-b from-[#E11D48] via-[#BE123C] to-[#9F1239] border-2 border-[#881337] border-b-[5px] sm:border-b-[6px] shadow-[0_6px_16px_rgba(225,29,72,0.35),inset_0_2px_3px_rgba(255,255,255,0.45),inset_0_-4px_8px_rgba(0,0,0,0.3)] flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-all duration-100 hover:brightness-110 active:translate-y-1 active:border-b-2 active:shadow-[0_2px_6px_rgba(225,29,72,0.3),inset_0_3px_8px_rgba(0,0,0,0.45)] focus:outline-none"
-          style={{ textShadow: '0 2px 4px rgba(0,0,0,0.4)' }}
+          className="relative overflow-hidden py-3.5 sm:py-5 px-2 sm:px-4 rounded-xl sm:rounded-2xl font-tactical font-black uppercase tracking-wider text-xs sm:text-sm text-white bg-[#E11D48] hover:bg-[#BE123C] border-2 border-[#881337] border-b-[5px] sm:border-b-[6px] shadow-[0_4px_0_#881337] flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-all duration-100 active:translate-y-1 active:border-b-2 active:shadow-none focus:outline-none"
         >
-          <span className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
           <span className="relative rounded-full bg-black/20 p-1 sm:p-1.5 border border-white/20 shrink-0">
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 18L18 6M6 6l12 12" />

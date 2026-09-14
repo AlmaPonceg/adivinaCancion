@@ -652,12 +652,6 @@ export default function HostLobby() {
                             boxShadow: `0 5px 0 ${currentTheme.colorDark}`,
                           }}
                         >
-                          <div
-                            className="absolute top-0 inset-x-0 h-1/2 pointer-events-none transition-all duration-300"
-                            style={{
-                              background: `linear-gradient(to bottom, ${currentTheme.colorLight}, transparent)`,
-                            }}
-                          />
                           <span
                             className="font-tactical font-black text-3xl sm:text-4xl z-10 leading-none -translate-y-0.5 select-none transition-colors duration-300"
                             style={{ color: currentTheme.color }}
@@ -788,7 +782,7 @@ export default function HostLobby() {
               <div className="shrink-0 space-y-2">
                 {/* MODE 1: EQUIPOS AL AZAR (Indigo) */}
                 {currentTheme.id === 'auto' && (
-                  <div className="p-3 rounded-2xl border transition-all duration-300 bg-gradient-to-r from-[#EEF2FF] via-[#F5F7FF] to-white border-[#C7D2FE] shadow-2xs">
+                  <div className="p-3 rounded-2xl border transition-all duration-300 bg-[#F5F7FF] border-[#C7D2FE] shadow-2xs">
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-8 h-8 rounded-xl bg-[#4F46E5] text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
@@ -883,7 +877,7 @@ export default function HostLobby() {
 
                 {/* MODE 2: ELECCIÓN LIBRE DE EQUIPOS (Sunset Coral) */}
                 {currentTheme.id === 'manual' && (
-                  <div className="p-3 rounded-2xl border transition-all duration-300 bg-gradient-to-r from-[#FFF7ED] via-[#FFFBF5] to-white border-[#FFEDD5] shadow-2xs">
+                  <div className="p-3 rounded-2xl border transition-all duration-300 bg-[#FFFBF5] border-[#FFEDD5] shadow-2xs">
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-8 h-8 rounded-xl bg-[#FF5722] text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
@@ -962,7 +956,7 @@ export default function HostLobby() {
 
                 {/* MODE 3: INDIVIDUAL / TODOS CONTRA TODOS (Neon Magenta) */}
                 {currentTheme.id === 'individual' && (
-                  <div className="p-3 rounded-2xl border transition-all duration-300 bg-gradient-to-r from-[#FDF4FF] via-[#FAF5FF] to-white border-[#F5D0FE] shadow-2xs">
+                  <div className="p-3 rounded-2xl border transition-all duration-300 bg-[#FAF5FF] border-[#F5D0FE] shadow-2xs">
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-8 h-8 rounded-xl bg-[#D946EF] text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
@@ -1024,7 +1018,7 @@ export default function HostLobby() {
 
                 {/* MODE 4: AUTO-HOST (Emerald Jade) */}
                 {currentTheme.id === 'autohost' && (
-                  <div className="p-3 rounded-2xl border transition-all duration-300 bg-gradient-to-r from-[#ECFDF5] via-[#F0FDF4] to-white border-[#A7F3D0] shadow-2xs">
+                  <div className="p-3 rounded-2xl border transition-all duration-300 bg-[#F0FDF4] border-[#A7F3D0] shadow-2xs">
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-8 h-8 rounded-xl bg-[#059669] text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
@@ -1131,7 +1125,7 @@ export default function HostLobby() {
               <div className="flex-1 min-h-0 flex flex-col my-2">
                 {!hasAssignedTeams ? (
                   players.length === 0 ? (
-                    <div className="h-full flex-1 flex flex-col items-center justify-center text-center p-5 bg-gradient-to-b from-[#FAF7F2] to-white rounded-2xl border-2 border-dashed border-[#DDD5C5] shadow-inner my-auto">
+                    <div className="h-full flex-1 flex flex-col items-center justify-center text-center p-5 bg-[#FAF7F2] rounded-2xl border-2 border-dashed border-[#DDD5C5] shadow-inner my-auto">
                       <div className="relative mb-3.5 flex items-center justify-center">
                         <div
                           className="w-20 h-20 rounded-full border flex items-center justify-center animate-ping pointer-events-none absolute"

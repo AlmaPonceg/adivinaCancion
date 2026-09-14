@@ -87,7 +87,7 @@ export default function PlaylistLoadingModal({
                     delay,
                     ease: 'easeInOut',
                   }}
-                  className="w-1.5 rounded-full bg-gradient-to-t from-[#FF5722] via-[#E11D48] to-[#9333EA]"
+                  className="w-1.5 rounded-full bg-[#FF5722]"
                 />
               ))}
             </div>

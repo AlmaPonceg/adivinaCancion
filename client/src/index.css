@@ -65,19 +65,18 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #FF7A50 0%, #FF5722 100%);
+  background: #D5CEBF;
   border-radius: 9999px;
-  border: 1.5px solid #FFFFFF;
-  box-shadow: 0 2px 4px rgba(255, 87, 34, 0.35);
+  border: 2px solid #F4EFE6;
   transition: background 0.15s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #FF5722 0%, #E11D48 100%);
+  background: #B8AE9A;
 }
 
 ::-webkit-scrollbar-thumb:active {
-  background: #E11D48;
+  background: #8E869E;
 }
 
 ::-webkit-scrollbar-button {
@@ -130,22 +129,7 @@ h1, h2, h3, .font-heading, .font-display {
   position: relative;
 }
 
-.party-card-glow {
-  position: relative;
-}
-.party-card-glow::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  padding: 2px;
-  background: linear-gradient(135deg, rgba(255, 87, 34, 0.4), rgba(225, 29, 72, 0.25), transparent 70%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
+
 
 /* Inset Wells & Screens */
 .console-inset {

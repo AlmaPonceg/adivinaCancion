@@ -42,8 +42,7 @@ export default function Scoreboard({ teams }) {
                 <motion.div
                   className="absolute inset-y-0 left-0 rounded-xl"
                   style={{
-                    background: `linear-gradient(90deg, ${team.color}, ${team.color}dd)`,
-                    boxShadow: `0 0 12px ${team.color}60`,
+                    backgroundColor: team.color,
                   }}
                   initial={{ width: '0%' }}
                   animate={{ width: team.score > 0 ? `${Math.max((team.score / maxScore) * 100, 14)}%` : '0%' }}

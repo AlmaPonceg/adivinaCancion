@@ -127,7 +127,7 @@ export default function PlayerJoin() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
-        className="party-card party-card-glow p-7 sm:p-9 w-full max-w-sm rounded-[2.2rem] relative z-20"
+        className="party-card p-7 sm:p-9 w-full max-w-sm rounded-[2.2rem] relative z-20"
       >
         {/* VIP Pass Header Tag */}
         <div className="text-center mb-7">
