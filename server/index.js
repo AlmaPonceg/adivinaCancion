@@ -231,6 +231,104 @@ app.get('/api/search-songs', async (req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════
+// Video Availability & Embeddability Verification
+// ═══════════════════════════════════════════════════════════════
+async function checkYoutubeVideoAvailability(rawIdOrUrl) {
+  if (!rawIdOrUrl) return { available: false, reason: 'EMPTY_INPUT' };
+  const str = String(rawIdOrUrl).trim();
+  const match = str.match(/(?:v=|youtu\.be\/|embed\/|^)([a-zA-Z0-9_-]{11})(?:[?&]|$)/);
+  const id = match ? match[1] : (str.length === 11 ? str : null);
+
+  if (!id || id.length !== 11) {
+    return { available: false, id, reason: 'INVALID_ID' };
+  }
+
+  try {
+    const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`;
+    const res = await fetch(oembedUrl, {
+      signal: AbortSignal.timeout(4000)
+    }).catch(() => null);
+
+    if (!res || !res.ok) {
+      return {
+        available: false,
+        id,
+        reason: 'NOT_FOUND_OR_RESTRICTED',
+        status: res ? res.status : 0
+      };
+    }
+
+    const data = await res.json().catch(() => null);
+
+    // Deep embeddability check via Innertube if available
+    let isEmbeddable = true;
+    try {
+      const yt = await getInnertube();
+      const info = await yt.getBasicInfo(id).catch(() => null);
+      if (info?.playability_status) {
+        if (info.playability_status.embeddable === false || (info.playability_status.status && info.playability_status.status !== 'OK')) {
+          isEmbeddable = false;
+        }
+      }
+    } catch {
+      // If Innertube check fails, fallback to oEmbed response
+    }
+
+    if (!isEmbeddable) {
+      return {
+        available: false,
+        id,
+        reason: 'EMBEDDING_DISABLED',
+        title: data?.title || null
+      };
+    }
+
+    return {
+      available: true,
+      id,
+      title: data?.title || null,
+      author: data?.author_name || null
+    };
+  } catch (err) {
+    return { available: false, id, reason: 'VERIFY_ERROR', error: err.message };
+  }
+}
+
+app.get('/api/check-video', async (req, res) => {
+  try {
+    const target = req.query.id || req.query.url;
+    const result = await checkYoutubeVideoAvailability(target);
+    res.json(result);
+  } catch (err) {
+    console.error('[CheckVideo] Error:', err);
+    res.status(500).json({ available: false, error: 'Error verificando video' });
+  }
+});
+
+app.post('/api/check-videos', async (req, res) => {
+  try {
+    const { items = [] } = req.body;
+    const list = Array.isArray(items) ? items.slice(0, 50) : [];
+    const results = {};
+
+    await Promise.all(
+      list.map(async (item) => {
+        const idOrUrl = typeof item === 'object' ? item.id || item.url : item;
+        const resCheck = await checkYoutubeVideoAvailability(idOrUrl);
+        const key = resCheck.id || String(idOrUrl);
+        results[key] = resCheck;
+      })
+    );
+
+    res.json({ success: true, results });
+  } catch (err) {
+    console.error('[CheckVideos] Error:', err);
+    res.status(500).json({ error: 'Error verificando videos' });
+  }
+});
+
+
 // DJ Bot automatic playlist generator
 app.post('/api/dj-bot-generate', async (req, res) => {
   try {

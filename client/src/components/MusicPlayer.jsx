@@ -8,6 +8,7 @@ import {
   normalizeTrack,
   getTrackTitle,
   isLocalTrack,
+  checkYoutubeAvailability,
 } from '../utils/trackHelper';
 import {
   saveAudioFile,
@@ -79,6 +80,55 @@ const MusicPlayer = forwardRef(function MusicPlayer(
   const [scrubTime, setScrubTime] = useState(0);
   const progressBarRef = useRef(null);
   const [showManualInput, setShowManualInput] = useState(false);
+
+  // Unavailable video detection & automatic skip
+  const [unavailableError, setUnavailableError] = useState(null);
+  const [skipSecondsLeft, setSkipSecondsLeft] = useState(0);
+  const skipCountdownRef = useRef(null);
+  const handleNextTrackRef = useRef(null);
+
+  const handlePlaybackError = useCallback(
+    (code) => {
+      setIsPlaying(false);
+      stopProgress();
+      if (timerRef.current) clearTimeout(timerRef.current);
+
+      const isRestriction = code === 101 || code === 150;
+      const errorDetails = {
+        code,
+        isRestriction,
+        title: currentTrack?.title || currentTrack?.name || 'Canción actual',
+        message: isRestriction
+          ? 'El autor bloqueó la reproducción fuera de YouTube por derechos de autor.'
+          : 'Este video fue eliminado, es privado o no está disponible en YouTube.',
+      };
+      setUnavailableError(errorDetails);
+
+      setSkipSecondsLeft(3);
+      if (skipCountdownRef.current) clearInterval(skipCountdownRef.current);
+      let remaining = 3;
+      skipCountdownRef.current = setInterval(() => {
+        remaining -= 1;
+        setSkipSecondsLeft(remaining);
+        if (remaining <= 0) {
+          clearInterval(skipCountdownRef.current);
+          skipCountdownRef.current = null;
+          setUnavailableError(null);
+          handleNextTrackRef.current?.();
+        }
+      }, 1000);
+    },
+    [currentTrack, stopProgress]
+  );
+
+  const handleManualSkipUnavailable = () => {
+    if (skipCountdownRef.current) {
+      clearInterval(skipCountdownRef.current);
+      skipCountdownRef.current = null;
+    }
+    setUnavailableError(null);
+    handleNextTrackRef.current?.();
+  };
 
   const applyDuration = useCallback((val) => {
     const parsed = Math.max(1, Math.min(120, parseInt(val, 10) || 1));
@@ -195,6 +245,11 @@ const MusicPlayer = forwardRef(function MusicPlayer(
       setIsPlaying(false);
       setCurrentTrackTime(0);
       setTrackDuration(0);
+      setUnavailableError(null);
+      if (skipCountdownRef.current) {
+        clearInterval(skipCountdownRef.current);
+        skipCountdownRef.current = null;
+      }
 
       // 1. LOCAL OFFLINE AUDIO (MP3, WAV, OGG, M4A or Blob URL)
       if (track.type === 'local' || isLocalTrack(track.url)) {
@@ -348,6 +403,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
             },
             onError: (e) => {
               console.warn('YouTube playback error code:', e.data);
+              handlePlaybackError(e.data);
             },
           },
         });
@@ -375,7 +431,32 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     return () => {
       isMounted = false;
     };
-  }, [mediaType, mediaId]);
+  }, [mediaType, mediaId, handlePlaybackError]);
+
+  // Proactively check video availability as soon as a YouTube track is loaded
+  useEffect(() => {
+    let isCancelled = false;
+    if (mediaType === 'youtube' && mediaId) {
+      checkYoutubeAvailability(mediaId)
+        .then((res) => {
+          if (isCancelled) return;
+          if (res && res.available === false) {
+            handlePlaybackError(res.reason === 'EMBEDDING_DISABLED' ? 150 : 100);
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      isCancelled = true;
+    };
+  }, [mediaType, mediaId, handlePlaybackError]);
+
+  // Cleanup auto-skip countdown on unmount
+  useEffect(() => {
+    return () => {
+      if (skipCountdownRef.current) clearInterval(skipCountdownRef.current);
+    };
+  }, []);
 
   // Initialize and shuffle playlist in random order by default with IndexedDB hydration
   useEffect(() => {
@@ -420,6 +501,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
     setUrl(nextTrack.url || nextTrack);
     loadMedia(nextTrack);
   };
+  handleNextTrackRef.current = handleNextTrack;
 
   const handlePrevTrack = () => {
     if (!activeQueue || activeQueue.length === 0) return;
@@ -868,7 +950,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
         className="hidden"
       />
 
-      {/* YOUTUBE PLAYER CONTAINER - Real size, placed behind page so video isn't visible, preventing Chrome/YouTube throttling */}
+      {/* YOUTUBE PLAYER CONTAINER - Real size with opacity: 0 to prevent throttling and hide YouTube error screens */}
       <div
         id="youtube-container"
         style={{
@@ -878,6 +960,7 @@ const MusicPlayer = forwardRef(function MusicPlayer(
           width: '320px',
           height: '180px',
           zIndex: -20,
+          opacity: 0,
           pointerEvents: 'none',
         }}
         aria-hidden="true"
@@ -886,6 +969,42 @@ const MusicPlayer = forwardRef(function MusicPlayer(
           <div id="youtube-player-slot" />
         )}
       </div>
+
+      {/* Unavailable Video Notification Banner */}
+      {unavailableError && (
+        <div className="mb-4 p-4 rounded-2xl bg-[#FFF1F2] border-2 border-[#E11D48]/40 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[#E11D48] relative z-20 animate-fade-in">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-[#FFE4E6] border border-[#FDA4AF] flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-[#E11D48]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-display font-black text-sm text-[#9F1239]">
+                  Canción no disponible en YouTube
+                </p>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#FFE4E6] text-[#BE123C] border border-[#FDA4AF]">
+                  Código {unavailableError.code}
+                </span>
+              </div>
+              <p className="text-xs text-[#BE123C] mt-0.5 font-medium leading-tight">
+                {unavailableError.message} Saltando a la siguiente canción en {skipSecondsLeft}s...
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleManualSkipUnavailable}
+            className="px-4 py-2 rounded-xl bg-[#E11D48] text-white font-tactical font-black text-xs hover:bg-[#BE123C] cursor-pointer shrink-0 transition-colors shadow-xs flex items-center justify-center gap-1.5"
+          >
+            <span>Saltar ahora ({skipSecondsLeft}s)</span>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Spotify fallback iframe (if ever used) */}
       {mediaType === 'spotify' && mediaId && (

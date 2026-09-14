@@ -109,3 +109,36 @@ export function normalizeTrack(item) {
   };
 }
 
+/**
+ * Checks if a YouTube video is publicly available and embeddable.
+ * Queries /api/check-video first, with fallback to direct YouTube oEmbed.
+ */
+export async function checkYoutubeAvailability(trackOrUrlOrId) {
+  const urlOrId = typeof trackOrUrlOrId === 'object' ? trackOrUrlOrId?.url || trackOrUrlOrId?.id : trackOrUrlOrId;
+  const ytId = extractYoutubeId(urlOrId) || (typeof urlOrId === 'string' && urlOrId.length === 11 ? urlOrId : null);
+  if (!ytId) return { available: true }; // Not a YouTube track
+
+  try {
+    const res = await fetch(`/api/check-video?id=${encodeURIComponent(ytId)}`, {
+      signal: AbortSignal.timeout ? AbortSignal.timeout(4000) : undefined,
+    }).catch(() => null);
+
+    if (res && res.ok) {
+      return await res.json();
+    }
+
+    // Direct oEmbed fallback if server route is unreachable
+    const oembedRes = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${ytId}&format=json`, {
+      signal: AbortSignal.timeout ? AbortSignal.timeout(3500) : undefined,
+    });
+    if (!oembedRes.ok) {
+      return { available: false, id: ytId, reason: 'NOT_FOUND_OR_RESTRICTED' };
+    }
+    const data = await oembedRes.json();
+    return { available: true, id: ytId, title: data.title, author: data.author_name };
+  } catch {
+    // If network check fails, assume available to prevent false-negative blocking
+    return { available: true, id: ytId, unchecked: true };
+  }
+}
+
