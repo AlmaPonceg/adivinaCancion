@@ -4,6 +4,7 @@ import NeutralBackground from './components/NeutralBackground';
 import LoginModal from './components/LoginModal';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { LanguageProvider } from './context/LanguageContext';
 import HostLobby from './pages/HostLobby';
 import HostGame from './pages/HostGame';
 import PlayerJoin from './pages/PlayerJoin';
@@ -53,9 +54,11 @@ function AppLayout() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ThemeProvider>
-        <AppLayout />
-      </ThemeProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <AppLayout />
+        </ThemeProvider>
+      </LanguageProvider>
     </BrowserRouter>
   );
 }

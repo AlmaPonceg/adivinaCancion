@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../context/LanguageContext';
 import AppLogo from '../components/AppLogo';
+import LanguageSelector from '../components/LanguageSelector';
 
 export default function Landing() {
   const navigate = useNavigate();
   const { isAlmaTheme, openLoginModal, lockTheme } = useTheme();
+  const { t } = useTranslation();
   const [roomCodeInput, setRoomCodeInput] = useState('');
 
   return (
@@ -21,15 +24,17 @@ export default function Landing() {
         </div>
 
         <div className="flex items-center gap-2">
+          <LanguageSelector />
+
           {isAlmaTheme ? (
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border-2 border-[#FF5722]/30 text-xs font-bold text-[#FF5722] shadow-xs select-none">
               <span className="w-2 h-2 rounded-full bg-[#FF5722] animate-pulse" />
-              <span>Edición Alma #24</span>
+              <span>{t('nav.editionAlma', 'Edición Alma #24')}</span>
               <button
                 type="button"
                 onClick={lockTheme}
                 className="ml-1 text-[#6B6280] hover:text-[#181226] cursor-pointer"
-                title="Cerrar sesión y volver al modo estándar"
+                title={t('nav.closeSession', 'Cerrar sesión y volver al modo estándar')}
               >
                 ✕
               </button>
@@ -43,7 +48,7 @@ export default function Landing() {
               <svg className="w-3.5 h-3.5 text-[#181226]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <span>Iniciar Sesión</span>
+              <span>{t('common.login', 'Iniciar Sesión')}</span>
             </button>
           )}
         </div>
@@ -93,7 +98,7 @@ export default function Landing() {
         <div className="flex items-center justify-center gap-3 mb-3">
           <span className="h-px w-8 bg-[#E5DFD5]" />
           <span className="badge-tag text-[#FF5722] tracking-[0.25em] font-extrabold">
-            TRIVIA MUSICAL EN VIVO · MULTIJUGADOR
+            {t('landing.eyebrow', 'TRIVIA MUSICAL EN VIVO · MULTIJUGADOR')}
           </span>
           <span className="h-px w-8 bg-[#E5DFD5]" />
         </div>
@@ -104,22 +109,28 @@ export default function Landing() {
         </h1>
 
         <p className="text-[#574F6B] text-xs sm:text-base mb-6 sm:mb-7 max-w-sm mx-auto leading-relaxed font-semibold">
-          El juego de adivinar canciones en vivo para reuniones y fiestas. Cada invitado usa su celular como pulsador de alta velocidad.
+          {t('landing.subtitle', 'El juego de adivinar canciones en vivo para reuniones y fiestas. Cada invitado usa su celular como pulsador de alta velocidad.')}
         </p>
 
         {/* Feature Strip */}
         <div className="grid grid-cols-3 gap-2 sm:gap-2.5 mb-6 sm:mb-8 text-left">
           <div className="p-2.5 sm:p-3.5 rounded-2xl bg-[#F7F4EE] border border-[#E5DFD5] flex flex-col justify-between shadow-xs">
             <span className="text-[#FF5722] text-lg sm:text-xl font-black leading-none mb-1">01</span>
-            <span className="text-[10px] sm:text-[11px] font-extrabold text-[#181226] leading-snug">Pulsador Celular</span>
+            <span className="text-[10px] sm:text-[11px] font-extrabold text-[#181226] leading-snug">
+              {t('landing.feature1Desc', 'Pulsador Celular')}
+            </span>
           </div>
           <div className="p-2.5 sm:p-3.5 rounded-2xl bg-[#F7F4EE] border border-[#E5DFD5] flex flex-col justify-between shadow-xs">
             <span className="text-[#E11D48] text-lg sm:text-xl font-black leading-none mb-1">02</span>
-            <span className="text-[10px] sm:text-[11px] font-extrabold text-[#181226] leading-snug">Equipos en Vivo</span>
+            <span className="text-[10px] sm:text-[11px] font-extrabold text-[#181226] leading-snug">
+              {t('landing.feature2Desc', 'Equipos en Vivo')}
+            </span>
           </div>
           <div className="p-2.5 sm:p-3.5 rounded-2xl bg-[#F7F4EE] border border-[#E5DFD5] flex flex-col justify-between shadow-xs">
             <span className="text-[#059669] text-lg sm:text-xl font-black leading-none mb-1">03</span>
-            <span className="text-[10px] sm:text-[11px] font-extrabold text-[#181226] leading-snug">Podio en Vivo</span>
+            <span className="text-[10px] sm:text-[11px] font-extrabold text-[#181226] leading-snug">
+              {t('landing.feature3Desc', 'Podio en Vivo')}
+            </span>
           </div>
         </div>
 
@@ -138,7 +149,7 @@ export default function Landing() {
                   else navigate('/play');
                 }
               }}
-              placeholder="PIN DE SALA (4 LETRAS)"
+              placeholder={t('landing.pinPlaceholder', 'PIN DE SALA (4 LETRAS)')}
               className="flex-1 px-3 py-2.5 bg-white border border-[#E5DFD5] rounded-xl text-center font-display font-black text-sm tracking-widest text-[#181226] placeholder-[#8E869E] uppercase focus:outline-none focus:border-[#FF5722]"
               maxLength={4}
             />
@@ -150,7 +161,7 @@ export default function Landing() {
               }}
               className="arcade-btn-lime px-5 py-2.5 rounded-xl text-xs font-black shrink-0 cursor-pointer shadow-xs"
             >
-              Unirme
+              {t('landing.joinBtn', 'Unirme')}
             </button>
           </div>
 
@@ -162,7 +173,7 @@ export default function Landing() {
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
-            <span>Explorar Partidas para Jugar</span>
+            <span>{t('landing.browseBtn', 'Explorar Partidas para Jugar')}</span>
           </button>
 
           {/* Secondary Action: Create New Game (Kahoot Studio) */}
@@ -173,7 +184,7 @@ export default function Landing() {
             <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            <span>Crear Nueva Partida</span>
+            <span>{t('landing.createBtn', 'Crear Nueva Partida')}</span>
           </button>
         </div>
       </motion.div>

@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo, useCallback, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SERVER_URL } from '../socket';
+import { useTranslation } from '../context/LanguageContext';
 import MusicPackCover from '../components/MusicPackCover';
 import AppLogo from '../components/AppLogo';
+import LanguageSelector from '../components/LanguageSelector';
 import { MOOD_TILES } from '../utils/genreArt';
 
 const GENRE_FILTERS = [
@@ -26,6 +28,7 @@ const LOCAL_STORAGE_MY_GAMES = 'trivia_my_created_games';
 export default function CommunityLibrary() {
   const navigate = useNavigate();
   const librarySearchId = useId();
+  const { t } = useTranslation();
 
   // ── Library Tab: 'community' | 'my_games' ──────────────────
   const [activeTab, setActiveTab] = useState('community');
@@ -264,13 +267,13 @@ export default function CommunityLibrary() {
               <svg className="w-4 h-4 text-[#E21B3C]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              <span>Volver</span>
+              <span>{t('common.back', 'Volver')}</span>
             </button>
 
             <div className="flex items-center gap-2">
               <AppLogo className="w-8 h-8" />
               <h1 className="text-base sm:text-lg font-black tracking-tight text-[#181226]">
-                Biblioteca de Música
+                {t('library.title', 'Biblioteca de Música')}
               </h1>
             </div>
           </div>
@@ -278,13 +281,13 @@ export default function CommunityLibrary() {
           {/* Center: Search Bar */}
           <div className="flex-1 max-w-md min-w-[220px]">
             <div className="relative">
-              <label htmlFor={librarySearchId} className="sr-only">Buscar canciones, creador o género...</label>
+              <label htmlFor={librarySearchId} className="sr-only">{t('library.searchPlaceholder', 'Buscar canciones, creador o género...')}</label>
               <input
                 id={librarySearchId}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar canciones, creador o género..."
+                placeholder={t('library.searchPlaceholder', 'Buscar canciones, creador o género...')}
                 className="w-full pl-9 pr-4 py-2 bg-[#FAF8F5] border-2 border-[#EAE3D5] rounded-xl text-xs font-semibold text-[#181226] placeholder-[#8E869E] focus:outline-none focus:border-[#46178F] focus:bg-white shadow-inner"
               />
               <svg className="w-4 h-4 text-[#64748B] absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -293,8 +296,8 @@ export default function CommunityLibrary() {
             </div>
           </div>
 
-          {/* Right: Tab Toggle & Create Button */}
-          <div className="flex items-center gap-2.5">
+          {/* Right: Tab Toggle, Language & Action Buttons */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <div className="bg-[#FAF8F5] p-1 rounded-xl border border-[#EAE3D5] flex items-center gap-1 text-xs">
               <button
                 onClick={() => { setActiveTab('community'); setSelectedGenre('all'); }}
@@ -304,7 +307,7 @@ export default function CommunityLibrary() {
                     : 'text-[#64748B] hover:text-[#181226]'
                 }`}
               >
-                Comunidad
+                {t('common.community', 'Comunidad')}
               </button>
               <button
                 onClick={() => setActiveTab('my_games')}
@@ -314,19 +317,21 @@ export default function CommunityLibrary() {
                     : 'text-[#64748B] hover:text-[#181226]'
                 }`}
               >
-                Mis Partidas ({myGames.length})
+                {t('common.myGames', 'Mis Partidas')} ({myGames.length})
               </button>
             </div>
+
+            <LanguageSelector />
 
             <button
               onClick={() => navigate('/planes')}
               className="px-3 py-1.5 rounded-xl border-2 border-amber-300 bg-amber-50 hover:bg-amber-100/80 text-xs font-black text-amber-900 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs"
-              title="Ver planes y suscripciones"
+              title={t('common.plans', 'Planes')}
             >
               <svg className="w-3.5 h-3.5 text-amber-600" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.5-6.2 4.5 2.4-7.4-6.2-4.5h7.6z" />
               </svg>
-              <span>Planes</span>
+              <span>{t('common.plans', 'Planes')}</span>
             </button>
 
             <button
@@ -336,7 +341,7 @@ export default function CommunityLibrary() {
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              <span>Crear</span>
+              <span>{t('common.create', 'Crear')}</span>
             </button>
           </div>
         </div>

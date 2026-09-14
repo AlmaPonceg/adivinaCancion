@@ -2,9 +2,11 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../context/LanguageContext';
 
 export default function LoginModal() {
   const { isLoginModalOpen, closeLoginModal, unlockAlmaTheme, isAlmaTheme, lockTheme } = useTheme();
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,7 +36,7 @@ export default function LoginModal() {
     const trimmedPass = password.trim();
 
     if (!trimmedPass) {
-      setError('Por favor, ingresá la contraseña');
+      setError(t('login.passRequired', 'Por favor, ingresá la contraseña'));
       return;
     }
 
@@ -47,13 +49,13 @@ export default function LoginModal() {
       if (res.success) {
         closeLoginModal();
       } else {
-        setError('Usuario o contraseña incorrectos');
+        setError(t('login.invalidCreds', 'Usuario o contraseña incorrectos'));
       }
       return;
     }
 
     // Standard user login placeholder (ready for Supabase integration)
-    setInfoMessage('Las cuentas de usuario y guardado de playlists estarán disponibles en la próxima actualización con Supabase.');
+    setInfoMessage(t('login.futureSupabase', 'Las cuentas de usuario y guardado de playlists estarán disponibles en la próxima actualización con Supabase.'));
   };
 
   const handleKeyDown = (e) => {
@@ -102,17 +104,17 @@ export default function LoginModal() {
               </div>
               <div>
                 <h3 id="login-title" className="font-display font-black text-xl text-[#181226] leading-snug">
-                  Iniciar Sesión
+                  {t('login.title', 'Iniciar Sesión')}
                 </h3>
                 <p className="text-xs text-[#6B6280] font-medium">
-                  Accedé a tus partidas y playlists
+                  {t('login.subtitle', 'Accedé a tus partidas y playlists')}
                 </p>
               </div>
             </div>
 
             {isAlmaTheme && (
               <div className="mb-5 p-3 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] flex items-center justify-between text-xs">
-                <span className="font-bold text-[#FF5722]">Modo Recuerdo Activo</span>
+                <span className="font-bold text-[#FF5722]">{t('login.memoryActive', 'Modo Recuerdo Activo')}</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -121,7 +123,7 @@ export default function LoginModal() {
                   }}
                   className="font-bold text-[#E11D48] hover:underline cursor-pointer"
                 >
-                  Cerrar sesión
+                  {t('common.logout', 'Cerrar sesión')}
                 </button>
               </div>
             )}
@@ -129,7 +131,7 @@ export default function LoginModal() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="login-username-input" className="block text-xs font-bold text-[#181226] mb-1.5 uppercase tracking-wider">
-                  Usuario o Correo
+                  {t('login.userLabel', 'Usuario o Correo')}
                 </label>
                 <input
                   id="login-username-input"
@@ -142,7 +144,7 @@ export default function LoginModal() {
                     if (infoMessage) setInfoMessage('');
                   }}
                   disabled={loading}
-                  placeholder="ej. usuario@correo.com"
+                  placeholder={t('login.userPlaceholder', 'ej. usuario@correo.com')}
                   autoComplete="username"
                   className="w-full px-4 py-3 rounded-xl bg-[#FAF7F2] border-2 border-[#EAE3D5] text-[#181226] placeholder-[#A098AE] font-tactical text-sm focus:outline-none focus:border-[#FF5722] transition-colors"
                 />
@@ -150,7 +152,7 @@ export default function LoginModal() {
 
               <div>
                 <label htmlFor="login-password-input" className="block text-xs font-bold text-[#181226] mb-1.5 uppercase tracking-wider">
-                  Contraseña
+                  {t('login.passLabel', 'Contraseña')}
                 </label>
                 <input
                   id="login-password-input"
@@ -162,7 +164,7 @@ export default function LoginModal() {
                     if (infoMessage) setInfoMessage('');
                   }}
                   disabled={loading}
-                  placeholder="••••••••"
+                  placeholder={t('login.passPlaceholder', '••••••••')}
                   autoComplete="current-password"
                   className="w-full px-4 py-3 rounded-xl bg-[#FAF7F2] border-2 border-[#EAE3D5] text-[#181226] placeholder-[#A098AE] font-tactical text-sm focus:outline-none focus:border-[#FF5722] transition-colors"
                 />
@@ -190,7 +192,7 @@ export default function LoginModal() {
                   disabled={loading}
                   className="flex-1 py-3 rounded-xl border border-[#EAE3D5] text-xs font-black text-[#6B6280] hover:text-[#181226] bg-[#FAF7F2] cursor-pointer transition-colors"
                 >
-                  Cancelar
+                  {t('common.cancel', 'Cancelar')}
                 </button>
                 <button
                   type="submit"
@@ -200,10 +202,10 @@ export default function LoginModal() {
                   {loading ? (
                     <>
                       <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                      <span>Ingresando...</span>
+                      <span>{t('login.loggingIn', 'Ingresando...')}</span>
                     </>
                   ) : (
-                    <span>Iniciar Sesión</span>
+                    <span>{t('login.submitBtn', 'Iniciar Sesión')}</span>
                   )}
                 </button>
               </div>
@@ -214,7 +216,7 @@ export default function LoginModal() {
                   onClick={closeLoginModal}
                   className="text-[11px] font-bold text-[#8E869E] hover:text-[#46178F] transition-colors"
                 >
-                  Acceso a Moderación y Estadísticas →
+                  {t('login.adminLink', 'Acceso a Moderación y Estadísticas →')}
                 </Link>
               </div>
             </form>
