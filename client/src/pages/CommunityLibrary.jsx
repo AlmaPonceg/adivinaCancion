@@ -1,18 +1,17 @@
 import { useState, useEffect, useMemo, useCallback, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { SERVER_URL } from '../socket';
 import MusicPackCover from '../components/MusicPackCover';
-import { getGameCoverTheme } from '../utils/genreArt';
+import { MOOD_TILES } from '../utils/genreArt';
 
 const GENRE_FILTERS = [
-  { id: 'all', label: 'Todos', color: '#181226' },
-  { id: 'Rock', label: 'Rock Nacional', color: '#FF5722' },
-  { id: 'Cumbia', label: 'Cumbia & Cuarteto', color: '#F43F5E' },
-  { id: 'Pop', label: 'Hits Pop', color: '#06B6D4' },
-  { id: 'Reggaeton', label: 'Reggaeton', color: '#EA580C' },
-  { id: 'Trap', label: 'Trap & Urbano', color: '#A855F7' },
-  { id: 'Animé', label: 'Animé & TV', color: '#3B82F6' },
+  { id: 'all', label: 'Todos los Géneros' },
+  { id: 'Rock', label: 'Rock Nacional' },
+  { id: 'Cumbia', label: 'Cumbia & Cuarteto' },
+  { id: 'Pop', label: 'Hits Pop' },
+  { id: 'Reggaeton', label: 'Reggaeton' },
+  { id: 'Trap', label: 'Trap & Urbano' },
+  { id: 'Animé', label: 'Animé & TV' },
 ];
 
 const SORT_OPTIONS = [
@@ -213,7 +212,7 @@ export default function CommunityLibrary() {
     }
   };
 
-  // ── Filtered Collections ────────────────────────────────────
+  // ── Curated Slices ──────────────────────────────────────────
   const featuredGames = useMemo(() => {
     return games.slice(0, 3);
   }, [games]);
@@ -249,7 +248,7 @@ export default function CommunityLibrary() {
     <div className="min-h-screen bg-[#F5F2EB] text-[#181226] pb-16">
       {/* ── Top Header Navigation (Kahoot-Style) ─────────────────── */}
       <header className="bg-white border-b-2 border-[#EAE3D5] sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           {/* Left: Brand & Back */}
           <div className="flex items-center gap-3">
             <button
@@ -281,7 +280,7 @@ export default function CommunityLibrary() {
           </div>
 
           {/* Center: Search Bar */}
-          <div className="flex-1 max-w-md min-w-[240px]">
+          <div className="flex-1 max-w-md min-w-[220px]">
             <div className="relative">
               <label htmlFor={librarySearchId} className="sr-only">Buscar canciones, creador o género...</label>
               <input
@@ -348,7 +347,6 @@ export default function CommunityLibrary() {
                     : 'bg-[#FAF8F5] text-[#64748B] hover:text-[#181226] border-[#EAE3D5]'
                 }`}
               >
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: gf.color }} />
                 <span>{gf.label}</span>
               </button>
             ))}
@@ -371,9 +369,47 @@ export default function CommunityLibrary() {
         {/* ══════════════════════════════════════════════════════════ */}
         {activeTab === 'community' && (
           <>
-            {/* If browsing default page without search, show Featured Hero + Rankings + Curated Shelves */}
+            {/* If browsing default page without search, show Hero Mood Tiles + Featured Carousel + Rankings + Curated Shelves */}
             {isBrowsingAll && (
               <>
+                {/* ── 0. KAHOOT-STYLE MOOD TILES (Categorías visuales con foto) ── */}
+                <section className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#FF5722]">
+                      EXPLORÁ POR TEMÁTICA
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    {MOOD_TILES.map((tile) => (
+                      <div
+                        key={tile.id}
+                        onClick={() => setSelectedGenre(tile.id)}
+                        className={`group relative h-24 sm:h-28 rounded-2xl overflow-hidden border-2 ${tile.borderColor} shadow-xs hover:shadow-md cursor-pointer transition-all duration-200 flex flex-col justify-end p-3`}
+                      >
+                        {/* Background Photo with dark gradient */}
+                        <img
+                          src={tile.image}
+                          alt={tile.title}
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className={`absolute inset-0 ${tile.bgColor}/80 mix-blend-multiply transition-opacity`} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+
+                        {/* Title & Subtitle */}
+                        <div className="relative z-10">
+                          <h4 className="font-black text-xs sm:text-sm text-white leading-tight">
+                            {tile.title}
+                          </h4>
+                          <p className="text-[10px] text-white/75 font-medium truncate mt-0.5">
+                            {tile.subtitle}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
                 {/* ── 1. HERO SHOWCASE: Destacados de la Semana ──── */}
                 <section className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -396,11 +432,12 @@ export default function CommunityLibrary() {
                         className="group bg-white rounded-3xl border-2 border-[#EAE3D5] p-3.5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
                       >
                         <div>
-                          {/* Album cover */}
-                          <div className="mb-3">
+                          {/* Real photo cover */}
+                          <div className="mb-3 cursor-pointer" onClick={() => navigate(`/game/${game.id}`)}>
                             <MusicPackCover
                               genre={game.genre}
                               title={game.title}
+                              gameId={game.id}
                               trackCount={game.trackCount}
                               playCount={game.playCount}
                               size="large"
@@ -408,7 +445,10 @@ export default function CommunityLibrary() {
                             />
                           </div>
 
-                          <h3 className="font-black text-base text-[#181226] group-hover:text-[#FF5722] transition-colors leading-snug line-clamp-1 mb-1">
+                          <h3
+                            onClick={() => navigate(`/game/${game.id}`)}
+                            className="font-black text-base text-[#181226] group-hover:text-[#FF5722] transition-colors leading-snug line-clamp-1 mb-1 cursor-pointer"
+                          >
                             {game.title}
                           </h3>
                           <p className="text-xs text-[#64748B] line-clamp-2 leading-relaxed mb-3">
@@ -470,21 +510,30 @@ export default function CommunityLibrary() {
                       return (
                         <div
                           key={game.id}
-                          className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#EAE3D5] hover:border-[#FF5722]/50 hover:bg-white transition-all flex flex-col justify-between"
+                          className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#EAE3D5] hover:border-[#FF5722]/50 hover:bg-white transition-all flex flex-col justify-between"
                         >
                           <div>
-                            <div className="flex items-center justify-between mb-2.5">
-                              <span className={`w-7 h-7 rounded-xl font-black text-xs flex items-center justify-center border ${rankColors[index] || rankColors[3]}`}>
-                                #{index + 1}
-                              </span>
-                              <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-white border border-[#EAE3D5] text-[#181226]">
-                                {game.trackCount} temas
-                              </span>
+                            {/* Photo Thumbnail */}
+                            <div className="mb-2.5">
+                              <MusicPackCover
+                                genre={game.genre}
+                                title={game.title}
+                                gameId={game.id}
+                                trackCount={game.trackCount}
+                                playCount={game.playCount}
+                                size="small"
+                              />
                             </div>
 
-                            <h4 className="font-bold text-xs text-[#181226] line-clamp-1 mb-1">
-                              {game.title}
-                            </h4>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className={`w-5 h-5 rounded-lg font-black text-[10px] flex items-center justify-center border ${rankColors[index] || rankColors[3]}`}>
+                                #{index + 1}
+                              </span>
+                              <h4 className="font-bold text-xs text-[#181226] line-clamp-1">
+                                {game.title}
+                              </h4>
+                            </div>
+
                             <p className="text-[11px] text-[#64748B] line-clamp-1 mb-3">
                               Por {game.creatorName || 'Comunidad'}
                             </p>
@@ -724,6 +773,7 @@ export default function CommunityLibrary() {
                         <MusicPackCover
                           genre={game.genre}
                           title={game.title}
+                          gameId={game.id}
                           trackCount={game.trackCount || (Array.isArray(game.tracks) ? game.tracks.length : 0)}
                           playCount={game.playCount || 0}
                           isHovered={hoveredCardId === game.id}
@@ -888,7 +938,7 @@ export default function CommunityLibrary() {
 }
 
 /**
- * GamePackCard Sub-Component for visual music cards
+ * GamePackCard Sub-Component for photographic music cards
  */
 function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onViewDetail, onPlay, isLaunching }) {
   const isHovered = hoveredCardId === game.id;
@@ -900,11 +950,12 @@ function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onView
       className="group bg-white rounded-3xl border-2 border-[#EAE3D5] p-3.5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
     >
       <div>
-        {/* Cover Art with Vinyl peek-out */}
+        {/* Real Photographic Cover */}
         <div className="mb-3 cursor-pointer" onClick={onViewDetail}>
           <MusicPackCover
             genre={game.genre}
             title={game.title}
+            gameId={game.id}
             trackCount={game.trackCount || 0}
             playCount={game.playCount || 0}
             isHovered={isHovered}

@@ -1,86 +1,130 @@
 // ═══════════════════════════════════════════════════════════════
-// Genre Art & Cover Generator for Music Trivia Packs
+// Genre Art & Photographic Cover System for Music Trivia Packs
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Curated color themes and visual styles per musical genre
+ * Curated pack-specific photography so EVERY single game has a unique, distinct cover
  */
+export const PACK_SPECIFIC_COVERS = {
+  // Rock Nacional
+  'game_1789399149034_19zgu': 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80', // Purple stadium concert
+  'game_1789399016268_mf7zz': 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80', // Vintage electric guitar & amp
+  'pack-rock-nacional': 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&auto=format&fit=crop&q=80', // Rock concert stadium crowd with lights
+  
+  // Fiesta, Cumbia & Cuarteto
+  'pack-cumbias-cuarteto': 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=80', // Golden confetti & festival crowd
+  
+  // Pop
+  'pack-pop-2000s': 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80', // Disco mirror ball & neon lasers
+  
+  // Reggaeton
+  'pack-reggaeton-old-school': 'https://images.unsplash.com/photo-1545128485-c400e7702796?w=800&auto=format&fit=crop&q=80', // Red dance club lasers
+  
+  // Trap & Urbano
+  'game_1789397749867_erc4i': 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&auto=format&fit=crop&q=80', // Studio recording desk & gear
+  
+  // Animé & Series
+  'pack-anime-series': 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80', // Neon arcade skyline
+  
+  // Private / Birthday
+  'game_1789397821677_4vsqu': 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=80', // Intimate party celebration lights
+};
+
 export const GENRE_THEMES = {
   'rock': {
     label: 'Rock Nacional',
-    gradient: 'from-[#2E1A47] via-[#1E1435] to-[#0D0818]',
-    accent: '#FF5722',
-    pillBg: 'bg-[#FFEDE7] text-[#D84315] border-[#FFCCBC]',
-    badgeBg: 'bg-[#FF5722]',
-    icon: 'guitar',
-    pattern: 'radial-lines',
     tagline: 'Himnos de Estadio & Clásicos',
+    accent: '#FF5722',
+    color: '#D84315',
+    bgBadge: 'bg-[#FF5722]',
+    coverPool: [
+      'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&auto=format&fit=crop&q=80',
+    ],
+    categoryTileBg: 'bg-[#7C2D12]',
+    categoryTileText: 'text-white',
   },
   'cumbia': {
     label: 'Cumbia & Cuarteto',
-    gradient: 'from-[#831843] via-[#701A75] to-[#2E1065]',
+    tagline: 'Para la Previa, Cumbias & Boliche',
     accent: '#F43F5E',
-    pillBg: 'bg-[#FFE4E6] text-[#BE123C] border-[#FECDD3]',
-    badgeBg: 'bg-[#F43F5E]',
-    icon: 'sparkles',
-    pattern: 'confetti',
-    tagline: 'Para la Previa & Boliche',
+    color: '#BE123C',
+    bgBadge: 'bg-[#F43F5E]',
+    coverPool: [
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=80',
+    ],
+    categoryTileBg: 'bg-[#831843]',
+    categoryTileText: 'text-white',
   },
   'pop': {
     label: 'Hits Pop 2000s',
-    gradient: 'from-[#0369A1] via-[#0E7490] to-[#1E293B]',
-    accent: '#06B6D4',
-    pillBg: 'bg-[#CFFAFE] text-[#0E7490] border-[#A5F3FC]',
-    badgeBg: 'bg-[#06B6D4]',
-    icon: 'disc',
-    pattern: 'disc-grooves',
     tagline: 'Bangerz Globales Inolvidables',
+    accent: '#06B6D4',
+    color: '#0E7490',
+    bgBadge: 'bg-[#06B6D4]',
+    coverPool: [
+      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&auto=format&fit=crop&q=80',
+    ],
+    categoryTileBg: 'bg-[#0E7490]',
+    categoryTileText: 'text-white',
   },
   'trap': {
     label: 'Trap & Urbano',
-    gradient: 'from-[#3B0764] via-[#1E1B4B] to-[#09090B]',
-    accent: '#A855F7',
-    pillBg: 'bg-[#F3E8FF] text-[#7E22CE] border-[#E9D5FF]',
-    badgeBg: 'bg-[#A855F7]',
-    icon: 'waveform',
-    pattern: 'equalizer-bars',
     tagline: 'Bizarrap Sessions & Flow',
+    accent: '#A855F7',
+    color: '#7E22CE',
+    bgBadge: 'bg-[#A855F7]',
+    coverPool: [
+      'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&auto=format&fit=crop&q=80',
+    ],
+    categoryTileBg: 'bg-[#4C1D95]',
+    categoryTileText: 'text-white',
   },
   'reggaeton': {
     label: 'Reggaeton Old School',
-    gradient: 'from-[#9A3412] via-[#7C2D12] to-[#181226]',
-    accent: '#EA580C',
-    pillBg: 'bg-[#FFEDD5] text-[#C2410C] border-[#FED7AA]',
-    badgeBg: 'bg-[#EA580C]',
-    icon: 'flame',
-    pattern: 'sunburst',
     tagline: 'El Perreo de los 2000s',
+    accent: '#EA580C',
+    color: '#C2410C',
+    bgBadge: 'bg-[#EA580C]',
+    coverPool: [
+      'https://images.unsplash.com/photo-1545128485-c400e7702796?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80',
+    ],
+    categoryTileBg: 'bg-[#9A3412]',
+    categoryTileText: 'text-white',
   },
   'anime': {
     label: 'Animé & Series TV',
-    gradient: 'from-[#1E3A8A] via-[#1E1B4B] to-[#0F172A]',
-    accent: '#3B82F6',
-    pillBg: 'bg-[#DBEAFE] text-[#1D4ED8] border-[#BFDBFE]',
-    badgeBg: 'bg-[#3B82F6]',
-    icon: 'tv',
-    pattern: 'retro-grid',
     tagline: 'Nostalgia de Pantalla Chica',
+    accent: '#3B82F6',
+    color: '#1D4ED8',
+    bgBadge: 'bg-[#3B82F6]',
+    coverPool: [
+      'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop&q=80',
+    ],
+    categoryTileBg: 'bg-[#1E3A8A]',
+    categoryTileText: 'text-white',
   },
   'general': {
-    label: 'Variado & Éxitos',
-    gradient: 'from-[#181226] via-[#2A233D] to-[#110D1A]',
+    label: 'Grandes Éxitos',
+    tagline: 'Música para Todos',
     accent: '#FF5722',
-    pillBg: 'bg-[#F1F5F9] text-[#475569] border-[#E2E8F0]',
-    badgeBg: 'bg-[#FF5722]',
-    icon: 'music',
-    pattern: 'vinyl',
-    tagline: 'Grandes Éxitos para Todos',
+    color: '#FF5722',
+    bgBadge: 'bg-[#FF5722]',
+    coverPool: [
+      'https://images.unsplash.com/photo-1539375665275-f9de415ef9ac?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80',
+    ],
+    categoryTileBg: 'bg-[#181226]',
+    categoryTileText: 'text-white',
   },
 };
 
-/**
- * Resolve genre key from string
- */
 export function getGenreKey(genre = '') {
   const g = String(genre).toLowerCase().trim();
   if (g.includes('rock')) return 'rock';
@@ -93,9 +137,80 @@ export function getGenreKey(genre = '') {
 }
 
 /**
- * Return theme configuration for a game
+ * Return theme configuration and cover photograph for a game
  */
-export function getGameCoverTheme(genre = '', title = '') {
+export function getGameCoverTheme(genre = '', title = '', gameId = '') {
   const key = getGenreKey(genre || title);
-  return GENRE_THEMES[key] || GENRE_THEMES.general;
+  const theme = GENRE_THEMES[key] || GENRE_THEMES.general;
+
+  let coverImage = PACK_SPECIFIC_COVERS[gameId];
+
+  if (!coverImage) {
+    const pool = theme.coverPool || [];
+    let hash = 0;
+    const str = `${title}_${gameId}`;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0;
+    }
+    const idx = Math.abs(hash) % pool.length;
+    coverImage = pool[idx] || pool[0];
+  }
+
+  return {
+    ...theme,
+    coverImage,
+    fallbackImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80',
+  };
 }
+
+export const MOOD_TILES = [
+  {
+    id: 'Cumbia',
+    title: 'Previa & Fiesta',
+    subtitle: 'Cumbias & Cuarteto',
+    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80',
+    bgColor: 'bg-[#831843]',
+    borderColor: 'border-[#9D174D]',
+  },
+  {
+    id: 'Rock',
+    title: 'Rock de Estadio',
+    subtitle: 'Nacional & 90s',
+    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80',
+    bgColor: 'bg-[#7C2D12]',
+    borderColor: 'border-[#9A3412]',
+  },
+  {
+    id: 'Pop',
+    title: 'Hits Pop 2000s',
+    subtitle: 'Discoteca & Glitter',
+    image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500&auto=format&fit=crop&q=80',
+    bgColor: 'bg-[#0E7490]',
+    borderColor: 'border-[#155E75]',
+  },
+  {
+    id: 'Trap',
+    title: 'Trap & Flow',
+    subtitle: 'Bizarrap Sessions',
+    image: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=500&auto=format&fit=crop&q=80',
+    bgColor: 'bg-[#4C1D95]',
+    borderColor: 'border-[#5B21B6]',
+  },
+  {
+    id: 'Reggaeton',
+    title: 'Reggaeton Retro',
+    subtitle: 'Old School 2000s',
+    image: 'https://images.unsplash.com/photo-1545128485-c400e7702796?w=500&auto=format&fit=crop&q=80',
+    bgColor: 'bg-[#9A3412]',
+    borderColor: 'border-[#C2410C]',
+  },
+  {
+    id: 'Animé',
+    title: 'Animé & Series',
+    subtitle: 'Intros de la Infancia',
+    image: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=500&auto=format&fit=crop&q=80',
+    bgColor: 'bg-[#1E3A8A]',
+    borderColor: 'border-[#1E40AF]',
+  },
+];
