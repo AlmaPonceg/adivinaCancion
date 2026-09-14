@@ -1,16 +1,18 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SERVER_URL } from '../socket';
+import MusicPackCover from '../components/MusicPackCover';
+import { getGameCoverTheme } from '../utils/genreArt';
 
 const GENRE_FILTERS = [
-  { id: 'all', label: 'Todos los Géneros' },
-  { id: 'Rock', label: 'Rock Nacional' },
-  { id: 'Cumbia', label: 'Cumbia & Cuarteto' },
-  { id: 'Pop', label: 'Pop' },
-  { id: 'Reggaeton', label: 'Reggaeton' },
-  { id: 'Animé', label: 'Animé & TV' },
-  { id: 'Trap', label: 'Trap & Urbano' },
+  { id: 'all', label: 'Todos', color: '#181226' },
+  { id: 'Rock', label: 'Rock Nacional', color: '#FF5722' },
+  { id: 'Cumbia', label: 'Cumbia & Cuarteto', color: '#F43F5E' },
+  { id: 'Pop', label: 'Hits Pop', color: '#06B6D4' },
+  { id: 'Reggaeton', label: 'Reggaeton', color: '#EA580C' },
+  { id: 'Trap', label: 'Trap & Urbano', color: '#A855F7' },
+  { id: 'Animé', label: 'Animé & TV', color: '#3B82F6' },
 ];
 
 const SORT_OPTIONS = [
@@ -23,6 +25,7 @@ const LOCAL_STORAGE_MY_GAMES = 'trivia_my_created_games';
 
 export default function CommunityLibrary() {
   const navigate = useNavigate();
+  const librarySearchId = useId();
 
   // ── Library Tab: 'community' | 'my_games' ──────────────────
   const [activeTab, setActiveTab] = useState('community');
@@ -34,6 +37,7 @@ export default function CommunityLibrary() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [selectedSort, setSelectedSort] = useState('popular');
+  const [hoveredCardId, setHoveredCardId] = useState(null);
 
   // ── My Games State ─────────────────────────────────────────
   const [myGames, setMyGames] = useState([]);
@@ -79,7 +83,7 @@ export default function CommunityLibrary() {
     if (activeTab === 'community') {
       const timer = setTimeout(() => {
         fetchCommunityGames();
-      }, 280);
+      }, 250);
       return () => clearTimeout(timer);
     }
   }, [fetchCommunityGames, activeTab]);
@@ -106,7 +110,6 @@ export default function CommunityLibrary() {
       const data = await res.json();
 
       if (data.success && Array.isArray(data.games)) {
-        // Map full server records
         const serverMap = new Map(data.games.map((g) => [g.id, g]));
         const merged = localList.map((item) => {
           const serverData = serverMap.get(item.id);
@@ -151,12 +154,10 @@ export default function CommunityLibrary() {
     }
   };
 
-  // ── Delete a Game (from server and local list) ───────────────
+  // ── Delete a Game ───────────────────────────────────────────
   const handleDeleteGame = async (game) => {
     try {
       await fetch(`${baseUrl}/api/games/${game.id}`, { method: 'DELETE' });
-
-      // Remove from localStorage
       try {
         const stored = localStorage.getItem(LOCAL_STORAGE_MY_GAMES);
         if (stored) {
@@ -174,7 +175,7 @@ export default function CommunityLibrary() {
     }
   };
 
-  // ── Launch and play game ────────────────────────────────────
+  // ── Launch and play game directly ───────────────────────────
   const handlePlayGame = async (game) => {
     setLaunchingId(game.id);
     try {
@@ -188,10 +189,8 @@ export default function CommunityLibrary() {
         return;
       }
 
-      // Record play count
       fetch(`${baseUrl}/api/games/${game.id}/play`, { method: 'POST' }).catch(() => {});
 
-      // Save to localStorage playlist storage
       try {
         localStorage.setItem('trivia_playlist', JSON.stringify(tracksToPlay));
         localStorage.setItem('trivia_current_playlist', JSON.stringify(tracksToPlay));
@@ -200,7 +199,6 @@ export default function CommunityLibrary() {
         console.warn('Storage warning:', e);
       }
 
-      // Navigate to host lobby directly
       navigate('/host', {
         state: {
           preloadedPlaylist: tracksToPlay,
@@ -215,11 +213,44 @@ export default function CommunityLibrary() {
     }
   };
 
+  // ── Filtered Collections ────────────────────────────────────
+  const featuredGames = useMemo(() => {
+    return games.slice(0, 3);
+  }, [games]);
+
+  const topRankedGames = useMemo(() => {
+    return [...games].sort((a, b) => (b.playCount || 0) - (a.playCount || 0) || (b.trackCount || 0) - (a.trackCount || 0)).slice(0, 4);
+  }, [games]);
+
+  const partyGames = useMemo(() => {
+    return games.filter((g) => {
+      const genre = (g.genre || '').toLowerCase();
+      return genre.includes('cumbia') || genre.includes('cuarteto') || genre.includes('reggaeton');
+    });
+  }, [games]);
+
+  const rockPopGames = useMemo(() => {
+    return games.filter((g) => {
+      const genre = (g.genre || '').toLowerCase();
+      return genre.includes('rock') || genre.includes('pop');
+    });
+  }, [games]);
+
+  const urbanAnimeGames = useMemo(() => {
+    return games.filter((g) => {
+      const genre = (g.genre || '').toLowerCase();
+      return genre.includes('trap') || genre.includes('anim') || genre.includes('serie');
+    });
+  }, [games]);
+
+  const isBrowsingAll = activeTab === 'community' && selectedGenre === 'all' && !searchQuery.trim();
+
   return (
-    <div className="min-h-screen p-4 sm:p-6 lg:p-8 flex flex-col text-[var(--color-text-primary)]">
-      <div className="max-w-6xl w-full mx-auto flex-1 flex flex-col">
-        {/* ── Top Header Navigation ──────────────────────────────── */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0">
+    <div className="min-h-screen bg-[#F5F2EB] text-[#181226] pb-16">
+      {/* ── Top Header Navigation (Kahoot-Style) ─────────────────── */}
+      <header className="bg-white border-b-2 border-[#EAE3D5] sticky top-0 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+          {/* Left: Brand & Back */}
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -232,624 +263,704 @@ export default function CommunityLibrary() {
               <span>Volver</span>
             </button>
 
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#FF5722]" />
-                <h1 className="font-display font-black text-xl sm:text-2xl text-[#181226] tracking-tight">
-                  Biblioteca de Partidas
-                </h1>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-[#FF5722] flex items-center justify-center text-white shadow-xs">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                </svg>
               </div>
-              <p className="text-xs text-[#6B6280] font-medium mt-0.5">
-                Explorá, buscá y creá partidas de música para jugar con amigos al estilo Kahoot
-              </p>
+              <div>
+                <h1 className="text-base sm:text-lg font-black tracking-tight text-[#181226] leading-none">
+                  Biblioteca de Música
+                </h1>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#FF5722]">
+                  Partidas Comunitarias & Propias
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          {/* Center: Search Bar */}
+          <div className="flex-1 max-w-md min-w-[240px]">
+            <div className="relative">
+              <label htmlFor={librarySearchId} className="sr-only">Buscar canciones, creador o género...</label>
+              <input
+                id={librarySearchId}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar canciones, creador o género..."
+                className="w-full pl-9 pr-4 py-2 bg-[#FAF8F5] border-2 border-[#EAE3D5] rounded-xl text-xs font-semibold text-[#181226] placeholder-[#94A3B8] focus:outline-none focus:border-[#FF5722] focus:bg-white shadow-inner"
+              />
+              <svg className="w-4 h-4 text-[#94A3B8] absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Right: Tab Toggle & Create Button */}
+          <div className="flex items-center gap-2">
+            <div className="bg-[#FAF8F5] p-1 rounded-xl border border-[#EAE3D5] flex items-center gap-1 text-xs">
+              <button
+                onClick={() => { setActiveTab('community'); setSelectedGenre('all'); }}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  activeTab === 'community'
+                    ? 'bg-[#181226] text-white shadow-xs'
+                    : 'text-[#64748B] hover:text-[#181226]'
+                }`}
+              >
+                Comunidad
+              </button>
+              <button
+                onClick={() => setActiveTab('my_games')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  activeTab === 'my_games'
+                    ? 'bg-[#181226] text-white shadow-xs'
+                    : 'text-[#64748B] hover:text-[#181226]'
+                }`}
+              >
+                Mis Partidas ({myGames.length})
+              </button>
+            </div>
+
             <button
-              type="button"
               onClick={() => navigate('/create')}
-              className="arcade-btn-primary px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 shadow-sm cursor-pointer"
+              className="py-2 px-3.5 bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              <span>+ Crear Partida</span>
+              <span>Crear</span>
             </button>
           </div>
-        </header>
-
-        {/* ── Main Tab Navigation: Comunidad vs Mis Partidas ──────── */}
-        <div className="flex items-center gap-2 mb-4 border-b border-[#EAE3D5] pb-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActiveTab('community')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center gap-2 ${
-              activeTab === 'community'
-                ? 'bg-[#181226] text-white shadow-2xs'
-                : 'bg-white text-[#574F6B] hover:text-[#181226] border border-[#EAE3D5]'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            <span>Explorar Comunidad</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('my_games')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer flex items-center gap-2 ${
-              activeTab === 'my_games'
-                ? 'bg-[#181226] text-white shadow-2xs'
-                : 'bg-white text-[#574F6B] hover:text-[#181226] border border-[#EAE3D5]'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-            </svg>
-            <span>Mis Partidas Guardadas</span>
-          </button>
         </div>
 
-        {/* ── Tab 1: Community Games ──────────────────────────────── */}
+        {/* Quick Genre Pills (Horizontal bar) */}
+        {activeTab === 'community' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 border-t border-[#EAE3D5] flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {GENRE_FILTERS.map((gf) => (
+              <button
+                key={gf.id}
+                onClick={() => setSelectedGenre(gf.id)}
+                className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 border ${
+                  selectedGenre === gf.id
+                    ? 'bg-[#181226] text-white border-[#181226] shadow-xs'
+                    : 'bg-[#FAF8F5] text-[#64748B] hover:text-[#181226] border-[#EAE3D5]'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: gf.color }} />
+                <span>{gf.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </header>
+
+      {/* ── Main Content Area ───────────────────────────────────── */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 space-y-8">
+
+        {/* ── ERROR BANNER ────────────────────────────────────────── */}
+        {error && (
+          <div className="p-4 rounded-2xl bg-[#FEF2F2] border border-[#FECACA] text-xs font-semibold text-[#B91C1C]">
+            {error}
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════ */}
+        {/* TAB 1: COMUNIDAD DISCOVERY VIEW                            */}
+        {/* ══════════════════════════════════════════════════════════ */}
         {activeTab === 'community' && (
           <>
-            {/* Search & Filters */}
-            <section className="party-card p-4 sm:p-5 rounded-2xl mb-6 shadow-sm shrink-0 space-y-3.5">
-              <div className="relative flex items-center">
-                <svg
-                  className="w-5 h-5 text-[#8E869E] absolute left-3.5 pointer-events-none"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscá por título de partida, artista, canción o creador..."
-                  className="w-full pl-11 pr-10 py-3 rounded-xl bg-[#FAF7F2] border-2 border-[#EAE3D5] text-sm text-[#181226] font-medium placeholder-[#8E869E] focus:outline-none focus:border-[#FF5722] transition-colors"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3.5 text-[#8E869E] hover:text-[#181226] p-1 cursor-pointer"
-                    title="Borrar búsqueda"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
-              </div>
+            {/* If browsing default page without search, show Featured Hero + Rankings + Curated Shelves */}
+            {isBrowsingAll && (
+              <>
+                {/* ── 1. HERO SHOWCASE: Destacados de la Semana ──── */}
+                <section className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#FF5722]">
+                        SELECCIÓN ESPECIAL
+                      </span>
+                      <h2 className="text-xl font-black text-[#181226] tracking-tight">
+                        Colecciones Destacadas
+                      </h2>
+                    </div>
+                  </div>
 
-              {/* Filter Controls: Clean 2-tier layout */}
-              <div className="pt-3 border-t border-[#EAE3D5] space-y-3">
-                {/* Genre Filter Pills: wraps cleanly, no overflow cut-offs or ugly scrollbars */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] font-black text-[#8E869E] uppercase tracking-wider mr-1">
-                    Género:
-                  </span>
-                  {GENRE_FILTERS.map((genre) => (
-                    <button
-                      key={genre.id}
-                      type="button"
-                      onClick={() => setSelectedGenre(genre.id)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        selectedGenre === genre.id
-                          ? 'bg-[#181226] text-white shadow-xs'
-                          : 'bg-[#FAF7F2] text-[#574F6B] hover:text-[#181226] hover:bg-[#EAE3D5] border border-[#EAE3D5]'
-                      }`}
-                    >
-                      {genre.label}
-                    </button>
-                  ))}
-                </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    {featuredGames.map((game) => (
+                      <div
+                        key={game.id}
+                        onMouseEnter={() => setHoveredCardId(game.id)}
+                        onMouseLeave={() => setHoveredCardId(null)}
+                        className="group bg-white rounded-3xl border-2 border-[#EAE3D5] p-3.5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+                      >
+                        <div>
+                          {/* Album cover */}
+                          <div className="mb-3">
+                            <MusicPackCover
+                              genre={game.genre}
+                              title={game.title}
+                              trackCount={game.trackCount}
+                              playCount={game.playCount}
+                              size="large"
+                              isHovered={hoveredCardId === game.id}
+                            />
+                          </div>
 
-                {/* Sub-bar: Results count on left, Sort on right */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-[#F0EBE1]">
-                  <span className="text-xs font-bold text-[#6B6280]">
-                    {games.length} {games.length === 1 ? 'partida pública encontrada' : 'partidas públicas encontradas'}
-                  </span>
+                          <h3 className="font-black text-base text-[#181226] group-hover:text-[#FF5722] transition-colors leading-snug line-clamp-1 mb-1">
+                            {game.title}
+                          </h3>
+                          <p className="text-xs text-[#64748B] line-clamp-2 leading-relaxed mb-3">
+                            {game.description || 'Partida de música interactiva creada por la comunidad.'}
+                          </p>
+                        </div>
 
-                  <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <span className="text-[11px] font-bold text-[#8E869E] uppercase tracking-wider">
-                      Ordenar por:
-                    </span>
-                    <div className="flex items-center gap-1 bg-[#FAF7F2] p-1 rounded-xl border border-[#EAE3D5]">
-                      {SORT_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => setSelectedSort(opt.id)}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
-                            selectedSort === opt.id
-                              ? 'bg-white text-[#181226] shadow-2xs font-black'
-                              : 'text-[#6B6280] hover:text-[#181226]'
-                          }`}
+                        <div className="pt-3 border-t border-[#EAE3D5] flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-[#64748B]">
+                            <div className="w-5 h-5 rounded-full bg-[#181226] text-white flex items-center justify-center text-[10px]">
+                              {(game.creatorName || 'C').charAt(0).toUpperCase()}
+                            </div>
+                            <span className="truncate max-w-[120px]">{game.creatorName || 'Comunidad'}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => navigate(`/game/${game.id}`)}
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FAF8F5] hover:bg-[#F3EFE6] text-[#181226] border border-[#EAE3D5] cursor-pointer"
+                            >
+                              Ver
+                            </button>
+                            <button
+                              onClick={() => handlePlayGame(game)}
+                              disabled={launchingId === game.id}
+                              className="px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-[#FF5722] hover:bg-[#E64A19] text-white shadow-xs cursor-pointer flex items-center gap-1"
+                            >
+                              <span>{launchingId === game.id ? 'Iniciando...' : 'Jugar'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* ── 2. RANKING STRIP: Top Partidas (#1 a #4) ───── */}
+                <section className="bg-white rounded-3xl p-6 border-2 border-[#EAE3D5] shadow-xs space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF5722]">
+                        PODIUM DE LA COMUNIDAD
+                      </span>
+                      <h2 className="text-lg font-black text-[#181226] tracking-tight">
+                        Top Partidas Más Populares
+                      </h2>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {topRankedGames.map((game, index) => {
+                      const rankColors = [
+                        'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]', // #1 Gold
+                        'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]', // #2 Silver
+                        'bg-[#FFEDD5] text-[#C2410C] border-[#FED7AA]', // #3 Bronze
+                        'bg-[#F3E8FF] text-[#7E22CE] border-[#E9D5FF]', // #4 Purple
+                      ];
+
+                      return (
+                        <div
+                          key={game.id}
+                          className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#EAE3D5] hover:border-[#FF5722]/50 hover:bg-white transition-all flex flex-col justify-between"
                         >
-                          {opt.label}
-                        </button>
+                          <div>
+                            <div className="flex items-center justify-between mb-2.5">
+                              <span className={`w-7 h-7 rounded-xl font-black text-xs flex items-center justify-center border ${rankColors[index] || rankColors[3]}`}>
+                                #{index + 1}
+                              </span>
+                              <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-white border border-[#EAE3D5] text-[#181226]">
+                                {game.trackCount} temas
+                              </span>
+                            </div>
+
+                            <h4 className="font-bold text-xs text-[#181226] line-clamp-1 mb-1">
+                              {game.title}
+                            </h4>
+                            <p className="text-[11px] text-[#64748B] line-clamp-1 mb-3">
+                              Por {game.creatorName || 'Comunidad'}
+                            </p>
+                          </div>
+
+                          <div className="pt-2 border-t border-[#EAE3D5] flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-[#FF5722] flex items-center gap-1">
+                              <span>▶</span>
+                              <span>{game.playCount || 0} jugadas</span>
+                            </span>
+
+                            <button
+                              onClick={() => navigate(`/game/${game.id}`)}
+                              className="px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#EAE3D5] text-[11px] font-bold text-[#181226] cursor-pointer"
+                            >
+                              Jugar
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                {/* ── 3. THEMATIC SHELF: Previa & Fiesta ───────────── */}
+                {partyGames.length > 0 && (
+                  <section className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#F43F5E]">
+                          RITMO TROPICAL & BAILE
+                        </span>
+                        <h3 className="text-lg font-black text-[#181226] tracking-tight">
+                          Para la Previa, Cumbias & Boliche
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {partyGames.map((game) => (
+                        <GamePackCard
+                          key={game.id}
+                          game={game}
+                          hoveredCardId={hoveredCardId}
+                          setHoveredCardId={setHoveredCardId}
+                          onInspect={() => handleInspectGame(game)}
+                          onViewDetail={() => navigate(`/game/${game.id}`)}
+                          onPlay={() => handlePlayGame(game)}
+                          isLaunching={launchingId === game.id}
+                        />
                       ))}
                     </div>
-                  </div>
-                </div>
-              </div>
-            </section>
+                  </section>
+                )}
 
-            {/* Error Message */}
-            {error && (
-              <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] text-xs sm:text-sm font-semibold mb-6 flex items-center justify-between">
-                <span>{error}</span>
-                <button
-                  type="button"
-                  onClick={fetchCommunityGames}
-                  className="underline font-bold hover:text-black cursor-pointer ml-4"
-                >
-                  Reintentar
-                </button>
-              </div>
+                {/* ── 4. THEMATIC SHELF: Himnos del Rock & Pop ────── */}
+                {rockPopGames.length > 0 && (
+                  <section className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF5722]">
+                          GUITARRAS & HIMNOS ETERNOS
+                        </span>
+                        <h3 className="text-lg font-black text-[#181226] tracking-tight">
+                          Rock Clásico, Nacional & Pop 2000s
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {rockPopGames.map((game) => (
+                        <GamePackCard
+                          key={game.id}
+                          game={game}
+                          hoveredCardId={hoveredCardId}
+                          setHoveredCardId={setHoveredCardId}
+                          onInspect={() => handleInspectGame(game)}
+                          onViewDetail={() => navigate(`/game/${game.id}`)}
+                          onPlay={() => handlePlayGame(game)}
+                          isLaunching={launchingId === game.id}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* ── 5. THEMATIC SHELF: Urbano & Geek ────────────── */}
+                {urbanAnimeGames.length > 0 && (
+                  <section className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#A855F7]">
+                          FLOW, BITS & CULTURA POP
+                        </span>
+                        <h3 className="text-lg font-black text-[#181226] tracking-tight">
+                          Trap Argentino & Animé Nostalgia
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {urbanAnimeGames.map((game) => (
+                        <GamePackCard
+                          key={game.id}
+                          game={game}
+                          hoveredCardId={hoveredCardId}
+                          setHoveredCardId={setHoveredCardId}
+                          onInspect={() => handleInspectGame(game)}
+                          onViewDetail={() => navigate(`/game/${game.id}`)}
+                          onPlay={() => handlePlayGame(game)}
+                          isLaunching={launchingId === game.id}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </>
             )}
 
-            {/* Games Grid */}
-            {loading ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-16">
-                <div className="w-10 h-10 rounded-full border-3 border-[#FF5722] border-t-transparent animate-spin mb-4" />
-                <p className="font-extrabold text-sm text-[#181226]">Buscando partidas en la comunidad...</p>
-              </div>
-            ) : games.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-white rounded-2xl border-2 border-[#EAE3D5] my-6">
-                <div className="w-12 h-12 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] flex items-center justify-center text-[#8E869E] font-black text-lg mb-3">
-                  ♪
-                </div>
-                <h3 className="font-display font-black text-base text-[#181226] mb-1">
-                  No se encontraron partidas públicas
-                </h3>
-                <p className="text-xs text-[#6B6280] max-w-sm mb-4">
-                  No hay partidas comunitarias que coincidan con los filtros actuales. ¡Podés crear la tuya y compartirla!
-                </p>
-                <button
-                  type="button"
-                  onClick={() => navigate('/create')}
-                  className="arcade-btn-primary px-5 py-2.5 rounded-xl text-xs font-black cursor-pointer"
-                >
-                  + Crear Primera Partida
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-8">
-                {games.map((game) => (
-                  <div
-                    key={game.id}
-                    className="party-card bg-white p-5 rounded-2xl border-2 border-[#EAE3D5] hover:border-[#181226] transition-all flex flex-col justify-between shadow-xs group"
-                  >
-                    <div>
-                      {/* Tags & Playcount */}
-                      <div className="flex items-center justify-between gap-2 mb-2.5">
-                        <span className="badge-tag text-[#FF5722] font-black text-[10px] tracking-wider truncate">
-                          {game.genre || 'General'}
-                        </span>
-                        <div className="flex items-center gap-1 text-[11px] font-bold text-[#6B6280] shrink-0 bg-[#FAF7F2] px-2 py-0.5 rounded-md border border-[#EAE3D5]">
-                          <svg className="w-3 h-3 text-[#FF5722]" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
-                          <span>{game.playCount || 0} jugadas</span>
-                        </div>
-                      </div>
-
-                      {/* Title & Description */}
-                      <h3
-                        onClick={() => navigate(`/game/${game.id}`)}
-                        className="font-display font-black text-base text-[#181226] leading-tight mb-1.5 group-hover:text-[#FF5722] transition-colors line-clamp-2 cursor-pointer"
-                      >
-                        {game.title}
-                      </h3>
-                      {game.description && (
-                        <p className="text-xs text-[#6B6280] line-clamp-2 mb-3 leading-relaxed">
-                          {game.description}
-                        </p>
-                      )}
-
-                      {/* Track Samples Snippet */}
-                      {Array.isArray(game.sampleTracks) && game.sampleTracks.length > 0 && (
-                        <div className="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#EAE3D5] mb-4 space-y-1">
-                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8E869E] block mb-1">
-                            Incluye temas como:
-                          </span>
-                          {game.sampleTracks.slice(0, 3).map((st, idx) => (
-                            <div key={idx} className="flex items-center gap-1.5 text-xs text-[#181226] truncate">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#FF5722] shrink-0" />
-                              <span className="font-bold truncate">{st.title}</span>
-                              {st.artist && <span className="text-[#8E869E] truncate">· {st.artist}</span>}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Footer Actions */}
-                    <div className="pt-3 border-t border-[#EAE3D5] flex items-center justify-between gap-2 mt-2">
-                      <div className="text-[11px] font-bold text-[#574F6B]">
-                        Por <span className="text-[#181226]">{game.creatorName || 'Comunidad'}</span>
-                        <span className="mx-1 text-[#8E869E]">·</span>
-                        <span className="text-[#FF5722] font-black">{game.trackCount} temas</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/game/${game.id}`)}
-                          className="arcade-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-[#181226] hover:text-[#FF5722] bg-[#FAF7F2] border border-[#EAE3D5] cursor-pointer"
-                          title="Ver detalles de la partida"
-                        >
-                          Ver Partida
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handlePlayGame(game)}
-                          disabled={launchingId === game.id}
-                          className="arcade-btn-primary px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                        >
-                          {launchingId === game.id ? (
-                            <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                          ) : (
-                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                          )}
-                          <span>Jugar</span>
-                        </button>
-                      </div>
-                    </div>
+            {/* If searching or filtering by a specific genre, show the focused grid */}
+            {!isBrowsingAll && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-black text-[#181226]">
+                      Resultados {selectedGenre !== 'all' ? `de ${selectedGenre}` : ''} {searchQuery ? `para "${searchQuery}"` : ''}
+                    </h2>
+                    <p className="text-xs text-[#64748B]">
+                      {games.length} {games.length === 1 ? 'partida encontrada' : 'partidas encontradas'}
+                    </p>
                   </div>
-                ))}
-              </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[#64748B]">Ordenar:</span>
+                    <select
+                      value={selectedSort}
+                      onChange={(e) => setSelectedSort(e.target.value)}
+                      className="px-3 py-1.5 bg-white border border-[#EAE3D5] rounded-xl text-xs font-bold text-[#181226] cursor-pointer"
+                    >
+                      {SORT_OPTIONS.map((so) => (
+                        <option key={so.id} value={so.id}>{so.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {loading ? (
+                  <div className="py-16 text-center text-xs font-bold text-[#64748B]">
+                    Cargando catálogo...
+                  </div>
+                ) : games.length === 0 ? (
+                  <div className="bg-white rounded-3xl p-12 text-center border-2 border-[#EAE3D5]">
+                    <h3 className="text-base font-black text-[#181226] mb-1">No se encontraron partidas</h3>
+                    <p className="text-xs text-[#64748B] mb-4">Intentá con otro término de búsqueda o eliminá el filtro de género.</p>
+                    <button
+                      onClick={() => { setSearchQuery(''); setSelectedGenre('all'); }}
+                      className="px-4 py-2 bg-[#FF5722] text-white rounded-xl text-xs font-bold"
+                    >
+                      Restablecer filtros
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {games.map((game) => (
+                      <GamePackCard
+                        key={game.id}
+                        game={game}
+                        hoveredCardId={hoveredCardId}
+                        setHoveredCardId={setHoveredCardId}
+                        onInspect={() => handleInspectGame(game)}
+                        onViewDetail={() => navigate(`/game/${game.id}`)}
+                        onPlay={() => handlePlayGame(game)}
+                        isLaunching={launchingId === game.id}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
             )}
           </>
         )}
 
-        {/* ── Tab 2: My Created & Saved Games ─────────────────────── */}
+        {/* ══════════════════════════════════════════════════════════ */}
+        {/* TAB 2: MIS PARTIDAS GUARDADAS                              */}
+        {/* ══════════════════════════════════════════════════════════ */}
         {activeTab === 'my_games' && (
-          <div className="space-y-4">
-            <div className="bg-white p-4 rounded-2xl border-2 border-[#EAE3D5] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-display font-black text-sm text-[#181226] uppercase tracking-wider">
-                  Partidas Creadas por Vos
-                </h2>
-                <p className="text-xs text-[#6B6280]">
-                  Acá tenés todas las partidas que armaste (tanto públicas como privadas). Podés jugarlas, editarlas o borrarlas.
+                <h2 className="text-lg font-black text-[#181226]">Mis Partidas Creadas</h2>
+                <p className="text-xs text-[#64748B]">
+                  Partidas que creaste en este navegador. Podés editarlas, eliminarlas o iniciarlas cuando quieras.
                 </p>
               </div>
 
               <button
-                type="button"
                 onClick={() => navigate('/create')}
-                className="arcade-btn-primary px-4 py-2 rounded-xl text-xs font-black shrink-0 flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2 bg-[#FF5722] hover:bg-[#E64A19] text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 cursor-pointer"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Nueva Partida</span>
+                <span>+ Crear Nueva</span>
               </button>
             </div>
 
             {loadingMyGames ? (
-              <div className="py-16 text-center">
-                <div className="w-8 h-8 rounded-full border-3 border-[#FF5722] border-t-transparent animate-spin mx-auto mb-3" />
-                <p className="font-black text-xs text-[#181226]">Cargando tus partidas...</p>
+              <div className="py-16 text-center text-xs font-bold text-[#64748B]">
+                Cargando tus partidas...
               </div>
             ) : myGames.length === 0 ? (
-              <div className="text-center p-8 bg-white rounded-2xl border-2 border-[#EAE3D5] my-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#FAF7F2] border border-[#EAE3D5] flex items-center justify-center text-[#8E869E] font-black text-lg mx-auto mb-3">
-                  ♪
+              <div className="bg-white rounded-3xl p-12 text-center border-2 border-[#EAE3D5] shadow-xs">
+                <div className="w-12 h-12 rounded-2xl bg-[#FAF8F5] text-[#94A3B8] mx-auto mb-3 flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
                 </div>
-                <h3 className="font-display font-black text-base text-[#181226] mb-1">
-                  Todavía no creaste ninguna partida
-                </h3>
-                <p className="text-xs text-[#6B6280] max-w-sm mx-auto mb-4">
-                  Armá tu propio Kahoot musical con tus canciones preferidas, elegí si querés que sea pública o privada, y jugala cuando quieras.
+                <h3 className="text-base font-black text-[#181226] mb-1">Aún no creaste partidas</h3>
+                <p className="text-xs text-[#64748B] mb-5 max-w-sm mx-auto">
+                  Armá tu propia playlist de trivia musical con canciones de YouTube, elegí si querés que sea pública o privada y jugala con tus amigos.
                 </p>
                 <button
-                  type="button"
                   onClick={() => navigate('/create')}
-                  className="arcade-btn-primary px-5 py-2.5 rounded-xl text-xs font-black cursor-pointer"
+                  className="px-5 py-2.5 bg-[#FF5722] text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md cursor-pointer"
                 >
-                  + Crear mi Primera Partida
+                  Crear Mi Primera Partida
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {myGames.map((game) => (
                   <div
                     key={game.id}
-                    className="party-card bg-white p-5 rounded-2xl border-2 border-[#EAE3D5] hover:border-[#181226] transition-all flex flex-col justify-between shadow-xs group"
+                    onMouseEnter={() => setHoveredCardId(game.id)}
+                    onMouseLeave={() => setHoveredCardId(null)}
+                    className="group bg-white rounded-3xl border-2 border-[#EAE3D5] p-3.5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
                   >
                     <div>
-                      {/* Status Badges */}
-                      <div className="flex items-center justify-between gap-2 mb-2.5">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${
-                          game.isPublic ? 'bg-[#ECFDF5] text-[#059669]' : 'bg-[#F5F3FF] text-[#7C3AED]'
+                      <div className="mb-3">
+                        <MusicPackCover
+                          genre={game.genre}
+                          title={game.title}
+                          trackCount={game.trackCount || (Array.isArray(game.tracks) ? game.tracks.length : 0)}
+                          playCount={game.playCount || 0}
+                          isHovered={hoveredCardId === game.id}
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                          game.isPublic ? 'bg-[#ECFDF5] text-[#059669]' : 'bg-[#F1F5F9] text-[#64748B]'
                         }`}>
                           {game.isPublic ? 'Pública' : 'Privada'}
                         </span>
-
-                        <span className="text-[11px] font-bold text-[#8E869E]">
-                          {game.tracksCount || (Array.isArray(game.tracks) ? game.tracks.length : 0)} canciones
+                        <span className="text-[10px] text-[#94A3B8] font-semibold">
+                          {game.genre || 'General'}
                         </span>
                       </div>
 
-                      <h3
-                        onClick={() => navigate(`/game/${game.id}`)}
-                        className="font-display font-black text-base text-[#181226] leading-tight mb-1.5 group-hover:text-[#FF5722] transition-colors cursor-pointer"
-                      >
+                      <h3 className="font-bold text-sm text-[#181226] mb-1 line-clamp-1">
                         {game.title}
                       </h3>
-
-                      {game.description && (
-                        <p className="text-xs text-[#6B6280] line-clamp-2 mb-3 leading-relaxed">
-                          {game.description}
-                        </p>
-                      )}
-
-                      <div className="text-[11px] text-[#574F6B] font-bold mb-3">
-                        Género: <span className="text-[#181226]">{game.genre || 'General'}</span>
-                      </div>
+                      <p className="text-xs text-[#64748B] line-clamp-2 mb-3">
+                        {game.description || 'Sin descripción'}
+                      </p>
                     </div>
 
-                    {/* Actions: Jugar, Ver, Editar, Eliminar */}
-                    <div className="pt-3 border-t border-[#EAE3D5] flex items-center justify-between gap-2 mt-2">
-                      <div className="flex items-center gap-1">
+                    <div className="pt-3 border-t border-[#EAE3D5] flex items-center justify-between">
+                      <button
+                        onClick={() => setGameToDelete(game)}
+                        className="text-[11px] font-bold text-[#DC2626] hover:underline cursor-pointer"
+                      >
+                        Eliminar
+                      </button>
+
+                      <div className="flex items-center gap-2">
                         <button
-                          type="button"
                           onClick={() => navigate(`/game/${game.id}`)}
-                          className="arcade-btn px-2 py-1.5 rounded-xl text-xs font-bold text-[#181226] hover:text-[#FF5722] bg-[#FAF7F2] border border-[#EAE3D5] cursor-pointer"
-                          title="Ver partida"
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FAF8F5] hover:bg-[#F3EFE6] text-[#181226] border border-[#EAE3D5] cursor-pointer"
                         >
                           Ver
                         </button>
                         <button
-                          type="button"
-                          onClick={() => navigate(`/create?id=${game.id}`)}
-                          className="arcade-btn px-2 py-1.5 rounded-xl text-xs font-bold text-[#574F6B] hover:text-[#181226] bg-[#FAF7F2] border border-[#EAE3D5] cursor-pointer"
-                          title="Editar esta partida"
+                          onClick={() => handlePlayGame(game)}
+                          className="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase bg-[#FF5722] hover:bg-[#E64A19] text-white shadow-xs cursor-pointer"
                         >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setGameToDelete(game)}
-                          className="p-1.5 rounded-xl text-[#DC2626] hover:bg-[#FEF2F2] cursor-pointer transition-colors"
-                          title="Eliminar partida"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
+                          Jugar
                         </button>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handlePlayGame(game)}
-                        disabled={launchingId === game.id}
-                        className="arcade-btn-primary px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                      >
-                        {launchingId === game.id ? (
-                          <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                        ) : (
-                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
-                        )}
-                        <span>Lanzar Sala</span>
-                      </button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
+          </section>
+        )}
+      </main>
+
+      {/* ── Inspect Tracks Modal ─────────────────────────────────── */}
+      {inspectingGame && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full border-2 border-[#EAE3D5] shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-[#EAE3D5]">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#FF5722]">
+                  VISTA PREVIA DE PARTIDA
+                </span>
+                <h3 className="text-base font-black text-[#181226]">{inspectingGame.title}</h3>
+                <p className="text-xs text-[#64748B]">
+                  Por {inspectingGame.creatorName || 'Comunidad'} · {inspectingTracks.length} canciones
+                </p>
+              </div>
+              <button
+                onClick={() => setInspectingGame(null)}
+                className="p-1.5 rounded-xl bg-[#FAF8F5] hover:bg-[#EAE3D5] text-[#181226] cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="py-2.5 flex items-center justify-between bg-[#FAF8F5] px-3 my-3 rounded-xl border border-[#EAE3D5]">
+              <span className="text-xs font-bold text-[#181226]">Modo Anti-Spoilers</span>
+              <button
+                onClick={() => setAntiSpoiler(!antiSpoiler)}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                  antiSpoiler ? 'bg-[#181226] text-white' : 'bg-white text-[#64748B] border border-[#EAE3D5]'
+                }`}
+              >
+                {antiSpoiler ? 'Ocultar Nombres' : 'Mostrar Nombres'}
+              </button>
+            </div>
+
+            <div className="py-2 overflow-y-auto divide-y divide-[#EAE3D5] flex-1">
+              {loadingTracks ? (
+                <div className="py-8 text-center text-xs text-[#64748B]">Cargando canciones...</div>
+              ) : (
+                inspectingTracks.map((t, idx) => (
+                  <div key={t.id || idx} className="py-2.5 flex items-center justify-between text-xs">
+                    <div>
+                      <div className={`font-bold text-[#181226] ${antiSpoiler ? 'blur-xs select-none' : ''}`}>
+                        {idx + 1}. {t.title}
+                      </div>
+                      <div className={`text-[11px] text-[#64748B] ${antiSpoiler ? 'blur-xs select-none' : ''}`}>
+                        {t.artist}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-[#EAE3D5] flex items-center justify-between">
+              <button
+                onClick={() => setInspectingGame(null)}
+                className="px-4 py-2 bg-[#FAF8F5] text-xs font-bold text-[#64748B] rounded-xl cursor-pointer"
+              >
+                Cerrar
+              </button>
+
+              <button
+                onClick={() => {
+                  const g = inspectingGame;
+                  setInspectingGame(null);
+                  handlePlayGame(g);
+                }}
+                className="px-5 py-2 bg-[#FF5722] hover:bg-[#E64A19] text-white text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer shadow-sm"
+              >
+                Empezar Partida Ahora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Confirm Delete Modal ─────────────────────────────────── */}
+      {gameToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full border-2 border-[#EAE3D5] shadow-2xl text-center">
+            <h3 className="text-base font-black text-[#181226] mb-2">¿Eliminar Partida?</h3>
+            <p className="text-xs text-[#64748B] mb-5">
+              Se eliminará <strong>{gameToDelete.title}</strong> de tu lista guardada.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setGameToDelete(null)}
+                className="flex-1 py-2.5 rounded-xl bg-[#FAF8F5] text-xs font-bold text-[#64748B] cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleDeleteGame(gameToDelete)}
+                className="flex-1 py-2.5 rounded-xl bg-[#DC2626] text-white text-xs font-black uppercase tracking-wider cursor-pointer shadow-xs"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * GamePackCard Sub-Component for visual music cards
+ */
+function GamePackCard({ game, hoveredCardId, setHoveredCardId, onInspect, onViewDetail, onPlay, isLaunching }) {
+  const isHovered = hoveredCardId === game.id;
+
+  return (
+    <div
+      onMouseEnter={() => setHoveredCardId(game.id)}
+      onMouseLeave={() => setHoveredCardId(null)}
+      className="group bg-white rounded-3xl border-2 border-[#EAE3D5] p-3.5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+    >
+      <div>
+        {/* Cover Art with Vinyl peek-out */}
+        <div className="mb-3 cursor-pointer" onClick={onViewDetail}>
+          <MusicPackCover
+            genre={game.genre}
+            title={game.title}
+            trackCount={game.trackCount || 0}
+            playCount={game.playCount || 0}
+            isHovered={isHovered}
+          />
+        </div>
+
+        {/* Card Header & Title */}
+        <h3
+          onClick={onViewDetail}
+          className="font-black text-sm text-[#181226] group-hover:text-[#FF5722] transition-colors leading-snug line-clamp-1 mb-1 cursor-pointer"
+        >
+          {game.title}
+        </h3>
+
+        <p className="text-xs text-[#64748B] line-clamp-2 leading-relaxed mb-3">
+          {game.description || 'Partida de trivia musical interactiva.'}
+        </p>
+
+        {/* Sample Tracks Tags */}
+        {Array.isArray(game.sampleTracks) && game.sampleTracks.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {game.sampleTracks.slice(0, 2).map((st, i) => (
+              <span key={i} className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#FAF8F5] border border-[#EAE3D5] text-[#64748B] max-w-[140px] truncate">
+                {st.title}
+              </span>
+            ))}
           </div>
         )}
+      </div>
 
-        {/* ── Inspection Modal ───────────────────────────────────── */}
-        <AnimatePresence>
-          {inspectingGame && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
-            >
-              <motion.div
-                initial={{ scale: 0.95, y: 15 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.95, y: 15 }}
-                className="party-card bg-white p-6 rounded-3xl border-2 border-[#EAE3D5] max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl"
-              >
-                {/* Modal Header */}
-                <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#EAE3D5] shrink-0">
-                  <div>
-                    <span className="badge-tag text-[#FF5722] font-black text-[10px]">
-                      {inspectingGame.genre || 'General'}
-                    </span>
-                    <h2 className="font-display font-black text-lg text-[#181226] leading-tight mt-0.5">
-                      {inspectingGame.title}
-                    </h2>
-                    <p className="text-xs text-[#6B6280]">
-                      Por {inspectingGame.creatorName || 'Comunidad'} · {inspectingTracks.length} canciones
-                    </p>
-                  </div>
+      {/* Footer & Actions */}
+      <div className="pt-3 border-t border-[#EAE3D5] flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[#64748B]">
+          <div className="w-5 h-5 rounded-full bg-[#181226] text-white flex items-center justify-center text-[9px]">
+            {(game.creatorName || 'C').charAt(0).toUpperCase()}
+          </div>
+          <span className="truncate max-w-[100px]">{game.creatorName || 'Comunidad'}</span>
+        </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setInspectingGame(null)}
-                    className="w-8 h-8 rounded-full bg-[#FAF7F2] border border-[#EAE3D5] flex items-center justify-center text-[#8E869E] hover:text-[#181226] hover:bg-[#EAE3D5] cursor-pointer transition-colors"
-                    title="Cerrar"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={onViewDetail}
+            className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-[#FAF8F5] hover:bg-[#F3EFE6] text-[#181226] border border-[#EAE3D5] cursor-pointer"
+            title="Ver detalles de la partida"
+          >
+            Ver
+          </button>
 
-                {/* Anti-spoiler Toggle */}
-                <div className="py-2.5 px-3 my-3 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-[#FF5722]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    <div>
-                      <span className="text-xs font-bold text-[#181226] block leading-none">
-                        Modo Anti-Spoiler
-                      </span>
-                      <span className="text-[10px] text-[#6B6280]">
-                        {antiSpoiler ? 'Oculta títulos para que quien organice no se queme las respuestas' : 'Respuestas visibles'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setAntiSpoiler(!antiSpoiler)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-black transition-colors cursor-pointer ${
-                      antiSpoiler
-                        ? 'bg-[#059669] text-white'
-                        : 'bg-white border border-[#EAE3D5] text-[#181226]'
-                    }`}
-                  >
-                    {antiSpoiler ? 'Activado' : 'Desactivado'}
-                  </button>
-                </div>
-
-                {/* Tracklist List */}
-                <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 custom-scrollbar my-1">
-                  {loadingTracks ? (
-                    <div className="py-12 text-center">
-                      <div className="w-6 h-6 rounded-full border-2 border-[#FF5722] border-t-transparent animate-spin mx-auto mb-2" />
-                      <p className="text-xs text-[#6B6280] font-bold">Cargando canciones...</p>
-                    </div>
-                  ) : inspectingTracks.length === 0 ? (
-                    <p className="text-xs text-[#8E869E] text-center py-6">
-                      No se encontraron detalles de canciones para esta partida.
-                    </p>
-                  ) : (
-                    inspectingTracks.map((t, idx) => (
-                      <div
-                        key={t.id || idx}
-                        className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-[#FAF7F2] border border-[#EAE3D5] text-xs"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <span className="w-5 h-5 rounded-md bg-[#181226] text-white text-[10px] font-black flex items-center justify-center shrink-0">
-                            {idx + 1}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p
-                              className={`font-extrabold text-[#181226] truncate ${
-                                antiSpoiler ? 'blur-xs select-none' : ''
-                              }`}
-                            >
-                              {t.title}
-                            </p>
-                            <p
-                              className={`text-[11px] text-[#574F6B] truncate ${
-                                antiSpoiler ? 'blur-xs select-none' : ''
-                              }`}
-                            >
-                              {t.artist || 'Artista no especificado'}
-                            </p>
-                          </div>
-                        </div>
-
-                        <span className="text-[10px] uppercase font-extrabold text-[#8E869E] shrink-0">
-                          {t.type || 'youtube'}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                {/* Modal Footer Actions */}
-                <div className="pt-4 border-t border-[#EAE3D5] flex items-center justify-end gap-2.5 shrink-0 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => setInspectingGame(null)}
-                    className="arcade-btn px-4 py-2 rounded-xl text-xs font-black text-[#574F6B] hover:text-[#181226] bg-[#FAF7F2] border border-[#EAE3D5] cursor-pointer"
-                  >
-                    Cerrar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handlePlayGame(inspectingGame)}
-                    disabled={launchingId === inspectingGame.id}
-                    className="arcade-btn-primary px-5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
-                  >
-                    {launchingId === inspectingGame.id ? (
-                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                    ) : (
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    )}
-                    <span>Lanzar Partida Ahora</span>
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Delete Confirmation Modal ──────────────────────────── */}
-        <AnimatePresence>
-          {gameToDelete && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
-            >
-              <motion.div
-                initial={{ scale: 0.95 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.95 }}
-                className="party-card bg-white p-6 rounded-3xl border-2 border-[#EAE3D5] max-w-sm w-full text-center shadow-2xl"
-              >
-                <div className="w-10 h-10 rounded-full bg-[#FEF2F2] border border-[#FCA5A5] flex items-center justify-center text-[#DC2626] mx-auto mb-3">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </div>
-                <h3 className="font-display font-black text-base text-[#181226] mb-1">
-                  ¿Eliminar esta partida?
-                </h3>
-                <p className="text-xs text-[#574F6B] mb-5">
-                  Vas a eliminar permanentemente "{gameToDelete.title}". Esta acción no se puede deshacer.
-                </p>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setGameToDelete(null)}
-                    className="arcade-btn py-2 rounded-xl text-xs font-black text-[#574F6B] bg-[#FAF7F2] border border-[#EAE3D5] cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteGame(gameToDelete)}
-                    className="py-2 rounded-xl text-xs font-black bg-[#DC2626] hover:bg-[#B91C1C] text-white cursor-pointer transition-colors"
-                  >
-                    Sí, eliminar
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          <button
+            onClick={onPlay}
+            disabled={isLaunching}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-[#FF5722] hover:bg-[#E64A19] text-white shadow-xs cursor-pointer flex items-center gap-1"
+          >
+            <span>{isLaunching ? '...' : 'Jugar'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
