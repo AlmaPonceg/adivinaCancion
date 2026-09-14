@@ -84,7 +84,7 @@ export default function Landing() {
           </div>
           <div className="p-2.5 sm:p-3.5 rounded-2xl bg-[#F7F4EE] border border-[#E5DFD5] flex flex-col justify-between shadow-xs">
             <span className="text-[#059669] text-lg sm:text-xl font-black leading-none mb-1">03</span>
-            <span className="text-[10px] sm:text-[11px] font-extrabold text-[#181226] leading-snug">Diploma Campeón</span>
+            <span className="text-[10px] sm:text-[11px] font-extrabold text-[#181226] leading-snug">Podio en Vivo</span>
           </div>
         </div>
 
