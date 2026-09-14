@@ -9,6 +9,7 @@ import cors from 'cors';
 import os from 'os';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { GameManager, GAME_STATES, TEAM_COLORS } from './gameManager.js';
 import YouTube from 'youtube-sr';
@@ -38,6 +39,16 @@ function extractPlaylistId(input) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Auto-load server/.env if available
+try {
+  const envPath = path.join(__dirname, '.env');
+  if (fs.existsSync(envPath) && typeof process.loadEnvFile === 'function') {
+    process.loadEnvFile(envPath);
+  }
+} catch {
+  // Ignore if unable to load .env
+}
+
 const app = express();
 const httpServer = createServer(app);
 
@@ -59,6 +70,9 @@ app.use(express.json());
 
 const gm = new GameManager();
 
+// In-memory rate limiting for memory unlock code attempts
+const unlockAttempts = new Map(); // ip -> { count, resetAt }
+
 // Detect local network IP (e.g. 192.168.1.X)
 function getLocalIp() {
   const interfaces = os.networkInterfaces();
@@ -75,6 +89,62 @@ function getLocalIp() {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
+});
+
+// Secure endpoint to unlock private Alma 24th Birthday Memory Theme
+app.post('/api/verify-memory-code', (req, res) => {
+  const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+
+  // Rate limit: max 5 attempts per 15 minutes per IP
+  const userRate = unlockAttempts.get(clientIp);
+  if (userRate && now < userRate.resetAt && userRate.count >= 5) {
+    const minutesLeft = Math.ceil((userRate.resetAt - now) / 60000);
+    return res.status(429).json({
+      success: false,
+      error: `Demasiados intentos fallidos. Por favor, esperá ${minutesLeft} minuto(s) antes de reintentar.`
+    });
+  }
+
+  const { code } = req.body || {};
+  if (!code || typeof code !== 'string') {
+    return res.status(400).json({ success: false, error: 'Código no proporcionado' });
+  }
+
+  const normalizedInput = code.trim().toLowerCase();
+  const normalizedTarget = (process.env.ALMA_SECRET_CODE || 'cumple24alma').trim().toLowerCase();
+
+  // Constant-time comparison using SHA-256 digests to prevent timing attacks
+  const inputHash = crypto.createHash('sha256').update(normalizedInput).digest();
+  const targetHash = crypto.createHash('sha256').update(normalizedTarget).digest();
+
+  const isMatch = crypto.timingSafeEqual(inputHash, targetHash);
+
+  if (!isMatch) {
+    const attempts = userRate && now < userRate.resetAt ? userRate.count + 1 : 1;
+    unlockAttempts.set(clientIp, {
+      count: attempts,
+      resetAt: userRate && now < userRate.resetAt ? userRate.resetAt : now + 15 * 60 * 1000
+    });
+    return res.status(401).json({
+      success: false,
+      error: 'Código incorrecto. Verificá los caracteres e intentá nuevamente.'
+    });
+  }
+
+  // Clear failed attempt tracking on success
+  unlockAttempts.delete(clientIp);
+
+  // Generate a tamper-evident session token
+  const token = crypto.createHmac('sha256', normalizedTarget).update(`alma_unlocked_${now}`).digest('hex');
+
+  return res.json({
+    success: true,
+    theme: 'alma',
+    token,
+    unlockedAt: now,
+    message: 'Modo Recuerdo desbloqueado exitosamente'
+  });
 });
 
 // YouTube Auto-Karaoke endpoint (Supports Playlist URL or Array of Song Names)

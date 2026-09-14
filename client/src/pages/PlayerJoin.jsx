@@ -3,10 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import socket from '../socket';
 import { lobbyAudioManager } from '../utils/lobbyAudio';
+import { useTheme } from '../context/ThemeContext';
 
 export default function PlayerJoin() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { isAlmaTheme } = useTheme();
 
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState(searchParams.get('room') || '');
@@ -75,8 +77,10 @@ export default function PlayerJoin() {
       return;
     }
 
-    // Pre-unlock and play Alma's lobby song within direct user click gesture
-    lobbyAudioManager.unlockAndPlay(0.35);
+    // Pre-unlock and play Alma's lobby song within direct user click gesture (if theme unlocked)
+    if (isAlmaTheme) {
+      lobbyAudioManager.unlockAndPlay(0.35);
+    }
 
     let persistentId = localStorage.getItem('trivia_player_id');
     if (!persistentId) {

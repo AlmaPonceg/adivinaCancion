@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { lobbyAudioManager } from '../utils/lobbyAudio';
+import { useTheme } from '../context/ThemeContext';
 
 /**
  * LobbyAudio — Plays "almaCancion.mp3" during the pre-game lobby.
  *
  * Rules:
  * - Plays only while players join and BEFORE the match starts.
+ * - Active ONLY when isAlmaTheme is unlocked.
  * - Shuts down completely when the match begins (isGameStarted === true).
  * - Connected to lobbyAudioManager singleton to support seamless playback from mobile join gesture.
  * - Automatically hooks into any screen touch/click if autoplay was deferred.
@@ -16,13 +18,14 @@ export default function LobbyAudio({
   initialVolume = 0.35,
   className = '',
 }) {
+  const { isAlmaTheme } = useTheme();
   const [isPlaying, setIsPlaying] = useState(() => lobbyAudioManager.isPlaying);
   const [isMuted, setIsMuted] = useState(() => lobbyAudioManager.isMuted);
   const [needsUserGesture, setNeedsUserGesture] = useState(false);
 
   useEffect(() => {
-    // If game has started, kill audio immediately and do nothing
-    if (isGameStarted) {
+    // If not Alma theme or game has started, kill audio immediately and do nothing
+    if (!isAlmaTheme || isGameStarted) {
       lobbyAudioManager.stop();
       setIsPlaying(false);
       return;
@@ -98,8 +101,8 @@ export default function LobbyAudio({
     lobbyAudioManager.toggleMute();
   };
 
-  // If match has already started, do not render anything
-  if (isGameStarted) return null;
+  // Only render if Alma memory theme is active and match hasn't started
+  if (!isAlmaTheme || isGameStarted) return null;
 
   return (
     <div className={`inline-flex items-center gap-1.5 select-none shrink-0 ${className}`}>

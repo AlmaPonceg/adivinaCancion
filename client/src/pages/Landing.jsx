@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { isAlmaTheme, openUnlockModal, lockTheme } = useTheme();
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-6 text-[var(--color-text-primary)] relative overflow-hidden">
@@ -10,6 +12,26 @@ export default function Landing() {
       <div className="absolute top-[-10%] left-[20%] w-96 h-96 bg-[#FF5722]/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[20%] w-96 h-96 bg-[#F59E0B]/12 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute top-[40%] right-[10%] w-80 h-80 bg-[#E11D48]/08 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Memory Mode Active Banner */}
+      {isAlmaTheme && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-xs border border-[#FF5722]/30 text-xs font-bold text-[#FF5722] shadow-sm z-20 select-none"
+        >
+          <span className="w-2 h-2 rounded-full bg-[#FF5722] animate-pulse" />
+          <span>Edición Cumpleaños Alma #24 activa</span>
+          <button
+            type="button"
+            onClick={lockTheme}
+            className="ml-1 underline text-[#6B6280] hover:text-[#181226] cursor-pointer"
+            title="Volver a la versión neutral para el público general"
+          >
+            (Salir)
+          </button>
+        </motion.div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 28 }}
@@ -112,6 +134,21 @@ export default function Landing() {
           </button>
         </div>
       </motion.div>
+
+      {/* Subtle Memory Mode Unlock Trigger in Footer */}
+      {!isAlmaTheme && (
+        <button
+          type="button"
+          onClick={openUnlockModal}
+          className="mt-6 inline-flex items-center gap-1.5 text-xs text-[#8E869E] hover:text-[#181226] transition-colors cursor-pointer py-1.5 px-3 rounded-xl hover:bg-white/60 z-20 select-none"
+          title="Acceso para anfitriones a la edición privada de cumpleaños"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <span>Acceso Especial / Modo Recuerdo</span>
+        </button>
+      )}
     </div>
   );
 }

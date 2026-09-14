@@ -636,7 +636,7 @@ export default function PlaylistSetup({
                         type="text"
                         value={savePlaylistName}
                         onChange={(e) => setSavePlaylistName(e.target.value)}
-                        placeholder="Nombre de la playlist (ej. Rock Nacional, Cumple Alma...)"
+                        placeholder="Nombre de la playlist (ej. Rock Nacional, Hits 2000s...)"
                         className="flex-1 px-3 py-1.5 text-xs bg-white border border-[#EAE3D5] rounded-lg focus:outline-none focus:border-[#FF5722] text-[#181226]"
                         autoFocus
                       />
